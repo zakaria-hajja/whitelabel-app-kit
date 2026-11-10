@@ -23,7 +23,13 @@ internal class LocalSession @Inject constructor(
         tokenStore.write(tokens)
     }
 
-    suspend fun replaceTokens(tokens: StoredTokens) = tokenStore.write(tokens)
+    /** Replaces the pair only if it still is [expected]; `false` means the session changed meanwhile. */
+    suspend fun replaceTokens(expected: StoredTokens, new: StoredTokens): Boolean = tokenStore.compareAndSet(expected, new)
+
+    /** Ends the session only if it still holds [expected], so a stale failure never ends a newer one. */
+    suspend fun endIfCurrent(expected: StoredTokens) {
+        if (tokenStore.compareAndSet(expected, null)) userCache.clear()
+    }
 
     /** Tokens first, so the session ends even if clearing the cache fails. */
     suspend fun clear() {

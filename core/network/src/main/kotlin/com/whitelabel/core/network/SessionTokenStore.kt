@@ -11,9 +11,15 @@ interface SessionTokenStore {
     /** The current pair, or `null` when signed out. */
     suspend fun current(): SessionTokens?
 
-    /** Stores the pair a refresh returned. */
-    suspend fun replace(tokens: SessionTokens)
+    /**
+     * Stores the pair a refresh returned, only if the session still holds [expected]: a refresh that
+     * finishes after sign-out, or after another sign-in, must not write its pair. Returns whether it did.
+     */
+    suspend fun replace(expected: SessionTokens, new: SessionTokens): Boolean
 
-    /** The backend ended the session (refresh rejected, or the session is gone): clear local session data. */
-    suspend fun endSession()
+    /**
+     * The backend ended the session that used [expected] (refresh rejected, or the retry still
+     * unauthorized): clear local session data, unless a newer session has started since.
+     */
+    suspend fun endSession(expected: SessionTokens)
 }

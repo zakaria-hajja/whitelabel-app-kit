@@ -63,6 +63,6 @@ class KtorHealthDataSourceTest {
 
 private object SignedOut : SessionTokenStore {
     override suspend fun current(): SessionTokens? = null
-    override suspend fun replace(tokens: SessionTokens) = Unit
-    override suspend fun endSession() = Unit
+    override suspend fun replace(expected: SessionTokens, new: SessionTokens) = false
+    override suspend fun endSession(expected: SessionTokens) = Unit
 }

@@ -1,8 +1,8 @@
 package com.whitelabel.core.datastore
 
 import java.io.File
-import java.security.GeneralSecurityException
 import java.util.Base64
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -27,25 +27,54 @@ class TokenStore(file: File, private val cipher: TokenCipher, scope: CoroutineSc
     val tokens: Flow<StoredTokens?> = store.data.map { document -> document.open() }
 
     suspend fun write(tokens: StoredTokens) {
-        val sealed = cipher.encrypt(Json.encodeToString(StoredTokens.serializer(), tokens).encodeToByteArray())
-        store.update { SealedDocument(iv = base64.encodeToString(sealed.iv), ciphertext = base64.encodeToString(sealed.ciphertext)) }
+        val sealed = seal(tokens)
+        store.update { sealed }
     }
 
     suspend fun clear() {
         store.update { SealedDocument() }
     }
 
-    private suspend fun SealedDocument.open(): StoredTokens? {
-        if (iv == null || ciphertext == null) return null
-        return try {
-            val plain = cipher.decrypt(Sealed(base64Decoder.decode(iv), base64Decoder.decode(ciphertext)))
-            Json.decodeFromString(StoredTokens.serializer(), plain.decodeToString())
-        } catch (_: GeneralSecurityException) {
-            null.also { clear() }
-        } catch (_: IllegalArgumentException) {
-            // Bad Base64 or JSON (SerializationException is an IllegalArgumentException).
-            null.also { clear() }
+    /**
+     * Atomically replaces the stored pair with [new] (`null` clears it), only if it currently is
+     * [expected]. Returns whether it did: `false` means the session changed meanwhile.
+     */
+    suspend fun compareAndSet(expected: StoredTokens, new: StoredTokens?): Boolean {
+        val replacement = new?.let(::seal) ?: SealedDocument()
+        var swapped = false
+        store.update { document ->
+            swapped = document.decryptOrNull() == expected
+            if (swapped) replacement else document
         }
+        return swapped
+    }
+
+    private fun seal(tokens: StoredTokens): SealedDocument {
+        val sealed = cipher.encrypt(Json.encodeToString(StoredTokens.serializer(), tokens).encodeToByteArray())
+        return SealedDocument(iv = base64.encodeToString(sealed.iv), ciphertext = base64.encodeToString(sealed.ciphertext))
+    }
+
+    private fun SealedDocument.decryptOrNull(): StoredTokens? = try {
+        decrypt()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+
+    private fun SealedDocument.decrypt(): StoredTokens? {
+        if (iv == null || ciphertext == null) return null
+        val plain = cipher.decrypt(Sealed(base64Decoder.decode(iv), base64Decoder.decode(ciphertext)))
+        return Json.decodeFromString(StoredTokens.serializer(), plain.decodeToString())
+    }
+
+    /**
+     * Any failure to open the pair reads as signed out and clears it: an invalidated key
+     * (`GeneralSecurityException`), bad Base64 or JSON, or a Keystore fault some devices raise as a
+     * `ProviderException`. Signing out is recoverable; crashing on every launch is not.
+     */
+    private suspend fun SealedDocument.open(): StoredTokens? = decryptOrNull() ?: null.also {
+        if (iv != null || ciphertext != null) clear()
     }
 
     private companion object {

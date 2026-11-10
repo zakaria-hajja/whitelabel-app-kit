@@ -14,7 +14,14 @@
 
 ## Decisions this plan makes (owner: please confirm in review)
 
-1. **Custom session plugin, not Ktor `Auth { bearer }`.** The backend returns 401 for `INVALID_CREDENTIALS` too (wrong login, and a wrong current password on password change). Ktor's bearer plugin refreshes on every 401. Our plugin refreshes only on `TOKEN_EXPIRED`, signs out on `UNAUTHENTICATED`/`INVALID_REFRESH_TOKEN`, and passes everything else through. It still does single-flight refresh.
+1. **Custom session plugin, not Ktor `Auth { bearer }`.** The backend returns 401 for `INVALID_CREDENTIALS` too (wrong login, and a wrong current password on password change). Ktor's bearer plugin refreshes on every 401. Our plugin follows the backend's "Android client guidance" (`../backend-api/docs/api.md`):
+   - `TOKEN_EXPIRED` or `UNAUTHENTICATED` → one single-flight refresh, then one retry. A retry still rejected that way signs out.
+   - A refresh with no response is retried once at once with the same refresh token (lost-response rule).
+   - `INVALID_REFRESH_TOKEN` signs out.
+   - Everything else passes through.
+   - Token writes are compare-and-set on the pair the request used, so a late refresh never revives a signed-out session.
+
+   (Changed after the Part A review: the first version signed out on `UNAUTHENTICATED` at once, against contract rule 4.)
 2. **`:core:network` stays pure JVM** and doesn't depend on `:core:datastore` (dropping that edge from spec §2). It declares `SessionTokenStore`, and `:core:data` implements it on the encrypted `TokenStore`.
 3. **`AppNavigator.toAuth()` is dropped.** With the whole-app gate, session state alone switches graphs, so nothing would call it. `AppNavigator` gains `canOpenTab(route)` for home's shortcuts.
 4. **`FeatureEntry.routes` receives a `FeatureScope(navigator, deepLinkScheme)`** in place of the bare navigator, so features can declare deep links. Spec §4 says `FeatureEntry` has no per-feature session flag, and the gate stays whole-app. `requiresSignIn` is a build-time check only: such a feature without `auth()` fails at definition build (spec §4's "fail at definition-build time").
@@ -67,7 +74,7 @@
 ## Review Focus
 
 1. **A 401 that isn't an expired token** (wrong password at login, or a wrong current password on change-password) must show "wrong password". It must not trigger a refresh or sign the user out. Pinned in Tasks 3 and 16.
-2. **Refresh fails for lack of network** (or with a 5xx). The user stays signed in and the call fails with `NO_INTERNET`. Only `INVALID_REFRESH_TOKEN`/`UNAUTHENTICATED` end the session. Pinned in Task 3.
+2. **Refresh fails for lack of network** (or with a 5xx). The user stays signed in; the call fails with `NO_INTERNET` (or the refresh's server error). Only a rejected refresh, or a retry still `TOKEN_EXPIRED`/`UNAUTHENTICATED`, ends the session. Pinned in Task 3.
 3. **Several calls expire at once** (home and the catalog loading together) must cause exactly one refresh. The backend revokes the session when a used refresh token is reused. Pinned in Task 3.
 4. **A slow, unreachable or newer backend at start.** The app must leave the splash within about 2 s, using cached or default config. A config carrying an unknown theme value or unknown flag keys must still load. Pinned in Tasks 6 and 7.
 5. **Impatient input:**

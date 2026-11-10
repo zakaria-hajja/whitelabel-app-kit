@@ -25,15 +25,18 @@ object PlainCipher : TokenCipher {
 
 object NoTokens : SessionTokenStore {
     override suspend fun current(): SessionTokens? = null
-    override suspend fun replace(tokens: SessionTokens) = Unit
-    override suspend fun endSession() = Unit
+    override suspend fun replace(expected: SessionTokens, new: SessionTokens) = false
+    override suspend fun endSession(expected: SessionTokens) = Unit
 }
 
-fun mockClient(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): HttpClient =
+fun mockClient(
+    tokens: SessionTokenStore = NoTokens,
+    handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
+): HttpClient =
     HttpClientFactory.create(
         MockEngine(handler),
         NetworkConfig(baseUrl = "https://api.test/api/v1/", tenant = null, userAgent = "test"),
-        NoTokens,
+        tokens,
     )
 
 private val json = headersOf(HttpHeaders.ContentType, "application/json")

@@ -108,12 +108,17 @@ Rules, enforced by module boundaries and by review:
 - **Logging:** only outside `PRODUCTION`, headers only, with `Authorization` redacted.
 - **Cleartext:** debug builds may use cleartext to `10.0.2.2` and `localhost` only. Release builds
   never do.
-- **Session:** while signed in, requests carry `Authorization: Bearer`. A 401 `TOKEN_EXPIRED`
-  triggers one refresh, shared by every concurrent caller, then one retry. A 401
-  `UNAUTHENTICATED`, or a rejected refresh, ends the session. Every other 401 (such as
-  `INVALID_CREDENTIALS` for a wrong password) is returned untouched. A refresh that fails for lack
-  of network keeps the session. Requests marked `publicRequest()` (sign-in, registration) never
-  carry the bearer.
+- **Session:** while signed in, requests carry `Authorization: Bearer`, following the backend's
+  "Android client guidance":
+  - A 401 `TOKEN_EXPIRED` or `UNAUTHENTICATED` triggers one refresh, shared by every concurrent
+    caller, then one retry.
+  - A rejected refresh, or a retry that is still rejected, ends the session.
+  - A refresh that gets no response is retried once at once with the same token, as the backend
+    requires; if it still fails, the session is kept.
+  - Every other 401 (such as `INVALID_CREDENTIALS` for a wrong password) is returned untouched.
+  - Token writes are conditional on the pair the request used, so a refresh that lands after
+    sign-out never signs the user back in.
+  - Requests marked `publicRequest()` (sign-in, registration) never carry the bearer.
 
 See [api-environments.md](api-environments.md).
 

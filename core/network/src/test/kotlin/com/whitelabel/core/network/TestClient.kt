@@ -29,12 +29,15 @@ class FakeSessionTokens(var tokens: SessionTokens? = null) : SessionTokenStore {
 
     override suspend fun current(): SessionTokens? = tokens
 
-    override suspend fun replace(tokens: SessionTokens) {
-        this.tokens = tokens
+    override suspend fun replace(expected: SessionTokens, new: SessionTokens): Boolean {
+        if (tokens != expected) return false
+        tokens = new
         replaced++
+        return true
     }
 
-    override suspend fun endSession() {
+    override suspend fun endSession(expected: SessionTokens) {
+        if (tokens != expected) return
         tokens = null
         ended++
     }

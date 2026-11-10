@@ -13,8 +13,10 @@ internal class StoreSessionTokens @Inject constructor(
     override suspend fun current(): SessionTokens? =
         session.currentTokens()?.let { SessionTokens(it.accessToken, it.refreshToken) }
 
-    override suspend fun replace(tokens: SessionTokens) =
-        session.replaceTokens(StoredTokens(tokens.accessToken, tokens.refreshToken))
+    override suspend fun replace(expected: SessionTokens, new: SessionTokens): Boolean =
+        session.replaceTokens(expected.stored(), new.stored())
 
-    override suspend fun endSession() = session.clear()
+    override suspend fun endSession(expected: SessionTokens) = session.endIfCurrent(expected.stored())
+
+    private fun SessionTokens.stored() = StoredTokens(accessToken, refreshToken)
 }
