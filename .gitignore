@@ -1,0 +1,20 @@
+# Gradle / build
+.gradle/
+build/
+.kotlin/
+captures/
+local.properties
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store
+
+# Signing material: never committed
+*.jks
+*.keystore
+clients/*/signing.properties
+
+# Tooling
+.superpowers/
+AGENTS.md

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Client brand.xml files override resources that :core:designsystem reads by name. -->
+    <issue id="UnusedResources">
+        <ignore regexp="R\.(color|dimen|font)\.brand_" />
+    </issue>
+    <!-- The client folder layout (design spec section 3) fixes mipmap-anydpi-v26 for launcher icons. -->
+    <issue id="ObsoleteSdkInt">
+        <ignore path="**/clients/*/res/mipmap-anydpi-v26" />
+    </issue>
+    <!-- allowBackup="false" already disables backup before Android 12; no fullBackupContent needed. -->
+    <issue id="DataExtractionRules" severity="ignore" />
+</lint>
