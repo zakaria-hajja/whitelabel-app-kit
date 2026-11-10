@@ -15,6 +15,7 @@ dependencies {
     api(libs.compose.material.icons.core)
     implementation(project(":core:common"))
     implementation(project(":core:network"))
+    implementation(project(":core:data"))
     implementation(project(":core:designsystem"))
 
     implementation(libs.ktor.client.core)
