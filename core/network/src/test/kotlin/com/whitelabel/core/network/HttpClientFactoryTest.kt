@@ -35,6 +35,21 @@ class HttpClientFactoryTest {
         assertThat(captured[HttpHeaders.UserAgent]).isEqualTo("test-agent/1.0")
     }
 
+    @Test fun `non-ascii header values are sanitized to printable ascii and request is sent`() = runTest {
+        var agent: String? = null
+        var slug: String? = null
+        val config = testConfig().copy(userAgent = "Caf\u00e9\u0001/1.0.0 (Android 16)", clientSlug = "caf\u00e9")
+        val client = testClient(config) { req ->
+            agent = req.headers[HttpHeaders.UserAgent]
+            slug = req.headers[CLIENT_ID_HEADER]
+            respond(OK_BODY, HttpStatusCode.OK, jsonHeaders)
+        }
+        val result = client.getResult<Health>("health")
+        assertThat(result is Result.Success).isEqualTo(true)
+        assertThat(agent).isEqualTo("Caf/1.0.0 (Android 16)")
+        assertThat(slug).isEqualTo("caf")
+    }
+
     @Test fun `relative path resolves under versioned base`() = runTest {
         var path = ""
         val client = testClient { req -> path = req.url.encodedPath; respond(OK_BODY, HttpStatusCode.OK, jsonHeaders) }

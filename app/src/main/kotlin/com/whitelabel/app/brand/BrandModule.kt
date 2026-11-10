@@ -25,7 +25,7 @@ object BrandModule {
     fun networkConfig(brand: BrandConfig): NetworkConfig = NetworkConfig(
         baseUrl = brand.apiBaseUrl,
         clientSlug = brand.clientSlug,
-        userAgent = "${brand.appName}/${brand.versionName} (Android ${Build.VERSION.RELEASE})",
+        userAgent = "${brand.clientSlug}/${brand.versionName} (Android ${Build.VERSION.RELEASE})",
         logger = if (brand.environment == Environment.PRODUCTION) null else { line -> Log.d("Http", line) },
     )
 

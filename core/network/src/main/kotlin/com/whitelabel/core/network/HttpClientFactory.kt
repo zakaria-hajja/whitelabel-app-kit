@@ -17,6 +17,9 @@ import io.ktor.serialization.kotlinx.json.json
 private const val CONNECT_TIMEOUT_MS = 15_000L
 private const val REQUEST_TIMEOUT_MS = 30_000L
 
+// OkHttp rejects header values outside printable ASCII, which would surface as a silent network error.
+private fun String.asHeaderValue(): String = filter { it.code in 0x20..0x7E }
+
 object HttpClientFactory {
     fun create(engine: HttpClientEngine, config: NetworkConfig): HttpClient = HttpClient(engine) {
         expectSuccess = false
@@ -28,8 +31,8 @@ object HttpClientFactory {
         defaultRequest {
             // The trailing slash makes relative paths resolve under the versioned base.
             url(config.baseUrl.trimEnd('/') + "/")
-            header(CLIENT_ID_HEADER, config.clientSlug)
-            header(HttpHeaders.UserAgent, config.userAgent)
+            header(CLIENT_ID_HEADER, config.clientSlug.asHeaderValue())
+            header(HttpHeaders.UserAgent, config.userAgent.asHeaderValue())
             accept(ContentType.Application.Json)
         }
         config.logger?.let { sink ->
