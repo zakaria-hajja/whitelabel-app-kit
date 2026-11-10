@@ -13,6 +13,10 @@ object ClientConfigLoader {
     private val APPLICATION_ID = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")
     private val DEEP_LINK_SCHEME = Regex("^[a-z][a-z0-9+.-]*$")
     private val LOCAL_HOSTS = setOf("localhost", "127.0.0.1", "10.0.2.2")
+    // Must match app/src/debug/res/xml/network_security_config.xml.
+    private val DEBUG_CLEARTEXT_HOSTS = setOf("10.0.2.2", "localhost")
+    private val REQUIRED_COLORS = listOf("brand_splash_background", "ic_launcher_background")
+    private val COLOR_NAME = Regex("<color\\s+[^>]*name\\s*=\\s*\"([^\"]+)\"")
     private const val MAX_VERSION_CODE = 2_100_000_000
 
     private val REQUIRED_ASSETS = listOf(
@@ -93,7 +97,7 @@ object ClientConfigLoader {
                 if (regex.matches(it)) it else { fail(key, "'$it' must match ${regex.pattern}"); null }
             }
 
-        fun url(key: String, httpsOnly: Boolean, notLocal: Boolean = false, normalize: Boolean = false): String? {
+        fun url(key: String, httpsOnly: Boolean, notLocal: Boolean = false, normalize: Boolean = false, cleartextHosts: Set<String>? = null): String? {
             val raw = required(key) ?: return null
             val uri = runCatching { URI(raw) }.getOrNull()
             val scheme = uri?.scheme?.lowercase()
@@ -106,6 +110,13 @@ object ClientConfigLoader {
                     fail(key, "'$raw' must use ${allowed.joinToString(" or ")}").let { null }
                 notLocal && host.lowercase() in LOCAL_HOSTS ->
                     fail(key, "'$raw' must not point to a local host").let { null }
+                scheme == "http" && cleartextHosts != null && host.lowercase() !in cleartextHosts ->
+                    fail(
+                        key,
+                        "'$raw' uses cleartext http to host '$host', but the debug network security config " +
+                            "(app/src/debug/res/xml/network_security_config.xml) only permits " +
+                            "${cleartextHosts.sorted().joinToString(" and ")}; use one of them or https",
+                    ).let { null }
                 normalize && !raw.endsWith("/") -> "$raw/"
                 else -> raw
             }
@@ -120,7 +131,7 @@ object ClientConfigLoader {
         }
         val versionName = required("app.versionName")
         val deepLinkScheme = matching("app.deepLinkScheme", DEEP_LINK_SCHEME)
-        val debugUrl = url("api.debug.baseUrl", httpsOnly = false, normalize = true)
+        val debugUrl = url("api.debug.baseUrl", httpsOnly = false, normalize = true, cleartextHosts = DEBUG_CLEARTEXT_HOSTS)
         val releaseUrl = url("api.release.baseUrl", httpsOnly = true, notLocal = true, normalize = true)
         val privacyUrl = url("defaults.legal.privacyPolicyUrl", httpsOnly = true)
         val termsUrl = url("defaults.legal.termsUrl", httpsOnly = true)
@@ -129,6 +140,15 @@ object ClientConfigLoader {
 
         REQUIRED_ASSETS.filterNot { File(dir, it).isFile }.forEach {
             problems += "clients/${dir.name}: missing required asset $it"
+        }
+
+        val declaredColors = File(dir, "res").listFiles { f -> f.isDirectory && f.name.startsWith("values") }
+            .orEmpty()
+            .flatMap { d -> d.listFiles { f -> f.isFile && f.extension == "xml" }.orEmpty().toList() }
+            .flatMap { f -> COLOR_NAME.findAll(f.readText()).map { it.groupValues[1] }.toList() }
+            .toSet()
+        REQUIRED_COLORS.filterNot { it in declaredColors }.forEach {
+            problems += "clients/${dir.name}: missing required color $it"
         }
 
         if (problems.size != before) return null

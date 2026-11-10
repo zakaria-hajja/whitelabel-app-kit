@@ -41,6 +41,7 @@ class ClientConfigLoaderTest {
         name: String,
         overrides: Map<String, String?> = emptyMap(),
         withAssets: Boolean = true,
+        colors: List<String> = listOf("brand_splash_background", "ic_launcher_background"),
     ): File {
         val dir = File(root, name).also { it.mkdirs() }
         val props = (validProps + overrides).filterValues { it != null }
@@ -48,6 +49,11 @@ class ClientConfigLoaderTest {
             .writeText(props.entries.joinToString("\n") { "${it.key}=${it.value}" })
         if (withAssets) {
             assets.forEach { File(dir, it).apply { parentFile.mkdirs() }.writeText("<x/>") }
+        }
+        if (colors.isNotEmpty()) {
+            File(dir, "res/values/brand.xml").apply { parentFile.mkdirs() }.writeText(
+                "<resources>" + colors.joinToString("") { "<color name=\"$it\">#000000</color>" } + "</resources>",
+            )
         }
         return dir
     }
@@ -329,5 +335,48 @@ class ClientConfigLoaderTest {
 
         assertThat(found.any { it.contains("app.name") && it.contains("control") }).isEqualTo(true)
         assertThat(found.any { it.contains("app.versionName") && it.contains("control") }).isEqualTo(true)
+    }
+
+    @Test
+    fun `each missing required color is a directory level problem`() {
+        writeClient("clientA", colors = emptyList())
+
+        val found = problems()
+
+        assertThat(found).containsExactly(
+            "clients/clientA: missing required color brand_splash_background",
+            "clients/clientA: missing required color ic_launcher_background",
+        )
+    }
+
+    @Test
+    fun `required colors may live in any values xml file`() {
+        val dir = writeClient("clientA", colors = listOf("ic_launcher_background"))
+        File(dir, "res/values-night").mkdirs()
+        File(dir, "res/values-night/extra.xml")
+            .writeText("<resources><color name=\"brand_splash_background\">#111111</color></resources>")
+
+        assertThat(ClientConfigLoader.load(root)).hasSize(1)
+    }
+
+    @Test
+    fun `cleartext debug url must use a host the debug network security config permits`() {
+        writeClient("clientA", mapOf("api.debug.baseUrl" to "http://192.168.1.5:3000/api/v1/"))
+
+        val found = problems()
+
+        assertThat(found).hasSize(1)
+        assertThat(found.single().contains("api.debug.baseUrl")).isEqualTo(true)
+        assertThat(found.single().contains("network_security_config.xml")).isEqualTo(true)
+    }
+
+    @Test
+    fun `debug cleartext allowed for emulator host and localhost, https any host`() {
+        listOf("http://localhost:3000/api/v1/", "http://10.0.2.2:3000/api/v1/", "https://staging.example.com/api/v1/")
+            .forEach { url ->
+                root.listFiles()?.forEach { it.deleteRecursively() }
+                writeClient("clientA", mapOf("api.debug.baseUrl" to url))
+                assertThat(ClientConfigLoader.load(root)).hasSize(1)
+            }
     }
 }
