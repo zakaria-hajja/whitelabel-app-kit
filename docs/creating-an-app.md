@@ -39,11 +39,15 @@ The quickest start is to copy `apps/showcase`, without its `build/` folder, then
 Kotlin package, the classes and every mention of Showcase:
 
 ```bash
-rsync -a --exclude build apps/showcase/ apps/globex/
+# Never copy another app's signing material: each app signs with its own key.
+rsync -a --exclude build --exclude signing.properties --exclude keys \
+  --exclude '*.jks' --exclude '*.keystore' --exclude '*.p12' apps/showcase/ apps/globex/
 cd apps/globex
 for d in src/main/kotlin src/test/kotlin; do mv $d/com/whitelabel/apps/showcase $d/com/whitelabel/apps/globex; done
 for f in $(find src -name 'Showcase*.kt'); do mv "$f" "$(echo "$f" | sed 's/Showcase/Globex/')"; done
-grep -rl -i showcase . | xargs sed -i '' -e 's/Showcase/Globex/g' -e 's/showcase/globex/g'   # GNU sed: -i without ''
+# Text files only (GNU sed: -i without '')
+grep -rl -i showcase --include='*.kt' --include='*.kts' --include='*.xml' --include='*.properties' . \
+  | xargs sed -i '' -e 's/Showcase/Globex/g' -e 's/showcase/globex/g'
 ```
 
 Then go through steps 2 to 7. The copied values are placeholders until you replace them.
