@@ -39,6 +39,10 @@ gradlePlugin {
             id = "whitelabel.android.library.compose"
             implementationClass = "com.whitelabel.buildlogic.AndroidLibraryComposeConventionPlugin"
         }
+        register("androidApplication") {
+            id = "whitelabel.android.application"
+            implementationClass = "com.whitelabel.buildlogic.AndroidApplicationConventionPlugin"
+        }
         register("hilt") {
             id = "whitelabel.hilt"
             implementationClass = "com.whitelabel.buildlogic.HiltConventionPlugin"

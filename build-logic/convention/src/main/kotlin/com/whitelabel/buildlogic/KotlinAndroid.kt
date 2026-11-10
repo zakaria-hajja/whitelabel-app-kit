@@ -27,6 +27,28 @@ internal fun Project.configureKotlinAndroid(extension: CommonExtension<*, *, *, 
     }
 }
 
+/**
+ * Compose for library and application modules: the compiler plugin, the BOM, Material 3,
+ * tooling and the instrumented UI-test dependencies.
+ */
+internal fun Project.configureCompose(extension: CommonExtension<*, *, *, *, *, *>) {
+    pluginManager.apply(libs.pluginId("kotlin-compose"))
+    extension.buildFeatures.compose = true
+    dependencies {
+        add("implementation", platform(libs.library("androidx-compose-bom")))
+        add("androidTestImplementation", platform(libs.library("androidx-compose-bom")))
+        add("implementation", libs.library("compose-ui"))
+        add("implementation", libs.library("compose-ui-tooling-preview"))
+        add("implementation", libs.library("compose-material3"))
+        add("debugImplementation", libs.library("compose-ui-tooling"))
+        add("debugImplementation", libs.library("compose-ui-test-manifest"))
+        add("androidTestImplementation", libs.library("compose-ui-test-junit4"))
+        add("androidTestImplementation", libs.library("androidx-test-ext-junit"))
+        // Espresso < 3.7 crashes on API 36 (InputManager.getInstance was removed).
+        add("androidTestImplementation", libs.library("androidx-test-espresso-core"))
+    }
+}
+
 internal fun Project.addTestDependencies(configuration: String = "testImplementation") {
     dependencies {
         add(configuration, libs.library("junit-jupiter"))

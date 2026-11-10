@@ -17,6 +17,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "android-starter-kit"
 
+include(":app")
+include(":core:branding")
 include(":core:common")
 include(":core:network")
 include(":core:designsystem")
