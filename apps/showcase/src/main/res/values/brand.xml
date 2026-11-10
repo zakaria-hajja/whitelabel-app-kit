@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  clientA brand overrides: a green primary family. Every role not listed here falls back
+  Showcase brand overrides: a green primary family. Every role not listed here falls back
   to the design-system defaults in core/designsystem/src/main/res/values/brand.xml.
   Contrast (WCAG AA >= 4.5:1): light on_primary 6.25, on_primary_container 13.2;
   dark on_primary 7.73, on_primary_container 7.26.
