@@ -99,6 +99,14 @@ class DefaultAppConfigRepositoryTest {
         }
     }
 
+    @Test fun `current reads the fetched config right after refresh`() = runTest {
+        withRepository(mockClient { ok(REMOTE) }) { repository ->
+            assertThat(repository.current()).isEqualTo(defaults)
+            repository.refresh()
+            assertThat(repository.current().defaultTheme).isEqualTo(ThemePreference.DARK)
+        }
+    }
+
     @Test fun `failed refresh keeps the cached config`() = runTest {
         withRepository(mockClient { ok(REMOTE) }) { it.refresh() }
         withRepository(offline()) { repository ->

@@ -14,6 +14,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -26,9 +27,12 @@ internal class DefaultAppConfigRepository @Inject constructor(
 
     private val defaults = brand.runtimeDefaults
 
-    override val config: StateFlow<AppConfig> = cache.config
-        .map { cached -> cached?.toAppConfig(defaults) ?: defaults.toAppConfig() }
-        .stateIn(scope, SharingStarted.Eagerly, defaults.toAppConfig())
+    private val resolved = cache.config.map { cached -> cached?.toAppConfig(defaults) ?: defaults.toAppConfig() }
+
+    override val config: StateFlow<AppConfig> = resolved.stateIn(scope, SharingStarted.Eagerly, defaults.toAppConfig())
+
+    /** Reads storage directly: [config] may not have emitted the cache, or a just-written fetch, yet. */
+    override suspend fun current(): AppConfig = resolved.first()
 
     override suspend fun refresh(): EmptyResult<DataError> =
         client.getResult<AppConfigDto>("app/config").onSuccess { cache.write(it) }.asEmptyResult()

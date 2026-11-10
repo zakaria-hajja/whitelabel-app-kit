@@ -45,11 +45,14 @@ private val brand = BrandConfig(
 private fun config(features: Map<String, Boolean> = emptyMap(), theme: ThemePreference = ThemePreference.SYSTEM) =
     AppConfig(features, null, "https://p", "https://t", theme, emptyList())
 
+/** [config] is what observers see; [stored] is what storage holds, which [config] may lag behind. */
 private class FakeAppConfig(initial: AppConfig = config()) : AppConfigRepository {
     override val config = MutableStateFlow(initial)
+    var stored: AppConfig = initial
     var onRefresh: suspend () -> AppConfig? = { null }
+    override suspend fun current(): AppConfig = stored
     override suspend fun refresh(): EmptyResult<DataError> {
-        onRefresh()?.let { config.value = it }
+        onRefresh()?.let { stored = it; config.value = it }
         return Result.Success(Unit)
     }
 }
@@ -116,6 +119,14 @@ class ShellViewModelTest {
         assertThat(viewModel.current.visibleTabs.map { it.route }).containsExactly(RouteA, RouteB)
     }
 
+    @Test fun `tabs use the stored config even before observers catch up`() = runTest {
+        appConfig.onRefresh = { null }
+        appConfig.stored = config(features = mapOf("b" to false)) // cached from an earlier launch, not yet emitted
+        val viewModel = viewModel()
+        runCurrent()
+        assertThat(viewModel.current.visibleTabs.map { it.route }).containsExactly(RouteA)
+    }
+
     @Test fun `tabs stay fixed when the config changes later`() = runTest {
         val viewModel = viewModel()
         runCurrent()
@@ -126,6 +137,7 @@ class ShellViewModelTest {
 
     @Test fun `theme falls back to the config default`() = runTest {
         appConfig.config.value = config(theme = ThemePreference.DARK)
+        appConfig.stored = appConfig.config.value
         val viewModel = viewModel()
         runCurrent()
         assertThat(viewModel.current.theme).isEqualTo(ThemePreference.DARK)

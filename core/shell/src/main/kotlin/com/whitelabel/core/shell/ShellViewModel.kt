@@ -62,7 +62,7 @@ internal class ShellViewModel @Inject constructor(
         viewModelScope.launch {
             val refresh = launch { appConfig.refresh() }
             withTimeoutOrNull(CONFIG_WAIT_MS) { refresh.join() }
-            tabs.value = definition.visibleTabs(appConfig.config.value.features, brand.runtimeDefaults.enabledFeatures)
+            tabs.value = definition.visibleTabs(appConfig.current().features, brand.runtimeDefaults.enabledFeatures)
         }
         viewModelScope.launch {
             if (session.state.first { it != SessionState.Unknown } == SessionState.SignedIn) users.refresh()

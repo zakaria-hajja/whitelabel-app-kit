@@ -23,6 +23,9 @@ interface AppConfigRepository {
     /** The cached remote config, or the defaults until one has been fetched. */
     val config: StateFlow<AppConfig>
 
+    /** The cached config read from storage now, or the defaults; never a value [config] hasn't caught up to yet. */
+    suspend fun current(): AppConfig
+
     /** Fetches and caches the config. On failure the cached config stays. */
     suspend fun refresh(): EmptyResult<DataError>
 }
