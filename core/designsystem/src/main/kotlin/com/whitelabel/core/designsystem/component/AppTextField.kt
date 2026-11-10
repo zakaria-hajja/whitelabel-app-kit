@@ -32,6 +32,10 @@ import androidx.compose.ui.unit.dp
 import com.whitelabel.core.designsystem.R
 import com.whitelabel.core.designsystem.theme.AppTheme
 
+/** Password fields keep the password IME (no suggestions or learning) whether revealed or not. */
+internal fun passwordKeyboardOptions(base: KeyboardOptions): KeyboardOptions =
+    base.copy(keyboardType = KeyboardType.Password, autoCorrectEnabled = false)
+
 @Composable
 fun AppTextField(
     value: String,
@@ -69,11 +73,7 @@ fun AppTextField(
             isError = error != null,
             supportingText = error?.let { message -> { Text(message) } },
             singleLine = singleLine,
-            keyboardOptions = if (hidden) {
-                keyboardOptions.copy(keyboardType = KeyboardType.Password)
-            } else {
-                keyboardOptions
-            },
+            keyboardOptions = if (isPassword) passwordKeyboardOptions(keyboardOptions) else keyboardOptions,
             visualTransformation = if (hidden) PasswordVisualTransformation() else VisualTransformation.None,
             trailingIcon = if (isPassword) {
                 {

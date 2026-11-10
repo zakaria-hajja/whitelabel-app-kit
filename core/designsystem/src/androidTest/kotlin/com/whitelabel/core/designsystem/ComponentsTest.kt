@@ -17,7 +17,12 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasImeAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import com.whitelabel.core.designsystem.component.passwordKeyboardOptions
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -57,6 +62,34 @@ class ComponentsTest {
         rule.onNodeWithContentDescription(string(R.string.ds_show_password)).performClick()
         rule.onNodeWithContentDescription(string(R.string.ds_hide_password)).assertExists()
         rule.onNode(hasSetTextAction()).assert(!isPassword)
+    }
+
+    @Test
+    fun passwordKeyboardOptions_alwaysPasswordWithoutAutoCorrectKeepingIme() {
+        val options = passwordKeyboardOptions(KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done))
+        assertThat(options.keyboardType).isEqualTo(KeyboardType.Password)
+        assertThat(options.autoCorrectEnabled).isEqualTo(false)
+        assertThat(options.imeAction).isEqualTo(ImeAction.Done)
+    }
+
+    @Test
+    fun passwordField_imeActionSurvivesToggle() {
+        rule.setContent {
+            AppTheme {
+                var value by remember { mutableStateOf("secret") }
+                AppTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = "Password",
+                    isPassword = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                )
+            }
+        }
+        rule.onNode(hasSetTextAction()).assert(hasImeAction(ImeAction.Done))
+        rule.onNodeWithContentDescription(string(R.string.ds_show_password)).performClick()
+        rule.onNodeWithContentDescription(string(R.string.ds_hide_password)).assertExists()
+        rule.onNode(hasSetTextAction()).assert(hasImeAction(ImeAction.Done))
     }
 
     @Test
