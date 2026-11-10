@@ -37,6 +37,7 @@ class AppConfigLoaderTest {
         "src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
         "src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
         "src/main/res/drawable/brand_splash_icon.xml",
+        "src/main/res/drawable/ic_launcher_foreground.xml",
     )
 
     private fun writeApp(
@@ -250,6 +251,7 @@ class AppConfigLoaderTest {
             "apps/sample: missing required asset src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
             "apps/sample: missing required asset src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
             "apps/sample: missing required asset src/main/res/drawable/brand_splash_icon.xml",
+            "apps/sample: missing required asset src/main/res/drawable/ic_launcher_foreground.xml",
             "apps/sample: missing required color brand_splash_background",
             "apps/sample: missing required color ic_launcher_background",
         )
@@ -327,6 +329,16 @@ class AppConfigLoaderTest {
 
         assertThat(AppConfigLoader.load(appDir).signing).isEqualTo(
             AppSigning(File(appDir, "keys/upload.jks"), storePassword = "s", keyAlias = "a", keyPassword = "k"),
+        )
+    }
+
+    @Test
+    fun `missing launcher foreground glyph is reported instead of shipping the shell placeholder`() {
+        writeApp()
+        File(appDir, "src/main/res/drawable/ic_launcher_foreground.xml").delete()
+
+        assertThat(problems()).containsExactly(
+            "apps/sample: missing required asset src/main/res/drawable/ic_launcher_foreground.xml",
         )
     }
 }

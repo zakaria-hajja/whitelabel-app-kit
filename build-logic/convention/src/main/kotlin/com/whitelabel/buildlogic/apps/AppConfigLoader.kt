@@ -24,6 +24,7 @@ object AppConfigLoader {
         "src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
         "src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
         "src/main/res/drawable/brand_splash_icon.xml",
+        "src/main/res/drawable/ic_launcher_foreground.xml",
     )
 
     fun load(appDir: File): AppConfig {
