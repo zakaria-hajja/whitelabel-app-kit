@@ -6,7 +6,7 @@
 # Always: application IDs and deep-link schemes are unique across apps.
 # Unless --config-only, for each app's built APK of each build type (aapt2 from the newest
 # build-tools): package, label and version match app.properties; no other app's application ID
-# appears in its dex; its launcher foreground differs from every other app's; the generated
+# appears in its dex; its deep links use only its own scheme; its launcher foreground differs from every other app's; the generated
 # foundation_* config resources the shell reads exist, match app.properties and nothing else.
 # Prints one OK/FAIL line per check and exits non-zero if any check fails.
 set -eu
@@ -77,6 +77,11 @@ for type in $types; do
     code=$(prop "$props" app.versionCode); version=$(prop "$props" app.versionName)
     echo "$badging" | grep -q "versionCode='$code' versionName='$version'" && ok "$app $type: version $code ($version)" \
       || bad "$app $type: version is not $code ($version)"
+    # Deep links (reset password, catalog items) open the app only through its own scheme.
+    scheme=$(prop "$props" app.deepLinkScheme)
+    schemes=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" | sed -n 's/.*android:scheme([^)]*)="\([^"]*\)".*/\1/p' | sort -u | tr '\n' ' ')
+    [ "$schemes" = "$scheme " ] && ok "$app $type: deep links use scheme '$scheme'" \
+      || bad "$app $type: deep-link schemes are '$schemes', expected only '$scheme'"
 
     # Config the shell reads at runtime: must match app.properties, and the generated names must be
     # exactly the ones the shell declares (a renamed field would otherwise read as blank).

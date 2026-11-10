@@ -35,6 +35,14 @@ says where its backend is.
 - **Dedicated mode** (one tenant per deployment): leave `api.tenant` out. No header is sent, and
   the backend uses its configured tenant.
 
+## Password reset links
+
+The backend emails `<linkBaseUrl>?token=…`, where `linkBaseUrl` is the tenant's
+`passwordReset.linkBaseUrl`. For the link to open the app's reset screen, set it to
+`<app.deepLinkScheme>://reset-password`, for example `globex://reset-password`. Use
+`npm run tenant -- set-config` in shared mode, or the deployment's config JSON in dedicated mode
+(see the backend's `docs/deployment-*.md`). The app accepts the link only while signed out.
+
 ## Local backend
 
 ```sh

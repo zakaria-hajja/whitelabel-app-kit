@@ -1,5 +1,6 @@
 package com.whitelabel.core.shell
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -35,25 +36,28 @@ class FoundationActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        // A recreated activity (rotation, process death) already handed its link over.
+        takeDeepLink(intent, deliver = savedInstanceState == null)
         val hasGate = definition.gateEntry != null
-        splash.setKeepOnScreenCondition {
-            val state = viewModel.state.value
-            !state.ready || (hasGate && state.session == SessionState.Unknown)
-        }
+        splash.setKeepOnScreenCondition { !viewModel.state.value.showsContent(hasGate) }
         enableEdgeToEdge()
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
+            val deepLink by viewModel.pendingDeepLink.collectAsStateWithLifecycle()
             val darkTheme = when (state.theme) {
                 ThemePreference.SYSTEM -> isSystemInDarkTheme()
                 ThemePreference.LIGHT -> false
                 ThemePreference.DARK -> true
             }
             AppTheme(darkTheme = darkTheme) {
-                if (state.ready) {
+                if (state.showsContent(hasGate)) {
                     ShellNavHost(
                         definition = definition,
                         visibleTabs = state.visibleTabs,
                         deepLinkScheme = brand.deepLinkScheme,
+                        signedIn = state.session == SessionState.SignedIn,
+                        deepLink = deepLink,
+                        onDeepLinkConsumed = viewModel::onDeepLinkConsumed,
                         onScreenView = { screen ->
                             analytics.track(AnalyticsEvent(AnalyticsEvents.SCREEN_VIEW, mapOf("screen" to screen)))
                         },
@@ -61,5 +65,20 @@ class FoundationActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        takeDeepLink(intent, deliver = true)
+    }
+
+    /**
+     * Moves the link out of the intent into the shell, which opens it or holds it until sign-in.
+     * Left in the intent, Navigation would open it by itself and bypass the sign-in gate.
+     */
+    private fun takeDeepLink(intent: Intent, deliver: Boolean) {
+        val link = intent.data ?: return
+        if (deliver) viewModel.onDeepLink(link.toString())
+        setIntent(Intent(intent).setData(null))
     }
 }

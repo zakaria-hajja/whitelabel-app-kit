@@ -18,10 +18,18 @@
         <activity
             android:name=".FoundationActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.Foundation.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- The app's deep links (app.deepLinkScheme); features declare the paths. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${deepLinkScheme}" />
             </intent-filter>
         </activity>
     </application>

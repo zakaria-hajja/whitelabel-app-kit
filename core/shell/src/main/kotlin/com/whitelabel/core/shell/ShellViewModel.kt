@@ -1,5 +1,6 @@
 package com.whitelabel.core.shell
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.branding.BrandConfig
@@ -23,13 +24,22 @@ import kotlinx.coroutines.withTimeoutOrNull
 /** How long a cold start waits for the remote config before using the cached one. */
 internal const val CONFIG_WAIT_MS = 2_000L
 
+private const val KEY_DEEP_LINK = "pendingDeepLink"
+
 internal data class ShellState(
     /** The tabs are decided; until then the splash stays on. */
     val ready: Boolean = false,
     val visibleTabs: List<Tab> = emptyList(),
     val theme: ThemePreference = ThemePreference.SYSTEM,
     val session: SessionState = SessionState.Unknown,
-)
+) {
+    /**
+     * Whether the shell may show the app (and the splash may go): the tabs are decided and, with a
+     * sign-in gate, the session is known. Composing the gate earlier would start at sign-in, then
+     * switch, which drops a restored back stack and creates screens the user never sees.
+     */
+    fun showsContent(hasGate: Boolean): Boolean = ready && !(hasGate && session == SessionState.Unknown)
+}
 
 /**
  * The shell's runtime state. The visible tabs are decided once per process, after the remote
@@ -44,7 +54,19 @@ internal class ShellViewModel @Inject constructor(
     preferences: UserPreferencesRepository,
     session: SessionRepository,
     private val users: UserRepository,
+    private val savedState: SavedStateHandle,
 ) : ViewModel() {
+
+    /** A deep link waiting to be opened (held until sign-in); survives process death. */
+    val pendingDeepLink: StateFlow<String?> = savedState.getStateFlow(KEY_DEEP_LINK, null)
+
+    fun onDeepLink(link: String) {
+        savedState[KEY_DEEP_LINK] = link
+    }
+
+    fun onDeepLinkConsumed() {
+        savedState[KEY_DEEP_LINK] = null
+    }
 
     private val tabs = MutableStateFlow<List<Tab>?>(null)
 
