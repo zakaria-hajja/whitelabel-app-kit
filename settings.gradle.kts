@@ -32,3 +32,4 @@ include(":core:domain")
 include(":core:data")
 
 include(":feature:authentication")
+include(":feature:settings")
