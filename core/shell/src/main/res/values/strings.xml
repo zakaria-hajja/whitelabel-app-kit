@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Diagnostics and shell strings. -->
+<resources>
+    <string name="preview_labeled_value">%1$s: %2$s</string>
+    <string name="preview_label_app_name">App name</string>
+    <string name="preview_label_slug">Tenant</string>
+    <string name="preview_label_environment">Environment</string>
+    <string name="preview_label_base_url">API</string>
+    <string name="preview_ping">Ping</string>
+    <string name="preview_health_idle">Not checked yet</string>
+    <string name="preview_health_checking">Checking…</string>
+    <string name="preview_health_up">Up, database up</string>
+    <string name="preview_health_db_down">Up, database down</string>
+    <string name="preview_error_no_internet">No connection to the server</string>
+    <string name="preview_error_timeout">The server took too long to answer</string>
+    <string name="preview_error_unexpected_response">Unexpected response from the server</string>
+    <string name="preview_error_server">The server returned an error</string>
+    <string name="preview_error_unknown">Something went wrong</string>
+    <string name="shell_diagnostics_tab">Diagnostics</string>
+    <string name="shell_no_features_title">Nothing to show</string>
+    <string name="shell_no_features_message">No feature of this app is enabled right now.</string>
+</resources>
