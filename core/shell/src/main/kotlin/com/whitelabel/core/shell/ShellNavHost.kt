@@ -1,5 +1,6 @@
 package com.whitelabel.core.shell
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -65,7 +66,10 @@ fun ShellNavHost(
         NavHost(
             navController = navController,
             startDestination = startTab.route,
-            modifier = Modifier.padding(innerPadding),
+            // Consume what the shell padded for, so feature scaffolds don't pad for the system bars again.
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding),
         ) {
             definition.entries.forEach { entry -> entry.routes(this, navigator) }
         }
