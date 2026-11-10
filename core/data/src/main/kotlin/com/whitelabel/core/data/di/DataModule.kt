@@ -3,6 +3,7 @@ package com.whitelabel.core.data.di
 import android.content.Context
 import com.whitelabel.core.data.config.AppConfigCache
 import com.whitelabel.core.data.config.DefaultAppConfigRepository
+import com.whitelabel.core.data.language.AppCompatLanguageRepository
 import com.whitelabel.core.data.preferences.DefaultUserPreferencesRepository
 import com.whitelabel.core.data.session.DefaultSessionRepository
 import com.whitelabel.core.data.session.StoreSessionTokens
@@ -12,6 +13,7 @@ import com.whitelabel.core.datastore.KeystoreTokenCipher
 import com.whitelabel.core.datastore.TokenStore
 import com.whitelabel.core.datastore.jsonStoreFile
 import com.whitelabel.core.domain.AppConfigRepository
+import com.whitelabel.core.domain.LanguageRepository
 import com.whitelabel.core.domain.SessionRepository
 import com.whitelabel.core.domain.UserPreferencesRepository
 import com.whitelabel.core.domain.UserRepository
@@ -37,6 +39,8 @@ internal abstract class DataModule {
     @Binds @Singleton abstract fun sessionTokens(impl: StoreSessionTokens): SessionTokenStore
 
     @Binds @Singleton abstract fun appConfigRepository(impl: DefaultAppConfigRepository): AppConfigRepository
+
+    @Binds abstract fun languageRepository(impl: AppCompatLanguageRepository): LanguageRepository
 
     companion object {
         @Provides @Singleton @ApplicationScope

@@ -2,7 +2,7 @@ package com.whitelabel.core.shell
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -22,10 +22,11 @@ import javax.inject.Inject
 
 /**
  * The launcher activity of every app: splash until the shell is ready, the theme the user chose
- * (or the config's default), and the app's definition in [ShellNavHost].
+ * (or the config's default), and the app's definition in [ShellNavHost]. An `AppCompatActivity`
+ * so the per-app language also applies below Android 13.
  */
 @AndroidEntryPoint
-class FoundationActivity : ComponentActivity() {
+class FoundationActivity : AppCompatActivity() {
 
     @Inject lateinit var definition: AppDefinition
     @Inject lateinit var brand: BrandConfig

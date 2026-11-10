@@ -50,6 +50,11 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             } ?: logger.info("${project.path}: no signing.properties, release will be unsigned")
             buildFeatures.buildConfig = true
             lint.targetSdk = TARGET_SDK
+            // Android 13+ lists the app's languages in system settings. The list is generated from
+            // the translated resources; AGP needs the default resources' language, which the
+            // foundation writes in English.
+            androidResources.generateLocaleConfig = true
+            sourceSets.getByName("main").res.srcDir(defaultLocaleResDir())
 
             buildTypes {
                 getByName("debug") {
@@ -84,4 +89,12 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
     private fun String.asJavaString(): String =
         "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+}
+
+/** A res dir holding only `resources.properties` (`unqualifiedResLocale=en`), as generateLocaleConfig requires. */
+private fun Project.defaultLocaleResDir(): java.io.File {
+    val dir = layout.buildDirectory.dir("generated/foundation/locale/res").get().asFile
+    dir.mkdirs()
+    java.io.File(dir, "resources.properties").writeText("unqualifiedResLocale=en\n")
+    return dir
 }
