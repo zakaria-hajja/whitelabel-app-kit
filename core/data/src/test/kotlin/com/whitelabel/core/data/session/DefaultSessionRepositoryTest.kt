@@ -31,6 +31,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -51,7 +53,8 @@ class DefaultSessionRepositoryTest {
     private val storeScope = CoroutineScope(Dispatchers.IO + storeJob)
     private val tokenStore by lazy { TokenStore(File(dir, "session.json"), PlainCipher, storeScope) }
     private val userCache by lazy { UserCache(File(dir, "user.json"), storeScope) }
-    private val requests = mutableListOf<HttpRequestData>()
+    // The mock engine answers on IO threads, outside the test scheduler.
+    private val requests = CopyOnWriteArrayList<HttpRequestData>()
 
     @AfterEach fun tearDown() = storeJob.cancel()
 
@@ -98,12 +101,16 @@ class DefaultSessionRepositoryTest {
 
     @Test fun `sign out clears local data even when logout fails`() = runTest {
         tokenStore.write(StoredTokens("a1", "r1"))
-        val repository = repository { throw IOException("offline") }
+        val logoutBody = CompletableDeferred<String>()
+        val repository = repository { request ->
+            logoutBody.complete(request.bodyText)
+            throw IOException("offline")
+        }
         repository.signOut()
         assertThat(repository.state.first { it != SessionState.Unknown }).isEqualTo(SessionState.SignedOut)
         assertThat(userCache.user.first()).isNull()
-        testScheduler.advanceUntilIdle()
-        assertThat(requests.single().bodyText).isEqualTo("""{"refreshToken":"r1"}""")
+        // The logout call runs in the background on the engine's thread: wait for it, not for the scheduler.
+        assertThat(logoutBody.await()).isEqualTo("""{"refreshToken":"r1"}""")
     }
 
     @Test fun `ended session clears the cached user`() = runTest {
