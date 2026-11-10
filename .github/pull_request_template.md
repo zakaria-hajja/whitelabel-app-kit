@@ -8,7 +8,7 @@
 
 ## How tested
 
-<!-- Commands run (scripts/check.sh, connected tests, scripts/verify-variants.sh), suites added, manual checks per client. -->
+<!-- Commands run (scripts/check.sh, connected tests, scripts/verify-apps.sh), suites added, manual checks per app. -->
 
 ## Risks & follow-ups
 
@@ -18,5 +18,5 @@
 
 - [ ] Commits follow `type(scope): summary`
 - [ ] `scripts/check.sh` (unit tests + lint) passes locally
-- [ ] No client-specific values outside `clients/<id>/`; no signing material committed
+- [ ] No app identity outside `apps/<name>/`; no signing material committed
 - [ ] Docs/plan updated if behaviour changed
