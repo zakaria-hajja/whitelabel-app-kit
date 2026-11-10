@@ -14,24 +14,24 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class BrandPreviewState(
+internal data class BrandPreviewState(
     val brand: BrandConfig,
     val health: HealthUi = HealthUi.Idle,
 )
 
-sealed interface HealthUi {
+internal sealed interface HealthUi {
     data object Idle : HealthUi
     data object Checking : HealthUi
     data class Up(val databaseUp: Boolean) : HealthUi
     data class Failed(val error: DataError) : HealthUi
 }
 
-sealed interface BrandPreviewAction {
+internal sealed interface BrandPreviewAction {
     data object OnPingClick : BrandPreviewAction
 }
 
 @HiltViewModel
-class BrandPreviewViewModel @Inject constructor(
+internal class BrandPreviewViewModel @Inject constructor(
     brand: BrandConfig,
     private val health: HealthDataSource,
 ) : ViewModel() {

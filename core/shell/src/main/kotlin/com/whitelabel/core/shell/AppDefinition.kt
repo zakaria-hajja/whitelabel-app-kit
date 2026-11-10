@@ -24,11 +24,11 @@ class FeatureEntry(
 
 /** Everything an app contains, built with [appDefinition]. */
 class AppDefinition internal constructor(
-    val entries: List<FeatureEntry>,
+    internal val entries: List<FeatureEntry>,
     /** `null` means the first tab. */
-    val startTabRoute: Any?,
+    internal val startTabRoute: Any?,
 ) {
-    val tabs: List<Tab> get() = entries.mapNotNull { it.tab }
+    internal val tabs: List<Tab> get() = entries.mapNotNull { it.tab }
 }
 
 class AppDefinitionBuilder internal constructor() {

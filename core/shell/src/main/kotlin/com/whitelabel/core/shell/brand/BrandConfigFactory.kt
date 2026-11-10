@@ -7,7 +7,7 @@ import com.whitelabel.core.branding.RuntimeDefaults
 import com.whitelabel.core.shell.R
 
 /** Maps the raw generated strings to a typed [BrandConfig]. Throws on an unknown environment. */
-fun brandConfigOf(
+internal fun brandConfigOf(
     tenant: String,
     appName: String,
     applicationId: String,
@@ -37,7 +37,7 @@ fun brandConfigOf(
 )
 
 /** The shell's own defaults are blank; a blank API URL means the app's config never reached the build. */
-fun requireConfigured(apiBaseUrl: String): String {
+internal fun requireConfigured(apiBaseUrl: String): String {
     check(apiBaseUrl.isNotBlank()) {
         "No app configuration found: apply the whitelabel.android.application plugin in the app module " +
             "and define its app.properties"
@@ -46,7 +46,7 @@ fun requireConfigured(apiBaseUrl: String): String {
 }
 
 /** Builds the brand from the `foundation_*` strings the application plugin generates from app.properties. */
-fun brandConfigFrom(strings: (Int) -> String, applicationId: String, versionName: String): BrandConfig =
+internal fun brandConfigFrom(strings: (Int) -> String, applicationId: String, versionName: String): BrandConfig =
     brandConfigOf(
         tenant = strings(R.string.foundation_tenant),
         appName = strings(R.string.foundation_app_name),
@@ -61,7 +61,7 @@ fun brandConfigFrom(strings: (Int) -> String, applicationId: String, versionName
         defaultFeatures = strings(R.string.foundation_default_features),
     )
 
-fun brandConfigFromResources(context: Context): BrandConfig = brandConfigFrom(
+internal fun brandConfigFromResources(context: Context): BrandConfig = brandConfigFrom(
     strings = context::getString,
     applicationId = context.packageName,
     versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty(),

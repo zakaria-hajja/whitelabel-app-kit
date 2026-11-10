@@ -7,7 +7,7 @@ import dagger.hilt.components.SingletonComponent
 
 @Module
 @InstallIn(SingletonComponent::class)
-interface DiagnosticsModule {
+internal interface DiagnosticsModule {
     @Binds
     fun healthDataSource(source: KtorHealthDataSource): HealthDataSource
 }

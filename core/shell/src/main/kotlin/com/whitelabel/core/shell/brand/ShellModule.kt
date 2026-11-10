@@ -17,7 +17,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object ShellModule {
+internal object ShellModule {
     @Provides
     @Singleton
     fun brandConfig(@ApplicationContext context: Context): BrandConfig = brandConfigFromResources(context)

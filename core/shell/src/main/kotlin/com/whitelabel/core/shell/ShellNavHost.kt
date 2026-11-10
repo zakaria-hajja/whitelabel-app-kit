@@ -24,14 +24,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.whitelabel.core.designsystem.component.EmptyState
 
-const val BOTTOM_BAR_TAG = "ShellBottomBar"
+internal const val BOTTOM_BAR_TAG = "ShellBottomBar"
 
 /**
  * The app's root navigation: every entry's graph, starting at the resolved start tab, with a
  * bottom bar when two or more tabs are visible. No visible tab shows an empty state.
  */
 @Composable
-fun ShellNavHost(
+internal fun ShellNavHost(
     definition: AppDefinition,
     visibleTabs: List<Tab>,
     modifier: Modifier = Modifier,

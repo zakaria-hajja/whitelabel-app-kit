@@ -8,7 +8,7 @@ import io.ktor.client.HttpClient
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 
-class KtorHealthDataSource @Inject constructor(
+internal class KtorHealthDataSource @Inject constructor(
     private val httpClient: HttpClient,
 ) : HealthDataSource {
     override suspend fun check(): Result<HealthStatus, DataError> =
