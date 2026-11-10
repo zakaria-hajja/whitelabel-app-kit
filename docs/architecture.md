@@ -46,7 +46,10 @@ graph TD
   data -.-> domain
   data -.-> network
   data -.-> datastore
-  nav -.-> features
+  features -.-> nav
+  features -.-> network
+  nav -.-> branding
+  network -.-> datastore
 
   classDef planned stroke-dasharray: 5 5,fill:#eee,color:#555
 ```
