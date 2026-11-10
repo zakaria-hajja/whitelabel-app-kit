@@ -6,7 +6,8 @@
 # Always: application IDs and deep-link schemes are unique across apps.
 # Unless --config-only, for each app's built APK of each build type (aapt2 from the newest
 # build-tools): package, label and version match app.properties; no other app's application ID
-# appears in its dex; its launcher foreground differs from every other app's.
+# appears in its dex; its launcher foreground differs from every other app's; the generated
+# foundation_* config resources the shell reads exist, match app.properties and nothing else.
 # Prints one OK/FAIL line per check and exits non-zero if any check fails.
 set -eu
 cd "$(dirname "$0")/.."
@@ -76,6 +77,22 @@ for type in $types; do
     code=$(prop "$props" app.versionCode); version=$(prop "$props" app.versionName)
     echo "$badging" | grep -q "versionCode='$code' versionName='$version'" && ok "$app $type: version $code ($version)" \
       || bad "$app $type: version is not $code ($version)"
+
+    # Config the shell reads at runtime: must match app.properties, and the generated names must be
+    # exactly the ones the shell declares (a renamed field would otherwise read as blank).
+    "$aapt2" dump resources "$apk" \
+      | awk '/string\/foundation_/ { sub(/.*string\//, ""); name = $1; next }
+             name != "" { v = $0; sub(/^[^"]*"/, "", v); sub(/"[^"]*$/, "", v); print name "=" v; name = "" }' \
+      | sort > "$tmp/config"
+    names=$(cut -d= -f1 "$tmp/config" | tr '\n' ' ')
+    expected_names="foundation_api_base_url foundation_app_name foundation_deep_link_scheme foundation_default_features foundation_environment foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
+    [ "$names" = "$expected_names" ] && ok "$app $type: config resources are the expected set" \
+      || bad "$app $type: config resources are [$names], expected [$expected_names]"
+    url=$(prop "$props" "api.$type.baseUrl"); case "$url" in */) ;; *) url="$url/" ;; esac
+    for pair in "foundation_api_base_url=$url" "foundation_app_name=$name" "foundation_tenant=$(prop "$props" api.tenant)"; do
+      grep -qxF "$pair" "$tmp/config" && ok "$app $type: $pair" \
+        || bad "$app $type: expected $pair, APK has $(grep "^${pair%%=*}=" "$tmp/config" || echo 'nothing')"
+    done
 
     unzip -p "$apk" 'classes*.dex' > "$tmp/dex"
     for other in $apps; do
