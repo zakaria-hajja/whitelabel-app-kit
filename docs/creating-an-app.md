@@ -108,6 +108,7 @@ object GlobexDefinition {
     @Provides
     @Singleton
     fun definition(): AppDefinition = appDefinition {
+        auth()                  // shared: sign-in gates the whole app
         notes()                 // app-specific feature (step 6)
         diagnostics()           // shared: identity, backend ping, design-system catalog
         startTab(NotesRoute)    // optional; defaults to the first tab
@@ -116,7 +117,11 @@ object GlobexDefinition {
 ```
 
 - **Features:** each one you add is a single call, and the order is the order of the bottom-bar
-  tabs.
+  tabs. The shared features, their options and flag keys are listed in
+  [shared-features.md](shared-features.md).
+- **Sign-in:** `auth()` makes the whole app sign-in only. Features that need a session (profile,
+  home, catalog) refuse to start without it, with a message naming `auth()`. Without `auth()` the
+  app is public.
 - **Tabs and the bottom bar:** an app needs at least one tab. The bottom bar appears when two or
   more tabs are visible.
 - **Remote flags:** a feature with a flag key can be switched off remotely. When the remote config
@@ -136,8 +141,8 @@ android {
 
 dependencies {
     implementation(project(":core:shell"))
-    implementation(project(":apps:globex:notes"))   // app-specific feature modules
-    // Shared features (Phase 4), e.g. implementation(project(":feature:settings"))
+    implementation(project(":feature:authentication"))   // one line per shared feature used
+    implementation(project(":apps:globex:notes"))        // app-specific feature modules
 }
 ```
 

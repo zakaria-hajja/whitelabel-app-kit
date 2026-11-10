@@ -18,13 +18,14 @@ Items marked **Phase 4** are not built yet.
 | `:core:designsystem` | Built | `AppTheme` built from brand resources, spacing tokens, components (buttons, text field, card, scaffold, loading, empty and error states, dialog), contrast helpers |
 | `:core:datastore` | Built | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. `TokenStore`: the session tokens, encrypted with an AES-256-GCM key in AndroidKeyStore |
 | `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, remote feature flags and the theme preference, analytics wiring, and the `diagnostics()` feature |
-| `:apps:showcase` | Built | Reference app that will use every shared feature. Today: diagnostics |
-| `:apps:globex`, `:apps:globex:notes` | Built | Second app, proving reuse: an app-specific notes feature plus diagnostics |
+| `:apps:showcase` | Built | Reference app that will use every shared feature. Today: sign-in and diagnostics |
+| `:apps:globex`, `:apps:globex:notes` | Built | Second app, proving reuse: sign-in, an app-specific notes feature, and diagnostics |
 | `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Pure Kotlin |
 | `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference |
 | `:core:ui` | Built | Presentation helpers for features: `UiText`, `DataError.toUiText()`, `ObserveAsEvents` |
 | `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Pure Kotlin |
-| `:feature:authentication`, `home`, `catalog`, `profile`, `settings` | Phase 4 | Ready-to-use shared features against the backend-starter API |
+| `:feature:authentication` | Built | `auth()`: the whole-app sign-in gate with sign-in, registration and password reset. See [shared-features.md](shared-features.md) |
+| `:feature:home`, `catalog`, `profile`, `settings` | Phase 4 | Ready-to-use shared features against the backend-starter API |
 
 ## 2. Dependencies
 
