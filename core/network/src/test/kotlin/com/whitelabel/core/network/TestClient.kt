@@ -18,5 +18,24 @@ fun testConfig(logger: ((String) -> Unit)? = null) =
 
 fun testClient(
     config: NetworkConfig = testConfig(),
+    tokens: SessionTokenStore = FakeSessionTokens(),
     handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
-): HttpClient = HttpClientFactory.create(MockEngine(handler), config)
+): HttpClient = HttpClientFactory.create(MockEngine(handler), config, tokens)
+
+/** In-memory [SessionTokenStore] that counts what the client did to it. */
+class FakeSessionTokens(var tokens: SessionTokens? = null) : SessionTokenStore {
+    var replaced = 0
+    var ended = 0
+
+    override suspend fun current(): SessionTokens? = tokens
+
+    override suspend fun replace(tokens: SessionTokens) {
+        this.tokens = tokens
+        replaced++
+    }
+
+    override suspend fun endSession() {
+        tokens = null
+        ended++
+    }
+}

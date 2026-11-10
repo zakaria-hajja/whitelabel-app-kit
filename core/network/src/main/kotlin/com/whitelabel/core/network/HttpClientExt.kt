@@ -55,3 +55,13 @@ suspend inline fun <reified B, reified T> HttpClient.patchResult(path: String, b
 
 suspend inline fun <reified T> HttpClient.deleteResult(path: String): Result<T, DataError> =
     safeCall { delete(relativePath(path)).toResult<T>() }
+
+/** [postResult] for a [publicRequest]: no bearer, no refresh (sign-in, registration, password reset). */
+suspend inline fun <reified B, reified T> HttpClient.postPublicResult(path: String, body: B): Result<T, DataError> =
+    safeCall {
+        post(relativePath(path)) {
+            publicRequest()
+            contentType(ContentType.Application.Json)
+            setBody(body)
+        }.toResult<T>()
+    }

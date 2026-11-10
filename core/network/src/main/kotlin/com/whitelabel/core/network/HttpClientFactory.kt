@@ -21,7 +21,8 @@ private const val REQUEST_TIMEOUT_MS = 30_000L
 private fun String.asHeaderValue(): String = filter { it.code in 0x20..0x7E }
 
 object HttpClientFactory {
-    fun create(engine: HttpClientEngine, config: NetworkConfig): HttpClient = HttpClient(engine) {
+    /** [tokens] supplies the session's bearer and receives refreshed pairs; see [installSessionAuth]. */
+    fun create(engine: HttpClientEngine, config: NetworkConfig, tokens: SessionTokenStore): HttpClient = HttpClient(engine) {
         expectSuccess = false
         install(ContentNegotiation) { json(networkJson) }
         install(HttpTimeout) {
@@ -44,5 +45,5 @@ object HttpClientFactory {
                 sanitizeHeader { it == HttpHeaders.Authorization }
             }
         }
-    }
+    }.also { it.installSessionAuth(tokens) }
 }
