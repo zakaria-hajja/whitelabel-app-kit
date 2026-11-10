@@ -5,6 +5,7 @@ import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
+import androidx.lifecycle.SavedStateHandle
 import com.whitelabel.core.branding.BrandConfig
 import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.branding.RuntimeDefaults
@@ -86,12 +87,13 @@ class ShellViewModelTest {
     private val preferences = FakePreferences()
     private val session = FakeSession()
     private val users = FakeUsers()
+    private val savedState = SavedStateHandle()
 
     @AfterEach fun tearDown() = Dispatchers.resetMain()
 
     private fun TestScope.viewModel(): ShellViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        return ShellViewModel(definition, brand, appConfig, preferences, session, users)
+        return ShellViewModel(definition, brand, appConfig, preferences, session, users, savedState)
     }
 
     private val ShellViewModel.current: ShellState get() = state.value
@@ -158,4 +160,12 @@ class ShellViewModelTest {
         assertThat(viewModel.current.session).isEqualTo(SessionState.SignedIn)
     }
 
+
+    @Test fun `held deep link survives process death until consumed`() = runTest {
+        viewModel().onDeepLink("sample://catalog/1")
+        val restored = ShellViewModel(definition, brand, appConfig, preferences, session, users, savedState)
+        assertThat(restored.pendingDeepLink.value).isEqualTo("sample://catalog/1")
+        restored.onDeepLinkConsumed()
+        assertThat(restored.pendingDeepLink.value).isEqualTo(null)
+    }
 }

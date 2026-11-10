@@ -7,6 +7,8 @@ plugins {
 
 android {
     namespace = "com.whitelabel.core.shell"
+    // For this module's own test APK; the application plugin sets each app's scheme.
+    defaultConfig.manifestPlaceholders["deepLinkScheme"] = "foundation"
 }
 
 dependencies {

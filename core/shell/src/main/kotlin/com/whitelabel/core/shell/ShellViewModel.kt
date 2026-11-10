@@ -1,5 +1,6 @@
 package com.whitelabel.core.shell
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.branding.BrandConfig
@@ -23,6 +24,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 /** How long a cold start waits for the remote config before using the cached one. */
 internal const val CONFIG_WAIT_MS = 2_000L
 
+private const val KEY_DEEP_LINK = "pendingDeepLink"
+
 internal data class ShellState(
     /** The tabs are decided; until then the splash stays on. */
     val ready: Boolean = false,
@@ -44,7 +47,19 @@ internal class ShellViewModel @Inject constructor(
     preferences: UserPreferencesRepository,
     session: SessionRepository,
     private val users: UserRepository,
+    private val savedState: SavedStateHandle,
 ) : ViewModel() {
+
+    /** A deep link waiting to be opened (held until sign-in); survives process death. */
+    val pendingDeepLink: StateFlow<String?> = savedState.getStateFlow(KEY_DEEP_LINK, null)
+
+    fun onDeepLink(link: String) {
+        savedState[KEY_DEEP_LINK] = link
+    }
+
+    fun onDeepLinkConsumed() {
+        savedState[KEY_DEEP_LINK] = null
+    }
 
     private val tabs = MutableStateFlow<List<Tab>?>(null)
 
