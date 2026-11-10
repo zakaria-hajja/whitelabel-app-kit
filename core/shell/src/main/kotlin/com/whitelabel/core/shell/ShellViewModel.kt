@@ -32,7 +32,14 @@ internal data class ShellState(
     val visibleTabs: List<Tab> = emptyList(),
     val theme: ThemePreference = ThemePreference.SYSTEM,
     val session: SessionState = SessionState.Unknown,
-)
+) {
+    /**
+     * Whether the shell may show the app (and the splash may go): the tabs are decided and, with a
+     * sign-in gate, the session is known. Composing the gate earlier would start at sign-in, then
+     * switch, which drops a restored back stack and creates screens the user never sees.
+     */
+    fun showsContent(hasGate: Boolean): Boolean = ready && !(hasGate && session == SessionState.Unknown)
+}
 
 /**
  * The shell's runtime state. The visible tabs are decided once per process, after the remote

@@ -39,10 +39,7 @@ class FoundationActivity : ComponentActivity() {
         // A recreated activity (rotation, process death) already handed its link over.
         takeDeepLink(intent, deliver = savedInstanceState == null)
         val hasGate = definition.gateEntry != null
-        splash.setKeepOnScreenCondition {
-            val state = viewModel.state.value
-            !state.ready || (hasGate && state.session == SessionState.Unknown)
-        }
+        splash.setKeepOnScreenCondition { !viewModel.state.value.showsContent(hasGate) }
         enableEdgeToEdge()
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -53,7 +50,7 @@ class FoundationActivity : ComponentActivity() {
                 ThemePreference.DARK -> true
             }
             AppTheme(darkTheme = darkTheme) {
-                if (state.ready) {
+                if (state.showsContent(hasGate)) {
                     ShellNavHost(
                         definition = definition,
                         visibleTabs = state.visibleTabs,
