@@ -12,6 +12,7 @@ dependencies {
     api(project(":core:domain"))
     implementation(project(":core:network"))
     implementation(project(":core:datastore"))
+    implementation(project(":core:branding"))
     implementation(libs.ktor.client.core)
     implementation(libs.kotlinx.serialization.json)
 

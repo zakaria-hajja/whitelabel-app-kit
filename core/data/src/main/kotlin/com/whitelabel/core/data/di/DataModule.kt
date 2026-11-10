@@ -1,6 +1,9 @@
 package com.whitelabel.core.data.di
 
 import android.content.Context
+import com.whitelabel.core.data.config.AppConfigCache
+import com.whitelabel.core.data.config.DefaultAppConfigRepository
+import com.whitelabel.core.data.preferences.DefaultUserPreferencesRepository
 import com.whitelabel.core.data.session.DefaultSessionRepository
 import com.whitelabel.core.data.session.StoreSessionTokens
 import com.whitelabel.core.data.user.DefaultUserRepository
@@ -8,7 +11,9 @@ import com.whitelabel.core.data.user.UserCache
 import com.whitelabel.core.datastore.KeystoreTokenCipher
 import com.whitelabel.core.datastore.TokenStore
 import com.whitelabel.core.datastore.jsonStoreFile
+import com.whitelabel.core.domain.AppConfigRepository
 import com.whitelabel.core.domain.SessionRepository
+import com.whitelabel.core.domain.UserPreferencesRepository
 import com.whitelabel.core.domain.UserRepository
 import com.whitelabel.core.network.SessionTokenStore
 import dagger.Binds
@@ -31,6 +36,8 @@ internal abstract class DataModule {
 
     @Binds @Singleton abstract fun sessionTokens(impl: StoreSessionTokens): SessionTokenStore
 
+    @Binds @Singleton abstract fun appConfigRepository(impl: DefaultAppConfigRepository): AppConfigRepository
+
     companion object {
         @Provides @Singleton @ApplicationScope
         fun applicationScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -42,5 +49,13 @@ internal abstract class DataModule {
         @Provides @Singleton
         fun userCache(@ApplicationContext context: Context, @ApplicationScope scope: CoroutineScope): UserCache =
             UserCache(context.jsonStoreFile("user"), scope)
+
+        @Provides @Singleton
+        fun appConfigCache(@ApplicationContext context: Context, @ApplicationScope scope: CoroutineScope): AppConfigCache =
+            AppConfigCache(context.jsonStoreFile("app_config"), scope)
+
+        @Provides @Singleton
+        fun preferences(@ApplicationContext context: Context, @ApplicationScope scope: CoroutineScope): UserPreferencesRepository =
+            DefaultUserPreferencesRepository(context.jsonStoreFile("preferences"), scope)
     }
 }
