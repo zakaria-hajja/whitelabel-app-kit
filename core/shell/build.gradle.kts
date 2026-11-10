@@ -7,8 +7,15 @@ plugins {
 
 android {
     namespace = "com.whitelabel.core.shell"
-    // For this module's own test APK; the application plugin sets each app's scheme.
-    defaultConfig.manifestPlaceholders["deepLinkScheme"] = "foundation"
+}
+
+// The manifest's deepLinkScheme placeholder is filled in by each app (application plugin). Only this
+// module's own test APK gets a value here: a library defaultConfig value would be baked into the
+// library manifest and override every app's scheme.
+androidComponents {
+    onVariants { variant ->
+        variant.androidTest?.manifestPlaceholders?.put("deepLinkScheme", "foundation")
+    }
 }
 
 dependencies {
