@@ -31,7 +31,7 @@ object HttpClientFactory {
         defaultRequest {
             // The trailing slash makes relative paths resolve under the versioned base.
             url(config.baseUrl.trimEnd('/') + "/")
-            header(CLIENT_ID_HEADER, config.clientSlug.asHeaderValue())
+            config.tenant?.let { header(CLIENT_ID_HEADER, it.asHeaderValue()) }
             header(HttpHeaders.UserAgent, config.userAgent.asHeaderValue())
             accept(ContentType.Application.Json)
         }

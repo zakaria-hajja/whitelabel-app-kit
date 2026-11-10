@@ -26,7 +26,7 @@ class KtorHealthDataSourceTest {
         }
         val config = NetworkConfig(
             baseUrl = "https://api.tenant.test/api/v1/",
-            clientSlug = "tenant",
+            tenant = "tenant",
             userAgent = "test/1.0",
         )
         return KtorHealthDataSource(HttpClientFactory.create(engine, config))

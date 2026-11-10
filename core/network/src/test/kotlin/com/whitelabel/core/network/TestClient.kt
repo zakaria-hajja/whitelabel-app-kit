@@ -14,7 +14,7 @@ const val TEST_BASE_URL = "https://api.test/api/v1/"
 const val TEST_SLUG = "acme"
 
 fun testConfig(logger: ((String) -> Unit)? = null) =
-    NetworkConfig(baseUrl = TEST_BASE_URL, clientSlug = TEST_SLUG, userAgent = "test-agent/1.0", logger = logger)
+    NetworkConfig(baseUrl = TEST_BASE_URL, tenant = TEST_SLUG, userAgent = "test-agent/1.0", logger = logger)
 
 fun testClient(
     config: NetworkConfig = testConfig(),

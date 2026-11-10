@@ -7,7 +7,7 @@ import com.whitelabel.core.branding.RuntimeDefaults
 
 /** Maps the raw `BuildConfig` strings to a typed [BrandConfig]. Throws on an unknown environment. */
 fun brandConfigOf(
-    clientSlug: String,
+    tenant: String,
     appName: String,
     applicationId: String,
     versionName: String,
@@ -19,7 +19,7 @@ fun brandConfigOf(
     termsUrl: String,
     defaultFeatures: String,
 ): BrandConfig = BrandConfig(
-    clientSlug = clientSlug,
+    tenant = tenant.ifBlank { null },
     appName = appName,
     applicationId = applicationId,
     versionName = versionName,
@@ -37,7 +37,7 @@ fun brandConfigOf(
 
 /** The brand of the running variant, from the fields the application plugin writes to `BuildConfig`. */
 fun buildConfigBrand(): BrandConfig = brandConfigOf(
-    clientSlug = BuildConfig.CLIENT_SLUG,
+    tenant = BuildConfig.CLIENT_SLUG,
     appName = BuildConfig.APP_NAME,
     applicationId = BuildConfig.APPLICATION_ID,
     versionName = BuildConfig.VERSION_NAME,

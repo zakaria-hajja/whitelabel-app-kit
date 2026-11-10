@@ -79,7 +79,7 @@ fun BrandPreviewScreen(
 private fun IdentityCard(brand: BrandConfig) {
     AppCard(modifier = Modifier.fillMaxWidth()) {
         LabeledValue(R.string.preview_label_app_name, brand.appName)
-        LabeledValue(R.string.preview_label_slug, brand.clientSlug)
+        LabeledValue(R.string.preview_label_slug, brand.tenant.orEmpty())
         LabeledValue(R.string.preview_label_environment, brand.environment.name)
         LabeledValue(R.string.preview_label_base_url, brand.apiBaseUrl)
     }
@@ -157,7 +157,7 @@ private fun DataError.messageRes(): Int = when (this) {
 }
 
 private val PreviewBrand = BrandConfig(
-    clientSlug = "preview",
+    tenant = "preview",
     appName = "Preview",
     applicationId = "com.example.preview",
     versionName = "1.0.0",

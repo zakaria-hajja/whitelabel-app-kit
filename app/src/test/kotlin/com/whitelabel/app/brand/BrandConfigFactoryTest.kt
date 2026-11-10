@@ -13,11 +13,12 @@ import org.junit.jupiter.api.Test
 class BrandConfigFactoryTest {
 
     private fun brand(
+        tenant: String = "tenant",
         environment: String = "DEVELOPMENT",
         supportEmail: String = "help@tenant.test",
         defaultFeatures: String = "",
     ): BrandConfig = brandConfigOf(
-        clientSlug = "tenant",
+        tenant = tenant,
         appName = "Tenant",
         applicationId = "com.example.tenant",
         versionName = "1.2.3",
@@ -45,6 +46,11 @@ class BrandConfigFactoryTest {
         assertThat(brand(defaultFeatures = "").runtimeDefaults.enabledFeatures).isEmpty()
     }
 
+    @Test fun `blank tenant becomes null`() {
+        assertThat(brand(tenant = "").tenant).isNull()
+        assertThat(brand(tenant = "acme").tenant).isEqualTo("acme")
+    }
+
     @Test fun `blank support email becomes null`() {
         assertThat(brand(supportEmail = "").runtimeDefaults.supportEmail).isNull()
         assertThat(brand(supportEmail = "help@tenant.test").runtimeDefaults.supportEmail)
@@ -53,7 +59,7 @@ class BrandConfigFactoryTest {
 
     @Test fun `identity fields pass through unchanged`() {
         val brand = brand()
-        assertThat(brand.clientSlug).isEqualTo("tenant")
+        assertThat(brand.tenant).isEqualTo("tenant")
         assertThat(brand.appName).isEqualTo("Tenant")
         assertThat(brand.applicationId).isEqualTo("com.example.tenant")
         assertThat(brand.versionName).isEqualTo("1.2.3")

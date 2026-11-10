@@ -30,7 +30,7 @@ private class FakeHealthDataSource : HealthDataSource {
 class BrandPreviewViewModelTest {
 
     private val brand = BrandConfig(
-        clientSlug = "tenant",
+        tenant = "tenant",
         appName = "Tenant",
         applicationId = "com.example.tenant",
         versionName = "1.0.0",

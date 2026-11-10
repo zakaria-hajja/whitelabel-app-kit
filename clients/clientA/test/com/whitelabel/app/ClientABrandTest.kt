@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 class ClientABrandTest {
     @Test fun `clientA build carries its own identity and api`() {
         val brand = buildConfigBrand()
-        assertThat(brand.clientSlug).isEqualTo("acme")
+        assertThat(brand.tenant).isEqualTo("acme")
         if (BuildConfig.DEBUG) {
             assertThat(brand.applicationId).isEqualTo("com.whitelabel.acme.debug")
             assertThat(brand.apiBaseUrl).isEqualTo("http://10.0.2.2:3000/api/v1/")

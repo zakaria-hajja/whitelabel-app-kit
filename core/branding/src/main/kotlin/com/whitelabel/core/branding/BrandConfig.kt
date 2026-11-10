@@ -6,7 +6,8 @@ package com.whitelabel.core.branding
  * compare client names.
  */
 data class BrandConfig(
-    val clientSlug: String,
+    /** `X-Client-Id` value for a shared-mode backend; `null` for a dedicated backend (header omitted). */
+    val tenant: String?,
     val appName: String,
     val applicationId: String,
     val versionName: String,
