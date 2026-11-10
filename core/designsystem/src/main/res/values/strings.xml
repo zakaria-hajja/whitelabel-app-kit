@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_retry">Retry</string>
+    <string name="ds_show_password">Show password</string>
+    <string name="ds_hide_password">Hide password</string>
+    <string name="ds_navigate_back">Navigate back</string>
+</resources>

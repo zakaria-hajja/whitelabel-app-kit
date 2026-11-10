@@ -23,6 +23,8 @@ class AndroidLibraryComposeConventionPlugin : Plugin<Project> {
             add("debugImplementation", libs.library("compose-ui-test-manifest"))
             add("androidTestImplementation", libs.library("compose-ui-test-junit4"))
             add("androidTestImplementation", libs.library("androidx-test-ext-junit"))
+            // Espresso < 3.7 crashes on API 36 (InputManager.getInstance was removed).
+            add("androidTestImplementation", libs.library("androidx-test-espresso-core"))
         }
     }
 }
