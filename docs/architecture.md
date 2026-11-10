@@ -1,100 +1,105 @@
-# Architecture (Phase 2)
+# Architecture
 
-This describes what is built after Phase 2. The full target design is in
-[the design spec](superpowers/specs/2026-11-09-whitelabel-android-design.md). Anything not yet
-built is marked **Planned (Phase 4)**.
+This repo is an **internal Android foundation for building many different apps**. Shared
+modules provide the infrastructure and common features. Each app is a thin module under
+`apps/<name>/` holding its configuration, its brand, the list of features it uses, and its own
+business features. The design is in
+[2026-11-10-reusable-app-foundation-design.md](superpowers/specs/2026-11-10-reusable-app-foundation-design.md).
+Items marked **Phase 4** are not built yet.
 
 ## 1. Modules
 
-| Module | Status | Role |
+| Module | Status | Responsibility |
 |---|---|---|
-| `build-logic` | Built | Convention plugins (`whitelabel.android.application`, `.android.library`, `.android.library.compose`, `.jvm.library`, `.hilt`) and the validated client config loader |
-| `:core:common` | Built | `Result<T, E>`, `DataError`, `ApiErrorCode`. Pure Kotlin/JVM |
-| `:core:network` | Built | Ktor client factory, envelope unwrapping, error mapping, typed request helpers. Depends on `:core:common`. Pure Kotlin/JVM with Hilt |
-| `:core:designsystem` | Built | Brand-resource `AppTheme`, tokens, components, design system catalog. Android library, no project dependencies |
-| `:core:branding` | Built | `BrandConfig`, `Environment`, `RuntimeDefaults`. Pure Kotlin/JVM, no project dependencies |
-| `:app` | Built | Application, Hilt wiring, `clientA` flavor, brand preview screen. Depends on all four core modules |
-| `:core:domain`, `:core:data`, `:core:datastore`, `:core:ui`, `:core:navigation` | Planned (Phase 4) | Domain models/use cases, repositories, token and preference storage, shared UI helpers, navigation |
-| `:feature:*` (auth, catalog, profile, ...) | Planned (Phase 4) | One module per feature |
-| Auth plugin (bearer refresh, token storage) | Planned (Phase 4) | See section 4 |
+| `build-logic` | Built | Convention plugins: `whitelabel.android.application` (app modules), `.android.library`, `.android.library.compose`, `.jvm.library`, `.hilt`. Also the app config loader that validates each `apps/<name>/app.properties` |
+| `:core:common` | Built | `Result<T, E>`, `DataError`, `ApiErrorCode`. Pure Kotlin |
+| `:core:branding` | Built | `BrandConfig`, the app's typed build-time identity (tenant, name, API URL, environment, runtime defaults). Pure Kotlin |
+| `:core:network` | Built | Ktor client factory, backend envelope unwrapping, error mapping, typed request helpers, the optional `X-Client-Id` tenant header. Pure Kotlin with Hilt |
+| `:core:designsystem` | Built | `AppTheme` built from brand resources, spacing tokens, components (buttons, text field, card, scaffold, loading, empty and error states, dialog), contrast helpers |
+| `:core:datastore` | Built (JSON store) | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. Phase 4 adds preferences and encrypted token storage |
+| `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, and the `diagnostics()` feature |
+| `:apps:showcase` | Built | Reference app that will use every shared feature. Today: diagnostics |
+| `:apps:globex`, `:apps:globex:notes` | Built | Second app, proving reuse: an app-specific notes feature plus diagnostics |
+| `:core:domain`, `:core:data`, `:core:ui`, `:core:analytics` | Phase 4 | Shared domain models and session, repositories, presentation helpers, analytics/crash interfaces |
+| `:feature:authentication`, `home`, `catalog`, `profile`, `settings` | Phase 4 | Ready-to-use shared features against the backend-starter API |
 
-## 2. Module dependencies
+## 2. Dependencies
 
 ```mermaid
-graph TD
-  app[":app"]
-  branding[":core:branding"]
-  network[":core:network"]
-  designsystem[":core:designsystem"]
-  common[":core:common"]
-  app --> branding
-  app --> network
-  app --> designsystem
-  app --> common
-  network --> common
+flowchart TD
+    subgraph apps["apps/*"]
+        showcase[":apps:showcase"]
+        globex[":apps:globex"]
+        notes[":apps:globex:notes"]
+    end
+    shell[":core:shell"]
+    ds[":core:designsystem"]
+    datastore[":core:datastore"]
+    network[":core:network"]
+    branding[":core:branding"]
+    common[":core:common"]
+    features[":feature:* (Phase 4)"]:::planned
 
-  domain[":core:domain (planned)"]:::planned
-  data[":core:data (planned)"]:::planned
-  datastore[":core:datastore (planned)"]:::planned
-  ui[":core:ui (planned)"]:::planned
-  nav[":core:navigation (planned)"]:::planned
-  features[":feature:* (planned)"]:::planned
-  app -.-> features
-  features -.-> domain
-  features -.-> ui
-  features -.-> designsystem
-  data -.-> domain
-  data -.-> network
-  data -.-> datastore
-  features -.-> nav
-  features -.-> network
-  nav -.-> branding
-  network -.-> datastore
+    showcase --> shell
+    globex --> shell
+    globex --> notes
+    notes --> shell
+    notes --> ds
+    notes --> datastore
+    shell --> branding
+    shell --> network
+    shell --> ds
+    shell --> common
+    network --> common
+    showcase -.-> features
+    features -.-> shell
 
-  classDef planned stroke-dasharray: 5 5,fill:#eee,color:#555
+    classDef planned stroke-dasharray: 5 5,fill:#eee,color:#555
 ```
 
-Solid arrows are real `build.gradle.kts` dependencies. Dashed arrows and grey nodes are planned.
-`:core:network` does not depend on `:core:branding`: `:app` maps `BrandConfig` to `NetworkConfig`
-(in `BrandModule`), so the network module knows nothing about brands or clients.
-`:core:designsystem` and `:core:branding` have no project dependencies.
+Rules, enforced by module boundaries and by review:
 
-## 3. Client configuration
+- Shared modules (`core/*`, `feature/*`) never depend on `apps/*`, and shared features never
+  depend on each other.
+- An app's own feature modules (`apps/<name>/<feature>`) may depend on any shared module, never on
+  another app.
+- Only app modules apply `whitelabel.android.application`.
+- No app's identity (name, ID, tenant, URL, color) appears outside `apps/<name>/`.
+  `scripts/verify-apps.sh` also checks that no APK contains another app's application ID.
 
-Each client lives in `clients/<id>/` (`client.properties` plus `res/` brand resources, and
-`test/`). The build-logic loader validates `client.properties` and the application convention
-plugin creates one flavor per client, writing the values into `BuildConfig`. Currently only
-`clientA` exists (`clients/clientA/`). Debug builds use `api.debug.baseUrl`
-(`http://10.0.2.2:3000/api/v1/`), release builds `api.release.baseUrl`.
+## 3. How an app is put together
 
-## 4. Branding (section 5 of the design)
+1. **Build time:** the application plugin validates `apps/<name>/app.properties` and publishes
+   the values twice from one map:
+   - as `BuildConfig` fields, read by the app's identity test;
+   - as `foundation_*` string resources, read by the shell.
+2. **Startup:** `FoundationActivity` (from the shell's manifest) shows the splash from the app's
+   `brand_splash_*` resources. It then injects the app's `AppDefinition` and its `BrandConfig`.
+3. **UI:** `ShellNavHost` registers each feature's navigation graph and starts at the start tab.
+   It shows a bottom bar when two or more tabs are visible. A tab with a flag key is visible when
+   the remote flag says so, or, with no remote value, when its key is in `defaults.features`.
+4. **Brand visuals:** `:core:designsystem` declares default brand resources. The app's
+   `src/main/res` overrides them by name, so features never change. See [branding.md](branding.md).
 
-- **Identity and config (typed):** `:app` builds `BrandConfig` from `BuildConfig`
-  (`brandConfigOf` / `buildConfigBrand`) and provides it as a Hilt singleton in `BrandModule`.
-  `Environment` is derived from the build type (debug is `DEVELOPMENT`, release `PRODUCTION`).
-  Code reads `BrandConfig`, never `BuildConfig`, and never compares client names.
-- **Visuals (resources):** `:core:designsystem` declares default brand resources (color roles
-  for light and dark, corner sizes, optional fonts). A client's flavor `res/` overrides them by
-  resource name, with no Kotlin. `AppTheme(darkTheme)` turns them into Material 3 colors,
-  shapes and typography. Dynamic color is off. `ColorContrast` supports WCAG AA contrast checks
-  on color pairs.
-- Components: buttons, text field, card, scaffold, loading, empty and error states, confirm
-  dialog, plus a `DesignSystemCatalog` composable. `BrandPreviewScreen` in `:app` shows the theme
-  and checks backend health.
+## 4. Networking
 
-## 5. Networking (section 6 of the design)
+- **Client:** Ktor with the OkHttp engine, provided by the shell.
+- **Headers:** every request carries `User-Agent` (`<applicationId>/<version>`) and
+  `Accept: application/json`. `X-Client-Id` is sent only when the app sets `api.tenant`, which
+  shared-mode backends need. Paths resolve under the versioned base URL.
+- **Results:** typed helpers return `Result<T, DataError>` with the backend envelope unwrapped.
+  Backend errors map to `DataError.Api` with the backend's `ApiErrorCode`. Cancellation is
+  rethrown.
+- **Logging:** only outside `PRODUCTION`, headers only, with `Authorization` redacted.
+- **Cleartext:** debug builds may use cleartext to `10.0.2.2` and `localhost` only. Release builds
+  never do.
+- **Phase 4:** bearer auth with single-flight refresh, and encrypted token storage.
 
-- Ktor Client with the OkHttp engine (provided by `:app`). `HttpClientFactory.create(engine,
-  NetworkConfig)`; `NetworkConfig` has `baseUrl`, `clientSlug`, `userAgent`, `logger`.
-- Every request carries `X-Client-Id`, `User-Agent` and `Accept: application/json`, with the
-  base URL always ending in `/` so relative paths resolve under `/api/v1/`. Timeouts: 15 s
-  connect, 30 s request.
-- Logging is on only outside `PRODUCTION`, at headers level, with `Authorization` redacted.
-- Typed helpers return `Result<T, DataError>` with the backend envelope unwrapped; paged
-  responses use `Page`. Error mapping: backend error envelope gives `DataError.Api`;
-  I/O failure, timeout and bad body give `DataError.Network` variants; coroutine cancellation
-  is rethrown.
-- Tests use Ktor `MockEngine`, so no server is needed.
-- **Planned (Phase 4):** bearer auth with single-flight refresh, and encrypted token storage
-  (AndroidKeyStore AES-GCM in a dedicated DataStore). Not present yet.
-- Debug builds allow cleartext to `10.0.2.2`/`localhost` only; release uses the platform default.
+See [api-environments.md](api-environments.md).
+
+## 5. Further reading
+
+- [creating-an-app.md](creating-an-app.md): build app #N step by step
+- [adding-a-shared-feature.md](adding-a-shared-feature.md): add a reusable feature
+- [branding.md](branding.md), [api-environments.md](api-environments.md),
+  [release-signing.md](release-signing.md), [testing.md](testing.md)
