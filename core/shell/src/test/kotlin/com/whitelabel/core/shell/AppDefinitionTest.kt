@@ -1,0 +1,64 @@
+package com.whitelabel.core.shell
+
+import assertk.assertFailure
+import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNull
+import assertk.assertions.isEqualTo
+import assertk.assertions.messageContains
+import org.junit.jupiter.api.Test
+
+class AppDefinitionTest {
+
+    @Test fun `definition keeps declaration order of tabs`() {
+        val definition = appDefinition {
+            add(entry("b", RouteB))
+            add(entry("settings-like", route = null))
+            add(entry("a", RouteA))
+        }
+
+        assertThat(definition.tabs.map { it.route }).containsExactly(RouteB, RouteA)
+        assertThat(definition.entries.map { it.id }).containsExactly("b", "settings-like", "a")
+    }
+
+    @Test fun `no tab is rejected`() {
+        assertFailure { appDefinition { add(entry("a", route = null)) } }
+            .isInstanceOf(IllegalArgumentException::class)
+            .messageContains("at least one tab")
+    }
+
+    @Test fun `duplicate entry id is rejected`() {
+        assertFailure {
+            appDefinition {
+                add(entry("notes", RouteA))
+                add(entry("notes", RouteB))
+            }
+        }.isInstanceOf(IllegalArgumentException::class).messageContains("notes")
+    }
+
+    @Test fun `start tab must be one of the tabs`() {
+        assertFailure {
+            appDefinition {
+                add(entry("a", RouteA))
+                startTab(RouteC)
+            }
+        }.isInstanceOf(IllegalArgumentException::class).messageContains("RouteC")
+    }
+
+    @Test fun `start tab defaults to null meaning first`() {
+        val definition = appDefinition { add(entry("a", RouteA)) }
+
+        assertThat(definition.startTabRoute).isNull()
+    }
+
+    @Test fun `explicit start tab is kept`() {
+        val definition = appDefinition {
+            add(entry("a", RouteA))
+            add(entry("b", RouteB))
+            startTab(RouteB)
+        }
+
+        assertThat(definition.startTabRoute).isEqualTo(RouteB)
+    }
+}
