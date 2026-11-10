@@ -5,6 +5,7 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.BuildConfigField
 import com.whitelabel.buildlogic.clients.ClientConfig
 import com.whitelabel.buildlogic.clients.ClientConfigLoader
+import com.whitelabel.buildlogic.clients.androidStringResource
 import com.whitelabel.buildlogic.clients.environmentFor
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -44,7 +45,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     applicationId = client.applicationId
                     versionCode = client.versionCode
                     versionName = client.versionName
-                    resValue("string", "app_name", client.appName)
+                    resValue("string", "app_name", androidStringResource(client.appName))
                     manifestPlaceholders["deepLinkScheme"] = client.deepLinkScheme
                 }
                 sourceSets.getByName(client.flavorName).res.srcDir(client.resDir)

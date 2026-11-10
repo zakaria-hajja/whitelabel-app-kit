@@ -78,6 +78,10 @@ object ClientConfigLoader {
             problems += "$prefix: $key $message"
         }
 
+        props.stringPropertyNames().sorted().forEach { key ->
+            if (props.getProperty(key).any { it.isISOControl() }) fail(key, "must not contain control characters")
+        }
+
         fun value(key: String): String? =
             props.getProperty(key)?.trim()?.takeIf { it.isNotEmpty() }
 

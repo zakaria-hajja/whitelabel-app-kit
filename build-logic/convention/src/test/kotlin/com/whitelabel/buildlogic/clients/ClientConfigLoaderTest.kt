@@ -320,4 +320,14 @@ class ClientConfigLoaderTest {
         assertThat(environmentFor("release")).isEqualTo("PRODUCTION")
         assertThrows(IllegalArgumentException::class.java) { environmentFor("staging") }
     }
+
+    @Test
+    fun `control characters in any value are rejected naming the key`() {
+        writeClient("clientA", mapOf("app.name" to "Ac\u0007me", "app.versionName" to "1.0\u0000"))
+
+        val found = problems()
+
+        assertThat(found.any { it.contains("app.name") && it.contains("control") }).isEqualTo(true)
+        assertThat(found.any { it.contains("app.versionName") && it.contains("control") }).isEqualTo(true)
+    }
 }
