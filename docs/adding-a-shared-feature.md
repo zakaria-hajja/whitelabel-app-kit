@@ -38,7 +38,8 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
             id = "settings",
             flagKey = null,                                  // or a key, to allow switching it off remotely
             tab = Tab(SettingsRoute, R.string.settings_tab, Icons.Default.Settings),
-            routes = { navigator -> composable<SettingsRoute> { SettingsRoot(options, navigator) } },
+            requiresSignIn = false,                          // true if it calls endpoints that need a session
+            routes = { scope -> composable<SettingsRoute> { SettingsRoot(options, scope.navigator) } },
         ),
     )
 }
@@ -47,10 +48,19 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
 - **Mark everything else `internal`.** Hilt modules and ViewModels may be internal too.
 - **Configuration only through the options and DI:** inject `BrandConfig`, never read
   `BuildConfig`, and never compare application IDs or names.
-- **Navigation:**
+- **Navigation:** `routes` receives a `FeatureScope`.
   - within the feature, use the routes it registers;
-  - to go elsewhere, call `AppNavigator` (`toTab`, `navigate`, `back`, `openUrl`);
+  - to go elsewhere, call `scope.navigator` (`toTab`, `canOpenTab`, `navigate`, `back`, `openUrl`);
+  - to accept deep links, build them from `scope.deepLinkScheme`
+    (`navDeepLink<DetailRoute>(basePath = "${scope.deepLinkScheme}://detail")`), never from a
+    literal scheme;
   - never import another feature's routes or depend on another feature's module.
+- **Sign-in:** set `requiresSignIn = true` when the feature calls endpoints that need a session.
+  An app that adds the feature without `auth()` then fails at startup with a message naming
+  `auth()`. Read the user and session from `:core:domain` (`UserRepository`, `SessionRepository`).
+- **Analytics:** inject `Analytics` (`:core:analytics`) and use the names in `AnalyticsEvents`.
+  Event params never contain an email, a name, a token or text the user typed. The shell already
+  tracks `screen_view`.
 - **Feature flags:** if the feature can be switched off remotely, give it a `flagKey`. Then document
   the key, which is also what apps list in `defaults.features`.
 - **Strings:** every user-visible string goes in `strings.xml` with a French translation in
@@ -62,11 +72,14 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
 
 - **Backend:** call it through `:core:network`'s helpers, with relative paths under the app's base
   URL (`"settings"`, not `"/api/v1/settings"`). The backend-starter contract is the same for every
-  app; see [api-environments.md](api-environments.md).
+  app; see [api-environments.md](api-environments.md). Signed-in calls carry the bearer and refresh
+  on their own; use `postPublicResult` for calls that must not (sign-in, password reset).
+- **Errors:** show `DataError.toUiText()` from `:core:ui`, after mapping the codes your screen
+  handles specially (for example `INVALID_CREDENTIALS`).
 - **Local storage:** use `JsonStore` from `:core:datastore`, with one file per feature (e.g.
   `context.jsonStoreFile("settings")`).
-- **State shared between features** (current user, session) lives in `:core:domain` / `:core:data`
-  (Phase 4), never in one feature that another feature reads.
+- **State shared between features** (current user, session, app config) lives in `:core:domain`
+  and `:core:data`, never in one feature that another feature reads.
 
 ## Tests (write them first)
 

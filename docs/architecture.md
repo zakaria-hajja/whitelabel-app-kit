@@ -14,13 +14,16 @@ Items marked **Phase 4** are not built yet.
 | `build-logic` | Built | Convention plugins: `whitelabel.android.application` (app modules), `.android.library`, `.android.library.compose`, `.jvm.library`, `.hilt`. Also the app config loader that validates each `apps/<name>/app.properties` |
 | `:core:common` | Built | `Result<T, E>`, `DataError`, `ApiErrorCode`. Pure Kotlin |
 | `:core:branding` | Built | `BrandConfig`, the app's typed build-time identity (tenant, name, API URL, environment, runtime defaults). Pure Kotlin |
-| `:core:network` | Built | Ktor client factory, backend envelope unwrapping, error mapping, typed request helpers, the optional `X-Client-Id` tenant header. Pure Kotlin with Hilt |
+| `:core:network` | Built | Ktor client factory, backend envelope unwrapping, error mapping, typed request helpers, the optional `X-Client-Id` tenant header, and the bearer session with single-flight refresh. It reads tokens through `SessionTokenStore`, so it never depends on storage. Pure Kotlin with Hilt |
 | `:core:designsystem` | Built | `AppTheme` built from brand resources, spacing tokens, components (buttons, text field, card, scaffold, loading, empty and error states, dialog), contrast helpers |
-| `:core:datastore` | Built (JSON store) | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. Phase 4 adds preferences and encrypted token storage |
-| `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, and the `diagnostics()` feature |
+| `:core:datastore` | Built | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. `TokenStore`: the session tokens, encrypted with an AES-256-GCM key in AndroidKeyStore |
+| `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, remote feature flags and the theme preference, analytics wiring, and the `diagnostics()` feature |
 | `:apps:showcase` | Built | Reference app that will use every shared feature. Today: diagnostics |
 | `:apps:globex`, `:apps:globex:notes` | Built | Second app, proving reuse: an app-specific notes feature plus diagnostics |
-| `:core:domain`, `:core:data`, `:core:ui`, `:core:analytics` | Phase 4 | Shared domain models and session, repositories, presentation helpers, analytics/crash interfaces |
+| `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Pure Kotlin |
+| `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference |
+| `:core:ui` | Built | Presentation helpers for features: `UiText`, `DataError.toUiText()`, `ObserveAsEvents` |
+| `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Pure Kotlin |
 | `:feature:authentication`, `home`, `catalog`, `profile`, `settings` | Phase 4 | Ready-to-use shared features against the backend-starter API |
 
 ## 2. Dependencies
@@ -35,6 +38,9 @@ flowchart TD
     shell[":core:shell"]
     ds[":core:designsystem"]
     datastore[":core:datastore"]
+    data[":core:data"]
+    domain[":core:domain"]
+    analytics[":core:analytics"]
     network[":core:network"]
     branding[":core:branding"]
     common[":core:common"]
@@ -50,6 +56,13 @@ flowchart TD
     shell --> network
     shell --> ds
     shell --> common
+    shell --> data
+    shell --> domain
+    shell --> analytics
+    data --> domain
+    data --> network
+    data --> datastore
+    domain --> common
     network --> common
     showcase -.-> features
     features -.-> shell
@@ -74,7 +87,9 @@ Rules, enforced by module boundaries and by review:
    - as `BuildConfig` fields, read by the app's identity test;
    - as `foundation_*` string resources, read by the shell.
 2. **Startup:** `FoundationActivity` (from the shell's manifest) shows the splash from the app's
-   `brand_splash_*` resources. It then injects the app's `AppDefinition` and its `BrandConfig`.
+   `brand_splash_*` resources. The splash stays up while the shell fetches the remote app config,
+   for at most 2 seconds. Then the visible tabs are fixed until the next launch. A config that
+   arrives later is cached for the next start.
 3. **UI:** `ShellNavHost` registers each feature's navigation graph and starts at the start tab.
    It shows a bottom bar when two or more tabs are visible. A tab with a flag key is visible when
    the remote flag says so, or, with no remote value, when its key is in `defaults.features`.
@@ -93,7 +108,12 @@ Rules, enforced by module boundaries and by review:
 - **Logging:** only outside `PRODUCTION`, headers only, with `Authorization` redacted.
 - **Cleartext:** debug builds may use cleartext to `10.0.2.2` and `localhost` only. Release builds
   never do.
-- **Phase 4:** bearer auth with single-flight refresh, and encrypted token storage.
+- **Session:** while signed in, requests carry `Authorization: Bearer`. A 401 `TOKEN_EXPIRED`
+  triggers one refresh, shared by every concurrent caller, then one retry. A 401
+  `UNAUTHENTICATED`, or a rejected refresh, ends the session. Every other 401 (such as
+  `INVALID_CREDENTIALS` for a wrong password) is returned untouched. A refresh that fails for lack
+  of network keeps the session. Requests marked `publicRequest()` (sign-in, registration) never
+  carry the bearer.
 
 See [api-environments.md](api-environments.md).
 

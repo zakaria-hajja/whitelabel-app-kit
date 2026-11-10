@@ -10,9 +10,17 @@ import kotlinx.serialization.Serializable
 
 fun tab(route: Any) = Tab(route = route, label = 0, icon = Icons.Default.Home)
 
-fun entry(id: String, route: Any? = null, flagKey: String? = null) = FeatureEntry(
+fun entry(
+    id: String,
+    route: Any? = null,
+    flagKey: String? = null,
+    requiresSignIn: Boolean = false,
+    gate: Gate? = null,
+) = FeatureEntry(
     id = id,
     flagKey = flagKey,
     tab = route?.let(::tab),
+    requiresSignIn = requiresSignIn,
+    gate = gate,
     routes = {},
 )

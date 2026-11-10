@@ -61,4 +61,31 @@ class AppDefinitionTest {
 
         assertThat(definition.startTabRoute).isEqualTo(RouteB)
     }
+
+    @Test fun `feature needing sign in without auth fails naming auth()`() {
+        assertFailure {
+            appDefinition {
+                add(entry("profile", RouteA, requiresSignIn = true))
+                add(entry("home", RouteB, requiresSignIn = true))
+            }
+        }.isInstanceOf(IllegalArgumentException::class).messageContains("profile, home need sign-in: add auth()")
+    }
+
+    @Test fun `feature needing sign in is accepted with a gate`() {
+        val definition = appDefinition {
+            add(entry("auth", gate = Gate(RouteC)))
+            add(entry("profile", RouteA, requiresSignIn = true))
+        }
+        assertThat(definition.gateEntry?.id).isEqualTo("auth")
+    }
+
+    @Test fun `two gates fail`() {
+        assertFailure {
+            appDefinition {
+                add(entry("auth", gate = Gate(RouteC)))
+                add(entry("sso", gate = Gate(RouteB)))
+                add(entry("a", RouteA))
+            }
+        }.isInstanceOf(IllegalArgumentException::class).messageContains("auth, sso")
+    }
 }
