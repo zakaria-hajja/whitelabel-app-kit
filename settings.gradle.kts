@@ -17,8 +17,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "android-starter-kit"
 
-include(":app")
+include(":apps:globex")
+include(":apps:globex:notes")
+include(":apps:showcase")
 include(":core:branding")
 include(":core:common")
 include(":core:network")
 include(":core:designsystem")
+include(":core:datastore")
+include(":core:shell")

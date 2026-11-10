@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Everything else (activity, icon, label, theme, network config) comes from :core:shell. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:name=".ShowcaseApp" />
+</manifest>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws everything; the window theme only needs no action bar. -->
+    <style name="Theme.Foundation" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Launch theme. The colors and icon come from the app's res/. -->
+    <style name="Theme.Foundation.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/brand_splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/brand_splash_icon</item>
+        <item name="postSplashScreenTheme">@style/Theme.Foundation</item>
+    </style>
+</resources>

@@ -35,10 +35,20 @@ class HttpClientFactoryTest {
         assertThat(captured[HttpHeaders.UserAgent]).isEqualTo("test-agent/1.0")
     }
 
+    @Test fun `no tenant omits the client id header`() = runTest {
+        var sent = true
+        val client = testClient(testConfig().copy(tenant = null)) { req ->
+            sent = req.headers.contains(CLIENT_ID_HEADER)
+            respond(OK_BODY, HttpStatusCode.OK, jsonHeaders)
+        }
+        client.getResult<Health>("health")
+        assertThat(sent).isEqualTo(false)
+    }
+
     @Test fun `non-ascii header values are sanitized to printable ascii and request is sent`() = runTest {
         var agent: String? = null
         var slug: String? = null
-        val config = testConfig().copy(userAgent = "Caf\u00e9\u0001/1.0.0 (Android 16)", clientSlug = "caf\u00e9")
+        val config = testConfig().copy(userAgent = "Caf\u00e9\u0001/1.0.0 (Android 16)", tenant = "caf\u00e9")
         val client = testClient(config) { req ->
             agent = req.headers[HttpHeaders.UserAgent]
             slug = req.headers[CLIENT_ID_HEADER]

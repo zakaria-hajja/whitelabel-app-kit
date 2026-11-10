@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Placeholders for the app configuration. The whitelabel.android.application plugin overrides
+    every value from the app's app.properties (generated resValues). Blank defaults make an app that
+    forgot the plugin fail at startup with a clear message instead of running unconfigured.
+-->
+<resources>
+    <string name="app_name" translatable="false"></string>
+    <string name="foundation_tenant" translatable="false"></string>
+    <string name="foundation_app_name" translatable="false"></string>
+    <string name="foundation_api_base_url" translatable="false"></string>
+    <string name="foundation_environment" translatable="false"></string>
+    <string name="foundation_deep_link_scheme" translatable="false"></string>
+    <string name="foundation_support_email" translatable="false"></string>
+    <string name="foundation_privacy_policy_url" translatable="false"></string>
+    <string name="foundation_terms_url" translatable="false"></string>
+    <string name="foundation_default_features" translatable="false"></string>
+</resources>

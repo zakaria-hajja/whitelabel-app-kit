@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neutral defaults so the shell links on its own. Every app must override these (the app config
+     loader fails the build when an app's src/main/res does not declare them). -->
+<resources>
+    <color name="brand_splash_background">#FFFFFF</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
+</resources>

@@ -27,6 +27,12 @@ jobs:
       - name: Unit tests and lint
         run: scripts/check.sh
 
+      - name: Build every app (debug and unsigned release)
+        run: ./gradlew assembleDebug assembleRelease
+
+      - name: Verify apps (identity, isolation, distinct icons)
+        run: scripts/verify-apps.sh
+
       - name: Commit messages
         if: github.event_name == 'pull_request'
         env:

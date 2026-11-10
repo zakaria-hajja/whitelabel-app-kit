@@ -1,0 +1,60 @@
+# API environments
+
+Every app talks to its own backend, built from the backend starter (`../backend-api`). They all
+share one contract, `/api/v1`:
+- the response envelope
+- the error codes
+- the auth endpoints
+- the paging rules
+
+The shared networking and (Phase 4) shared features target that contract directly. An app only
+says where its backend is.
+
+## Base URLs per build type
+
+| Build type | Key | Environment | Rules |
+|---|---|---|---|
+| `debug` | `api.debug.baseUrl` | `DEVELOPMENT` | `http` only to `10.0.2.2` (the host machine from the emulator) or `localhost`; any `https` host |
+| `release` | `api.release.baseUrl` | `PRODUCTION` | `https`, not a local host |
+
+- **URL form:** the URL is the versioned root, ending in `/` (added if missing). Features use
+  relative paths such as `"catalog"`, which resolve under it.
+- **Cleartext:** debug builds allow cleartext only for those two hosts
+  (`core/shell/src/debug/res/xml/network_security_config.xml`). The loader rejects a debug
+  `http` URL to any other host, so the app can't fail at runtime with "cleartext not permitted".
+- **On a physical device:** use an `https` tunnel, or `adb reverse tcp:3000 tcp:3000` with
+  `http://localhost:3000/api/v1/`.
+- **Adding a staging environment later:** add a `staging` build type (`initWith(release)`) and an
+  `api.staging.baseUrl` key in the loader. Don't add a second flavor dimension.
+
+## Tenant (shared vs dedicated backends)
+
+- **Shared mode** (several tenants on one deployment): set `api.tenant=<slug>`. Every request
+  sends `X-Client-Id: <slug>`, and the tenant must exist in that backend
+  (`npm run tenant -- create`).
+- **Dedicated mode** (one tenant per deployment): leave `api.tenant` out. No header is sent, and
+  the backend uses its configured tenant.
+
+## Local backend
+
+```sh
+cd ../backend-api
+docker compose up -d postgres && npm run db:deploy && npm run db:seed   # tenants acme, globex
+npm run dev                                                             # http://localhost:3000
+```
+
+Showcase (tenant `acme`) and globex (tenant `globex`) both point their debug builds at
+`http://10.0.2.2:3000/api/v1/`. The diagnostics screen's **Ping** calls `GET health` and shows
+whether the backend and its database are up.
+
+## Requests and errors (for feature authors)
+
+- **Helpers:** use `HttpClient.getResult`, `getPageResult`, `postResult`, `patchResult` and
+  `deleteResult` from `:core:network`. They return `Result<T, DataError>` with the envelope
+  already unwrapped.
+- **Backend errors:** these arrive as `DataError.Api(code, httpStatus, fieldErrors,
+  retryAfterSeconds)`, with `code` taken from the backend's error codes.
+- **Transport failures:** these become `DataError.Network` (`NO_INTERNET`, `REQUEST_TIMEOUT`,
+  `SERIALIZATION`, `UNKNOWN`).
+- **Logging:** request logging (headers only, `Authorization` redacted) is on in `DEVELOPMENT`
+  only.

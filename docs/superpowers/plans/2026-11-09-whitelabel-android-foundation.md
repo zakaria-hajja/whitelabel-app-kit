@@ -1,5 +1,7 @@
 # White-Label Android Foundation & Multi-Client Implementation Plan
 
+> **Status:** Phase 2 done (PR #1). Phase 3 of this plan is superseded by `2026-11-10-multi-app-foundation.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A Gradle multi-module Android project that builds `clientA` and `clientB` as independent, branded APKs from one codebase, with a tested core (result types, networking, client config, design system). This covers brief Phases 2 and 3.

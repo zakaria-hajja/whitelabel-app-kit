@@ -29,12 +29,16 @@ applies the merge settings, and also branch protection where the plan allows it.
    planned work; **the owner merges**. Never bypass hooks (`--no-verify`) unless the owner
    says so for that instance.
 
-Phase → branch mapping for the initial build: see "Phases and PRs" in
-`docs/superpowers/plans/2026-11-09-whitelabel-android-foundation.md`.
+Phase → branch mapping: see the roadmap (section 7) of
+`docs/superpowers/specs/2026-11-10-reusable-app-foundation-design.md`.
 
 ## Project pointers
 
-- Architecture (Phase 1, approved before code): `docs/superpowers/specs/2026-11-09-whitelabel-android-design.md`
-- Brief: `docs/superpowers/specs/2026-11-09-whitelabel-android-brief.md`
-- Backend API contract: `../backend-api` (design spec §9; generated `openapi/openapi.json`)
-- Client-specific values live only in `clients/<id>/`. No Kotlin or Gradle file names a client.
+- What this is: a foundation for many Android apps. Shared modules live in `core/*` (and, from Phase 4,
+  `feature/*`). Each app is a thin module under `apps/<name>/`. See `docs/architecture.md`.
+- New app: `docs/creating-an-app.md`. New shared feature: `docs/adding-a-shared-feature.md`.
+- Design: `docs/superpowers/specs/2026-11-10-reusable-app-foundation-design.md` (it supersedes
+  the white-label parts of `2026-11-09-whitelabel-android-design.md`).
+- Rule: no app identity (name, application ID, tenant, URL, color) outside `apps/<name>/`, and
+  shared modules never depend on `apps/*`. `scripts/verify-apps.sh` checks every built app.
+- Backend API contract: `../backend-api` (design spec section 9; generated `openapi/openapi.json`).

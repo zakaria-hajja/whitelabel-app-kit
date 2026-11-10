@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notes_tab">Notes</string>
+    <string name="notes_title">Notes</string>
+    <string name="notes_draft_label">New note</string>
+    <string name="notes_add">Add</string>
+    <string name="notes_delete">Delete note</string>
+    <string name="notes_empty_title">No notes yet</string>
+    <string name="notes_empty_message">Write something above and tap Add.</string>
+</resources>
