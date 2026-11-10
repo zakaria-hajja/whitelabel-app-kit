@@ -10,4 +10,8 @@ android {
 dependencies {
     api(libs.androidx.datastore.core)
     api(libs.kotlinx.serialization.json)
+
+    androidTestImplementation(libs.assertk)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }
