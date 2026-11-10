@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="core_ui_error_no_internet">Pas de connexion Internet. Vérifiez votre connexion et réessayez.</string>
+    <string name="core_ui_error_timeout">Le serveur a mis trop de temps à répondre. Réessayez.</string>
+    <string name="core_ui_error_server">Un problème est survenu de notre côté. Réessayez plus tard.</string>
+    <string name="core_ui_error_unknown">Un problème est survenu. Réessayez.</string>
+    <string name="core_ui_error_storage">Impossible d\'enregistrer sur cet appareil. Libérez de l\'espace et réessayez.</string>
+    <string name="core_ui_error_rate_limited">Trop de tentatives. Patientez un instant et réessayez.</string>
+    <string name="core_ui_error_rate_limited_seconds">Trop de tentatives. Réessayez dans %1$d secondes.</string>
+    <string name="core_ui_error_session_expired">Votre session a expiré. Reconnectez-vous.</string>
+    <string name="core_ui_error_suspended">Ce service est actuellement indisponible.</string>
+    <string name="core_ui_error_unavailable">Cette fonctionnalité n\'est pas disponible.</string>
+    <string name="core_ui_error_not_found">Nous n\'avons pas trouvé ce que vous cherchiez.</string>
+</resources>

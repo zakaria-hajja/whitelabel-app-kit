@@ -11,10 +11,13 @@ android {
 
 dependencies {
     api(project(":core:branding"))
+    api(project(":core:analytics"))
+    api(project(":core:domain"))
     api(libs.androidx.navigation.compose)
     api(libs.compose.material.icons.core)
     implementation(project(":core:common"))
     implementation(project(":core:network"))
+    implementation(project(":core:data"))
     implementation(project(":core:designsystem"))
 
     implementation(libs.ktor.client.core)

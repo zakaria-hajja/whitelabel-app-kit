@@ -9,6 +9,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -18,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -34,7 +37,9 @@ internal const val BOTTOM_BAR_TAG = "ShellBottomBar"
 internal fun ShellNavHost(
     definition: AppDefinition,
     visibleTabs: List<Tab>,
+    deepLinkScheme: String,
     modifier: Modifier = Modifier,
+    onScreenView: (String) -> Unit = {},
 ) {
     val startTab = definition.resolveStartTab(visibleTabs)
     if (startTab == null) {
@@ -47,15 +52,25 @@ internal fun ShellNavHost(
     }
     val navController = rememberNavController()
     val uriHandler = LocalUriHandler.current
-    val navigator = remember(navController, uriHandler) {
+    val navigator = remember(navController, uriHandler, visibleTabs) {
         object : AppNavigator {
             override fun toTab(route: Any) = navController.navigateToTab(route)
+            override fun canOpenTab(route: Any) = visibleTabs.any { it.route == route }
             override fun navigate(route: Any) = navController.navigate(route)
             override fun back() {
                 navController.popBackStack()
             }
             override fun openUrl(url: String) = uriHandler.openUri(url)
         }
+    }
+    val scope = remember(navigator, deepLinkScheme) { FeatureScope(navigator, deepLinkScheme) }
+    val currentOnScreenView by rememberUpdatedState(onScreenView)
+    DisposableEffect(navController) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            destination.route?.let { currentOnScreenView(screenName(it)) }
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose { navController.removeOnDestinationChangedListener(listener) }
     }
     Scaffold(
         modifier = modifier,
@@ -71,7 +86,7 @@ internal fun ShellNavHost(
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding),
         ) {
-            definition.entries.forEach { entry -> entry.routes(this, navigator) }
+            definition.entries.forEach { entry -> entry.routes(this, scope) }
         }
     }
 }

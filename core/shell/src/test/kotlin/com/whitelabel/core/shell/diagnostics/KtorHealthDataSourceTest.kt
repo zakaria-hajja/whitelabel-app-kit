@@ -7,6 +7,8 @@ import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.Result
 import com.whitelabel.core.network.HttpClientFactory
 import com.whitelabel.core.network.NetworkConfig
+import com.whitelabel.core.network.SessionTokenStore
+import com.whitelabel.core.network.SessionTokens
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
@@ -29,7 +31,7 @@ class KtorHealthDataSourceTest {
             tenant = "tenant",
             userAgent = "test/1.0",
         )
-        return KtorHealthDataSource(HttpClientFactory.create(engine, config))
+        return KtorHealthDataSource(HttpClientFactory.create(engine, config, SignedOut))
     }
 
     @Test fun `up database maps to databaseUp true`() = runTest {
@@ -57,4 +59,10 @@ class KtorHealthDataSourceTest {
         assertThat(source.check())
             .isEqualTo(Result.Error(DataError.Api(code = ApiErrorCode.INTERNAL_ERROR, httpStatus = 500)))
     }
+}
+
+private object SignedOut : SessionTokenStore {
+    override suspend fun current(): SessionTokens? = null
+    override suspend fun replace(expected: SessionTokens, new: SessionTokens) = false
+    override suspend fun endSession(expected: SessionTokens) = Unit
 }

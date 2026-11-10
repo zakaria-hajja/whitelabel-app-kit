@@ -51,7 +51,7 @@ class ShellNavHostTest {
     )
 
     private fun show(definition: AppDefinition, visible: List<Tab> = definition.tabs) {
-        rule.setContent { AppTheme { ShellNavHost(definition = definition, visibleTabs = visible) } }
+        rule.setContent { AppTheme { ShellNavHost(definition = definition, visibleTabs = visible, deepLinkScheme = "test") } }
     }
 
     @Test
