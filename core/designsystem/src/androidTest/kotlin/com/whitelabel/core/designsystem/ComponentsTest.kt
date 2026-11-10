@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasSetTextAction
@@ -55,6 +57,22 @@ class ComponentsTest {
         rule.onNodeWithContentDescription(string(R.string.ds_show_password)).performClick()
         rule.onNodeWithContentDescription(string(R.string.ds_hide_password)).assertExists()
         rule.onNode(hasSetTextAction()).assert(!isPassword)
+    }
+
+    @Test
+    fun passwordField_toggleKeepsFocus() {
+        rule.setContent {
+            AppTheme {
+                var value by remember { mutableStateOf("") }
+                AppTextField(value = value, onValueChange = { value = it }, label = "Password", isPassword = true)
+            }
+        }
+        rule.onNode(hasSetTextAction()).performClick()
+        rule.onNode(hasSetTextAction()).performTextInput("secret")
+        rule.onNodeWithContentDescription(string(R.string.ds_show_password)).performClick()
+        rule.onNodeWithContentDescription(string(R.string.ds_hide_password)).assertExists()
+        rule.onNode(hasSetTextAction()).assertIsFocused().assert(!isPassword)
+        rule.onNode(hasSetTextAction()).assertTextEquals("Password", "secret")
     }
 
     @Test
