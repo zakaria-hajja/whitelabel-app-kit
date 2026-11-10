@@ -6,6 +6,7 @@ import assertk.assertions.containsExactly
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
+import com.whitelabel.buildlogic.apps.environmentFor
 import java.io.File
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test

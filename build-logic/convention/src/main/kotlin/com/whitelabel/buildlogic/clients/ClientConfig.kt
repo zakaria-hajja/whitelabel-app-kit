@@ -21,9 +21,3 @@ data class ClientConfig(
     val resDir: File get() = clientDir.resolve("res")
     val testDir: File get() = clientDir.resolve("test")
 }
-
-fun environmentFor(buildType: String): String = when (buildType) {
-    "debug" -> "DEVELOPMENT"
-    "release" -> "PRODUCTION"
-    else -> throw IllegalArgumentException("Unknown build type '$buildType'; expected debug or release")
-}

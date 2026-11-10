@@ -1,4 +1,4 @@
-package com.whitelabel.buildlogic.clients
+package com.whitelabel.buildlogic.apps
 
 /** Escapes [raw] so aapt2 reads it back verbatim as the value of a `<string>` resource. */
 fun androidStringResource(raw: String): String {

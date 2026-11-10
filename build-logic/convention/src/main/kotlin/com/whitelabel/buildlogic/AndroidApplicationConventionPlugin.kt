@@ -5,8 +5,8 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.api.variant.BuildConfigField
 import com.whitelabel.buildlogic.clients.ClientConfig
 import com.whitelabel.buildlogic.clients.ClientConfigLoader
-import com.whitelabel.buildlogic.clients.androidStringResource
-import com.whitelabel.buildlogic.clients.environmentFor
+import com.whitelabel.buildlogic.apps.androidStringResource
+import com.whitelabel.buildlogic.apps.environmentFor
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure

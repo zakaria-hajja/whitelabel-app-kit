@@ -1,4 +1,4 @@
-package com.whitelabel.buildlogic.clients
+package com.whitelabel.buildlogic.apps
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
