@@ -289,4 +289,44 @@ class AppConfigLoaderTest {
         assertThat(environmentFor("release")).isEqualTo("PRODUCTION")
         assertThrows(IllegalArgumentException::class.java) { environmentFor("staging") }
     }
+
+    private fun writeSigning(vararg lines: String) {
+        File(appDir, "signing.properties").writeText(lines.joinToString("\n"))
+    }
+
+    @Test
+    fun `absent signing file gives null`() {
+        writeApp()
+
+        assertThat(AppConfigLoader.load(appDir).signing).isNull()
+    }
+
+    @Test
+    fun `incomplete signing file names the missing key`() {
+        writeApp()
+        File(appDir, "upload.jks").writeText("x")
+        writeSigning("storeFile=upload.jks", "storePassword=s", "keyPassword=k")
+
+        assertThat(problems()).containsExactly("apps/sample/signing.properties: keyAlias is required and must not be blank")
+    }
+
+    @Test
+    fun `signing store file must exist`() {
+        writeApp()
+        writeSigning("storeFile=missing.jks", "storePassword=s", "keyAlias=a", "keyPassword=k")
+
+        assertThat(problems().single()).contains("apps/sample/signing.properties: storeFile")
+    }
+
+    @Test
+    fun `relative store file resolves against app dir`() {
+        writeApp()
+        File(appDir, "keys").mkdirs()
+        File(appDir, "keys/upload.jks").writeText("x")
+        writeSigning("storeFile=keys/upload.jks", "storePassword=s", "keyAlias=a", "keyPassword=k")
+
+        assertThat(AppConfigLoader.load(appDir).signing).isEqualTo(
+            AppSigning(File(appDir, "keys/upload.jks"), storePassword = "s", keyAlias = "a", keyPassword = "k"),
+        )
+    }
 }

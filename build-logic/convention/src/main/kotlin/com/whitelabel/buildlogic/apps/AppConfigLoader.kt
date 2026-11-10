@@ -115,6 +115,8 @@ object AppConfigLoader {
             problems += "$label: missing required color $it"
         }
 
+        val signing = parseSigning(dir, label, problems)
+
         if (problems.size != before) return null
         return AppConfig(
             tenant = tenant,
@@ -128,8 +130,31 @@ object AppConfigLoader {
             privacyPolicyUrl = privacyUrl!!,
             termsUrl = termsUrl!!,
             defaultFeatures = features,
-            signing = null,
+            signing = signing,
             appDir = dir,
         )
+    }
+
+    /** Parses the optional, gitignored `signing.properties`; absent means the release build stays unsigned. */
+    private fun parseSigning(dir: File, label: String, problems: MutableList<String>): AppSigning? {
+        val file = File(dir, "signing.properties")
+        if (!file.isFile) return null
+        val props = Properties().also { p -> file.reader(Charsets.UTF_8).use { p.load(it) } }
+        val prefix = "$label/signing.properties"
+        fun required(key: String): String? =
+            props.getProperty(key)?.trim()?.takeIf { it.isNotEmpty() }
+                ?: run { problems += "$prefix: $key is required and must not be blank"; null }
+
+        val storePath = required("storeFile")
+        val storePassword = required("storePassword")
+        val keyAlias = required("keyAlias")
+        val keyPassword = required("keyPassword")
+        val storeFile = storePath?.let { File(it).takeIf(File::isAbsolute) ?: File(dir, it) }
+        if (storeFile != null && !storeFile.isFile) {
+            problems += "$prefix: storeFile '$storePath' does not exist"
+            return null
+        }
+        if (storeFile == null || storePassword == null || keyAlias == null || keyPassword == null) return null
+        return AppSigning(storeFile, storePassword, keyAlias, keyPassword)
     }
 }

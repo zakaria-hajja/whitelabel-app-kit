@@ -40,6 +40,14 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 resValue("string", "app_name", androidStringResource(app.appName))
                 manifestPlaceholders["deepLinkScheme"] = app.deepLinkScheme
             }
+            app.signing?.let { signing ->
+                signingConfigs.create("release") {
+                    storeFile = signing.storeFile
+                    storePassword = signing.storePassword
+                    keyAlias = signing.keyAlias
+                    keyPassword = signing.keyPassword
+                }
+            } ?: logger.info("${project.path}: no signing.properties, release will be unsigned")
             buildFeatures.buildConfig = true
             lint.targetSdk = TARGET_SDK
 
@@ -51,6 +59,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     isMinifyEnabled = true
                     isShrinkResources = true
                     proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+                    signingConfig = signingConfigs.findByName("release")
                 }
             }
         }

@@ -13,8 +13,8 @@ local.properties
 # Signing material: never committed
 *.jks
 *.keystore
-clients/*/signing.properties
 
 # Tooling
 .superpowers/
 AGENTS.md
+apps/*/signing.properties

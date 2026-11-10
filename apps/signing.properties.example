@@ -1,0 +1,6 @@
+# Copy to apps/<name>/signing.properties (gitignored) to sign that app's release build.
+# storeFile is relative to the app directory unless absolute. Never commit the real file or keystore.
+storeFile=keys/upload.jks
+storePassword=change-me
+keyAlias=upload
+keyPassword=change-me
