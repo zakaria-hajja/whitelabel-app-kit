@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_sign_in_title">Sign in to %1$s</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_create_account">Create an account</string>
+    <string name="auth_forgot_password">Forgot password?</string>
+    <string name="auth_register_title">Create an account</string>
+    <string name="auth_first_name">First name (optional)</string>
+    <string name="auth_last_name">Last name (optional)</string>
+    <string name="auth_register">Create account</string>
+    <string name="auth_forgot_title">Reset your password</string>
+    <string name="auth_forgot_message">Enter your email and we\'ll send you a link to choose a new password.</string>
+    <string name="auth_send_link">Send link</string>
+    <string name="auth_forgot_sent">If an account exists for this email, a reset link is on its way. Check your inbox.</string>
+    <string name="auth_back_to_sign_in">Back to sign in</string>
+    <string name="auth_reset_title">Choose a new password</string>
+    <string name="auth_new_password">New password</string>
+    <string name="auth_reset_submit">Save password</string>
+    <string name="auth_reset_done">Your password has been changed. Sign in with your new password.</string>
+    <string name="auth_request_new_link">Request a new link</string>
+    <string name="auth_error_email_blank">Enter your email.</string>
+    <string name="auth_error_email_invalid">Enter a valid email address.</string>
+    <string name="auth_error_email_taken">An account already exists for this email.</string>
+    <string name="auth_error_password_short">Use at least %1$d characters.</string>
+    <string name="auth_error_password_long">Use at most %1$d characters.</string>
+    <string name="auth_error_name_long">Use at most %1$d characters.</string>
+    <string name="auth_error_invalid_credentials">Wrong email or password.</string>
+    <string name="auth_error_reset_expired">This link has expired or was already used.</string>
+</resources>

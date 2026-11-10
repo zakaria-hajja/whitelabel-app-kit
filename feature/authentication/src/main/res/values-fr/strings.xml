@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_sign_in_title">Se connecter à %1$s</string>
+    <string name="auth_email">E-mail</string>
+    <string name="auth_password">Mot de passe</string>
+    <string name="auth_sign_in">Se connecter</string>
+    <string name="auth_create_account">Créer un compte</string>
+    <string name="auth_forgot_password">Mot de passe oublié ?</string>
+    <string name="auth_register_title">Créer un compte</string>
+    <string name="auth_first_name">Prénom (facultatif)</string>
+    <string name="auth_last_name">Nom (facultatif)</string>
+    <string name="auth_register">Créer le compte</string>
+    <string name="auth_forgot_title">Réinitialiser le mot de passe</string>
+    <string name="auth_forgot_message">Saisissez votre e-mail et nous vous enverrons un lien pour choisir un nouveau mot de passe.</string>
+    <string name="auth_send_link">Envoyer le lien</string>
+    <string name="auth_forgot_sent">Si un compte existe pour cet e-mail, un lien de réinitialisation est en route. Consultez votre boîte de réception.</string>
+    <string name="auth_back_to_sign_in">Retour à la connexion</string>
+    <string name="auth_reset_title">Choisissez un nouveau mot de passe</string>
+    <string name="auth_new_password">Nouveau mot de passe</string>
+    <string name="auth_reset_submit">Enregistrer</string>
+    <string name="auth_reset_done">Votre mot de passe a été modifié. Connectez-vous avec le nouveau mot de passe.</string>
+    <string name="auth_request_new_link">Demander un nouveau lien</string>
+    <string name="auth_error_email_blank">Saisissez votre e-mail.</string>
+    <string name="auth_error_email_invalid">Saisissez une adresse e-mail valide.</string>
+    <string name="auth_error_email_taken">Un compte existe déjà pour cet e-mail.</string>
+    <string name="auth_error_password_short">Utilisez au moins %1$d caractères.</string>
+    <string name="auth_error_password_long">Utilisez au plus %1$d caractères.</string>
+    <string name="auth_error_name_long">Utilisez au plus %1$d caractères.</string>
+    <string name="auth_error_invalid_credentials">E-mail ou mot de passe incorrect.</string>
+    <string name="auth_error_reset_expired">Ce lien a expiré ou a déjà été utilisé.</string>
+</resources>
