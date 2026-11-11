@@ -31,7 +31,7 @@ fun AppDefinitionBuilder.profile(options: ProfileOptions = ProfileOptions()) {
             id = "profile",
             flagKey = "profile",
             requiresSignIn = true,
-            tab = Tab(ProfileRoute, R.string.profile_tab, Icons.Default.Person),
+            tab = Tab(ProfileRoute, R.string.profile_tab, Icons.Default.Person, routeId = ProfileRoutes.ROOT),
             modules = listOf(profileModule),
             routes = { scope ->
                 screen<ProfileRoute> {

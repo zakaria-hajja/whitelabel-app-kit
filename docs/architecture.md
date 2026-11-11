@@ -19,6 +19,7 @@ business features. The design is in
 | `:core:datastore` | Built | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. `TokenStore`: the session tokens, encrypted with an AES-256-GCM key in AndroidKeyStore. Kotlin Multiplatform (Android, iOS) on DataStore-okio. The Keystore cipher (`KeystoreTokenCipher`) is Android-only |
 | `:core:reminders` | Built | `Reminders`: local notifications at a date and time that survive reboots, clock and time-zone changes and app updates, with a 12-hour rule for missed ones; the app's channels through `ReminderConfig`; `rememberNotificationPermission()` and `openNotificationSettings()`. See [reminders.md](reminders.md) |
 | `:core:reminders:shared` | Built | The reminder engine, its ports (`AlarmScheduler`, `NotificationPoster`, `ReminderStore`), `Reminder` (on `kotlinx-datetime`) and the stored format. Kotlin Multiplatform (Android, iOS) |
+| `:core:shell:shared` | Built | The shell's platform-neutral model, shared with iOS: `DefinitionSpec`/`FeatureSpec` and their rules (`validate()`, the backend check), visible tabs and the start tab, the deep-link policy, and `ShellViewModel` (tabs once per process, theme, session, pending deep link). Kotlin Multiplatform (Android, iOS) |
 | `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, remote feature flags, the theme and language preferences, analytics wiring, the sign-in gate, and the diagnostics screen (debug builds only, opened from Settings) |
 | `:apps:showcase` | Built | Reference app that will use every shared feature. It uses all of them: sign-in, home, catalog, profile and settings |
 | `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Kotlin Multiplatform (Android, iOS) |
@@ -99,7 +100,10 @@ Rules, enforced by module boundaries and by review:
    `brand_splash_*` resources. The splash stays up while the shell fetches the remote app config,
    for at most 2 seconds. Then the visible tabs are fixed until the next launch. A config that
    arrives later is cached for the next start.
-3. **UI:** `ShellNavHost` registers each feature's navigation graph and starts at the start tab.
+3. **UI:** the shell's decisions (which tabs show, the start tab, the gate, held deep links) come
+   from `:core:shell:shared`, which works on route ids (`Tab.routeId`; the foundation's features
+   use their `<Name>Routes` constants, shared with iOS). `ShellNavHost` maps them back to the app's
+   tabs, registers each feature's navigation graph and starts at the start tab.
    It shows a bottom bar when two or more tabs are visible. A tab with a flag key is visible when
    the remote flag says so, or, with no remote value, when its key is in `defaults.features`.
 4. **Brand visuals:** `:core:designsystem` declares default brand resources. The app's

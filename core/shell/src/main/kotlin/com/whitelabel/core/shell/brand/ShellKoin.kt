@@ -16,7 +16,8 @@ import com.whitelabel.core.network.NetworkConfig
 import com.whitelabel.core.network.defaultHttpEngine
 import com.whitelabel.core.network.di.networkModule
 import com.whitelabel.core.shell.AppDefinition
-import com.whitelabel.core.shell.ShellViewModel
+import com.whitelabel.core.shell.model.shellModelModule
+import com.whitelabel.core.shell.toSpec
 import com.whitelabel.core.shell.diagnostics.BrandPreviewViewModel
 import com.whitelabel.core.shell.diagnostics.HealthDataSource
 import com.whitelabel.core.shell.diagnostics.KtorHealthDataSource
@@ -54,7 +55,6 @@ internal fun shellModule(definition: AppDefinition) = module {
         definition.crashReporter ?: LoggingCrashReporter { message, throwable -> Log.e("Crash", message, throwable) }
     }
     single<HealthDataSource> { KtorHealthDataSource(get()) }
-    viewModelOf(::ShellViewModel)
     viewModel { BrandPreviewViewModel(get(), get(), get(named(USING_MOCK_API))) }
 }
 
@@ -65,6 +65,6 @@ internal fun shellModule(definition: AppDefinition) = module {
  * wins over everything.
  */
 internal fun foundationModules(definition: AppDefinition, contributors: List<ModuleContributor>): List<Module> =
-    listOf(networkModule, dataModule, androidDataModule, shellModule(definition)) +
+    listOf(networkModule, dataModule, androidDataModule, shellModule(definition), shellModelModule(definition.toSpec())) +
         definition.koinModules +
         contributors.flatMap { it.modules() }

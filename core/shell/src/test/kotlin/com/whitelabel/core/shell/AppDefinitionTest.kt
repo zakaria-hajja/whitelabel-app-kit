@@ -119,4 +119,13 @@ class AppDefinitionTest {
         }
         assertThat(definition.stylePack).isEqualTo(StylePack.Material)
     }
+
+    @Test fun `tabs with the same simple route name get different default ids`() {
+        val definition = appDefinition {
+            add(entry("first", FirstFeature.Root))
+            add(entry("second", SecondFeature.Root, flagKey = "second"))
+        }
+        assertThat(definition.tabs.map { it.routeId }.toSet().size).isEqualTo(2)
+        assertThat(definition.visibleTabs(mapOf("second" to false), emptySet()).map { it.route }).containsExactly(FirstFeature.Root)
+    }
 }

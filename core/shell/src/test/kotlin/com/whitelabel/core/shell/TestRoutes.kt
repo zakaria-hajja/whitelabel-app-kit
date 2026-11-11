@@ -28,3 +28,7 @@ fun entry(
     modules = modules,
     routes = {},
 )
+
+/** Two routes with the same simple name in different scopes, as two features' `RootRoute`s would be. */
+object FirstFeature { @Serializable data object Root }
+object SecondFeature { @Serializable data object Root }

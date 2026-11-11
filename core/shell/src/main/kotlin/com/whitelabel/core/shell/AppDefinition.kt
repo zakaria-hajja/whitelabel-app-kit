@@ -7,12 +7,21 @@ import androidx.navigation.NavGraphBuilder
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
 import org.koin.core.module.Module
+import com.whitelabel.core.shell.model.DefinitionSpec
+import com.whitelabel.core.shell.model.FeatureSpec
 
 /** A bottom-bar destination. [route] is a `@Serializable` route object registered by the entry's graph. */
+/**
+ * A bottom-bar tab. [routeId] is the platform-neutral id the shared shell model and iOS use (the
+ * foundation's features pass their `<Name>Routes` constant); it defaults to the route's fully
+ * qualified class name, unique even after R8 renames classes. Set it explicitly for a tab that also
+ * exists on iOS, so both platforms use the same id.
+ */
 data class Tab(
     val route: Any,
     @StringRes val label: Int,
     val icon: ImageVector,
+    val routeId: String = route::class.qualifiedName ?: route.toString(),
 )
 
 /** Makes the whole app sign-in only: signed out, the app shows only this entry's graph, starting at [startRoute]. */
@@ -105,20 +114,9 @@ class AppDefinitionBuilder internal constructor() {
     }
 
     internal fun build(): AppDefinition {
-        val duplicates = entries.groupBy { it.id }.filterValues { it.size > 1 }.keys
-        require(duplicates.isEmpty()) { "Feature added more than once: ${duplicates.joinToString()}" }
-        val tabRoutes = entries.mapNotNull { it.tab?.route }
-        require(tabRoutes.isNotEmpty()) { "An app definition needs at least one tab" }
-        startTabRoute?.let { start ->
-            require(start in tabRoutes) { "Start tab $start is not one of the tabs: ${tabRoutes.joinToString()}" }
-        }
-        val gates = entries.filter { it.gate != null }
-        require(gates.size <= 1) { "Only one feature may gate the app: ${gates.joinToString { it.id }}" }
-        val needSignIn = entries.filter { it.requiresSignIn }
-        require(needSignIn.isEmpty() || gates.isNotEmpty()) {
-            "${needSignIn.joinToString { it.id }} need sign-in: add auth() to the app definition"
-        }
-        return AppDefinition(entries.toList(), startTabRoute, analytics, crashReporter, stylePack, appModules.toList())
+        val definition = AppDefinition(entries.toList(), startTabRoute, analytics, crashReporter, stylePack, appModules.toList())
+        definition.toSpec().validate()
+        return definition
     }
 }
 
@@ -126,14 +124,23 @@ class AppDefinitionBuilder internal constructor() {
  * Why this definition can't run without a backend, or `null` if it can: features that sign in or
  * call the API need the app's `api.*` base URLs.
  */
-internal fun AppDefinition.backendProblem(hasBackend: Boolean): String? {
-    if (hasBackend) return null
-    val needing = entries.filter { it.gate != null || it.requiresSignIn || it.requiresBackend }
-    if (needing.isEmpty()) return null
-    return "${needing.joinToString { it.id }} call the backend: " +
-        "set api.debug.baseUrl and api.release.baseUrl in app.properties"
-}
+internal fun AppDefinition.backendProblem(hasBackend: Boolean): String? = toSpec().backendProblem(hasBackend)
 
 /** Declares an app's features, e.g. `appDefinition { auth(); notes(); settings(); startTab(NotesRoute) }`. */
 fun appDefinition(block: AppDefinitionBuilder.() -> Unit): AppDefinition =
     AppDefinitionBuilder().apply(block).build()
+
+/** The platform-neutral form of this definition, which the shared shell model works on. */
+internal fun AppDefinition.toSpec(): DefinitionSpec = DefinitionSpec(
+    features = entries.map {
+        FeatureSpec(
+            id = it.id,
+            flagKey = it.flagKey,
+            tabRoute = it.tab?.routeId,
+            requiresSignIn = it.requiresSignIn,
+            isGate = it.gate != null,
+            requiresBackend = it.requiresBackend,
+        )
+    },
+    startTabRoute = startTabRoute?.let { start -> tabs.firstOrNull { it.route == start }?.routeId ?: start::class.qualifiedName },
+)
