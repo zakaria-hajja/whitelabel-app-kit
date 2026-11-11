@@ -1,6 +1,6 @@
 # Standalone App Support: style packs, reminders, Firebase, ads — Design
 
-Status: draft for owner approval (2026-11-10)
+Status: approved by the owner (2026-11-11)
 Extends `2026-11-10-reusable-app-foundation-design.md`. Everything there still holds unless this
 document says otherwise.
 
