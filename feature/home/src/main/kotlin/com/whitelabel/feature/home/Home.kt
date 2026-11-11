@@ -31,7 +31,7 @@ fun AppDefinitionBuilder.home(options: HomeOptions = HomeOptions()) {
         FeatureEntry(
             id = "home",
             requiresSignIn = true,
-            tab = Tab(HomeRoute, R.string.home_tab, Icons.Default.Home),
+            tab = Tab(HomeRoute, R.string.home_tab, Icons.Default.Home, routeId = HomeRoutes.ROOT),
             modules = listOf(homeModule),
             routes = { scope ->
                 screen<HomeRoute> {

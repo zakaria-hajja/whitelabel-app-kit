@@ -30,7 +30,7 @@ fun AppDefinitionBuilder.catalog(options: CatalogOptions = CatalogOptions()) {
             id = "catalog",
             flagKey = "catalog",
             requiresSignIn = true,
-            tab = Tab(CatalogRoute, R.string.catalog_tab, Icons.AutoMirrored.Filled.List),
+            tab = Tab(CatalogRoute, R.string.catalog_tab, Icons.AutoMirrored.Filled.List, routeId = CatalogRoutes.LIST),
             modules = listOf(catalogModule),
             routes = { scope ->
                 screen<CatalogRoute> {

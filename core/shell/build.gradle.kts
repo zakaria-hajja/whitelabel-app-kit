@@ -11,6 +11,7 @@ android {
 
 dependencies {
     api(project(":core:branding"))
+    api(project(":core:shell:shared"))
     api(project(":core:analytics"))
     api(project(":core:domain"))
     // Apps name a StylePack in their definition (style(StylePack.Gallery)).

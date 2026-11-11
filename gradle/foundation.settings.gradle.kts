@@ -19,6 +19,7 @@ val sharedModules = listOf(
     ":core:reminders",
     ":core:reminders:shared",
     ":core:shell",
+    ":core:shell:shared",
     ":core:ui",
     ":core:analytics",
     ":core:domain",
