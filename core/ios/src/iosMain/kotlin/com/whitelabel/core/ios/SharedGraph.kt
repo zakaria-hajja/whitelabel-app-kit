@@ -58,7 +58,7 @@ private const val NO_BACKEND_BASE_URL = "https://no-backend.invalid/"
  * through its typed accessor (Swift can't use Koin's reified functions). Every failure Swift must
  * handle is declared with @Throws, since an undeclared Kotlin exception aborts the process.
  */
-object Shared {
+object SharedGraph {
 
     private class Launch(val platform: IosPlatform, val definition: DefinitionSpec, val appModules: List<Module>, val useMockApi: Boolean)
 
@@ -106,7 +106,7 @@ object Shared {
     /** A fresh graph with the same arguments, as Android's FreshAppRule gives each test. */
     @Throws(IllegalArgumentException::class, IllegalStateException::class)
     fun resetForTests() {
-        val last = checkNotNull(launch) { "Shared.start was never called" }
+        val last = checkNotNull(launch) { "SharedGraph.start was never called" }
         stop()
         start(last.platform, last.definition, last.appModules, last.useMockApi)
     }

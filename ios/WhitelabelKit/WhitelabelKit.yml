@@ -1,0 +1,33 @@
+# WhitelabelKit: the Swift half of the foundation's UI, included by every app's XcodeGen project:
+#
+#   include: [path/to/foundation/ios/WhitelabelKit/WhitelabelKit.yml]
+#
+# The app sets, at project level:
+#   WL_GRADLE_ROOT        the Gradle root (the foundation, or the app repo)
+#   WL_SHARED_PROJECT     the app's framework module, e.g. :apps:showcase:shared (its framework is named Shared)
+#   WL_SHARED_FRAMEWORKS  where Gradle puts it: <module>/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+#   WL_GRADLE_ARGS        -Pwhitelabel.mockApi=true in Debug (links the fake backend), empty in Release
+#
+# A local Swift package can't see a framework the app's own build produces, so the kit is a static
+# framework target: it builds Shared first through Gradle and compiles against it; the app links Shared.
+targets:
+  WhitelabelKit:
+    type: framework.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources/WhitelabelKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.whitelabel.kit
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+        SWIFT_VERSION: "5.9"
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+    preBuildScripts:
+      - name: Build the shared Kotlin framework
+        basedOnDependencyAnalysis: false
+        script: |
+          # Only the framework: the strings are synced into the app bundle by the app's own phase.
+          cd "$WL_GRADLE_ROOT" && ./gradlew "$WL_SHARED_PROJECT:embedAndSignAppleFrameworkForXcode" -x "$WL_SHARED_PROJECT:syncComposeResourcesForIos" $WL_GRADLE_ARGS

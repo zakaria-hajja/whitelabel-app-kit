@@ -1,0 +1,64 @@
+name: Showcase
+options:
+  deploymentTarget: { iOS: "17.0" }
+include:
+  - ../WhitelabelKit/WhitelabelKit.yml
+configFiles:
+  Debug: Config/Debug.generated.xcconfig
+  Release: Config/Release.generated.xcconfig
+settings:
+  base:
+    WL_GRADLE_ROOT: $(SRCROOT)/../..
+    WL_SHARED_PROJECT: ":apps:showcase:shared"
+    WL_SHARED_FRAMEWORKS: $(SRCROOT)/../../apps/showcase/shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+    SWIFT_VERSION: "5.9"
+    # Kotlin builds iosSimulatorArm64 only (no Intel simulators): a Release build must not ask for x86_64.
+    "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+  configs:
+    Debug: { WL_GRADLE_ARGS: -Pwhitelabel.mockApi=true }
+    Release: { WL_GRADLE_ARGS: "" }
+targets:
+  Showcase:
+    type: application
+    platform: iOS
+    sources: [Showcase]
+    dependencies:
+      - target: WhitelabelKit
+    settings:
+      base:
+        INFOPLIST_FILE: Showcase/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: $(WL_BUNDLE_ID)
+        PRODUCT_NAME: $(WL_APP_NAME)
+        MARKETING_VERSION: $(WL_VERSION_NAME)
+        CURRENT_PROJECT_VERSION: $(WL_VERSION_CODE)
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+        OTHER_LDFLAGS: [$(inherited), -framework, Shared]
+    preBuildScripts:
+      - name: Sync the shared framework and its strings into the app
+        basedOnDependencyAnalysis: false
+        script: |
+          cd "$WL_GRADLE_ROOT" && ./gradlew "$WL_SHARED_PROJECT:embedAndSignAppleFrameworkForXcode" $WL_GRADLE_ARGS
+  WhitelabelKitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ../WhitelabelKit/Tests/WhitelabelKitTests
+    dependencies:
+      - target: Showcase
+      - target: WhitelabelKit
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.whitelabel.kit.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/$(WL_APP_NAME).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/$(WL_APP_NAME)
+        BUNDLE_LOADER: $(TEST_HOST)
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+schemes:
+  Showcase:
+    build:
+      targets:
+        Showcase: all
+    test:
+      config: Debug
+      targets:
+        - WhitelabelKitTests

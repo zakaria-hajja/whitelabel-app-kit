@@ -10,7 +10,7 @@ import com.whitelabel.core.domain.LanguageRepository
 import com.whitelabel.core.domain.SessionRepository
 import com.whitelabel.core.domain.SessionState
 import com.whitelabel.core.ios.IosPlatform
-import com.whitelabel.core.ios.Shared
+import com.whitelabel.core.ios.SharedGraph
 import com.whitelabel.core.mockapi.FakeData
 import com.whitelabel.core.shell.model.DefinitionSpec
 import com.whitelabel.core.shell.model.FeatureSpec
@@ -31,7 +31,7 @@ class IosMockTest {
     private val dir = (NSTemporaryDirectory() + "ios-mock-" + NSUUID().UUIDString).toPath().also { FileSystem.SYSTEM.createDirectories(it) }
 
     @AfterTest fun tearDown() {
-        Shared.stop()
+        SharedGraph.stop()
         FileSystem.SYSTEM.deleteRecursively(dir)
     }
 
@@ -49,7 +49,7 @@ class IosMockTest {
             logger = {},
         )
         val definition = DefinitionSpec(listOf(FeatureSpec("auth", null, null, false, true, false), FeatureSpec("settings", null, "settings", false, false, false)), null)
-        Shared.start(platform, definition, emptyList(), useMockApi = true)
+        SharedGraph.start(platform, definition, emptyList(), useMockApi = true)
         val session = KoinPlatform.getKoin().get<SessionRepository>()
         session.signIn("alice@shared.test", FakeData.PASSWORD)
         assertEquals(SessionState.SignedIn, session.state.first { it != SessionState.Unknown })

@@ -29,49 +29,49 @@ class SharedEntryIosTest {
     @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
     @AfterTest fun tearDown() {
-        Shared.stop()
+        SharedGraph.stop()
         FileSystem.SYSTEM.deleteRecursively(dir)
         Dispatchers.resetMain()
     }
 
     @Test fun `every accessor gives its view model`() {
-        Shared.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
-        Shared.shellViewModel()
-        Shared.settingsViewModel()
-        Shared.homeViewModel()
-        Shared.profileViewModel()
-        Shared.changePasswordViewModel()
-        Shared.loginViewModel(email = null)
-        Shared.registerViewModel()
-        Shared.forgotPasswordViewModel(email = "ada@example.com")
-        Shared.resetPasswordViewModel(token = "t1")
-        Shared.catalogListViewModel(CatalogOptions())
-        Shared.catalogDetailViewModel(id = "i1")
+        SharedGraph.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
+        SharedGraph.shellViewModel()
+        SharedGraph.settingsViewModel()
+        SharedGraph.homeViewModel()
+        SharedGraph.profileViewModel()
+        SharedGraph.changePasswordViewModel()
+        SharedGraph.loginViewModel(email = null)
+        SharedGraph.registerViewModel()
+        SharedGraph.forgotPasswordViewModel(email = "ada@example.com")
+        SharedGraph.resetPasswordViewModel(token = "t1")
+        SharedGraph.catalogListViewModel(CatalogOptions())
+        SharedGraph.catalogDetailViewModel(id = "i1")
     }
 
     @Test fun `reset for tests gives a new graph`() {
-        Shared.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
-        val before = Shared.shellViewModel()
-        Shared.resetForTests()
-        val after = Shared.shellViewModel()
+        SharedGraph.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
+        val before = SharedGraph.shellViewModel()
+        SharedGraph.resetForTests()
+        val after = SharedGraph.shellViewModel()
         assertNotSame(before, after)
         assertFalse(after.state.value.ready && after.state.value.visibleTabRoutes.isEmpty())
     }
 
     @Test fun `starting twice keeps the first graph`() {
-        Shared.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
-        Shared.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
-        assertTrue(Shared.isStarted)
+        SharedGraph.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
+        SharedGraph.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
+        assertTrue(SharedGraph.isStarted)
     }
 
     @Test fun `an invalid definition fails with its rule`() {
         val noTabs = DefinitionSpec(listOf(FeatureSpec("a", null, null, false, false, false)), null)
-        val error = assertFailsWith<IllegalArgumentException> { Shared.start(testPlatform(dir), noTabs, emptyList(), useMockApi = false) }
+        val error = assertFailsWith<IllegalArgumentException> { SharedGraph.start(testPlatform(dir), noTabs, emptyList(), useMockApi = false) }
         assertEquals("An app definition needs at least one tab", error.message)
     }
 
     @Test fun `the mock api without the mock module fails naming the gradle property`() {
-        val error = assertFailsWith<IllegalStateException> { Shared.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = true) }
+        val error = assertFailsWith<IllegalStateException> { SharedGraph.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = true) }
         assertTrue(error.message!!.contains("-Pwhitelabel.mockApi=true"), error.message)
     }
 }

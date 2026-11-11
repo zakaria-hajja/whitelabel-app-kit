@@ -3,6 +3,7 @@ package com.whitelabel.core.ios
 import com.whitelabel.core.branding.BrandConfig
 import com.whitelabel.core.datastore.StorePaths
 import com.whitelabel.core.datastore.TokenCipher
+import com.whitelabel.core.datastore.iosJsonStorePath
 import com.whitelabel.core.domain.LanguageRepository
 
 /**
@@ -16,4 +17,8 @@ class IosPlatform(
     val storePaths: StorePaths,
     val brand: BrandConfig,
     val logger: (String) -> Unit,
-)
+) {
+    /** With the stores at their conventional place: Application Support, `datastore/<name>.json`. */
+    constructor(tokenCipher: TokenCipher, language: LanguageRepository, brand: BrandConfig, logger: (String) -> Unit) :
+        this(tokenCipher, language, StorePaths { iosJsonStorePath(it) }, brand, logger)
+}
