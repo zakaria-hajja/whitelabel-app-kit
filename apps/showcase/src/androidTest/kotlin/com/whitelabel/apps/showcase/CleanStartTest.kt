@@ -15,14 +15,18 @@ import dagger.hilt.android.testing.HiltAndroidTest
 import javax.inject.Inject
 import org.junit.Assert.assertFalse
 import org.junit.Before
+import org.junit.FixMethodOrder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
+import org.junit.runners.MethodSorters
 
 /**
  * Two tests in one class: the second must start signed out with a fresh backend, whatever the
  * first left behind (stored tokens, cached user, the fake's sessions).
  */
+// The second test proves nothing unless it runs after the first.
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @HiltAndroidTest
 class CleanStartTest {
 

@@ -68,12 +68,20 @@ class ShowcaseE2ETest {
         InstrumentationRegistry.getInstrumentation().targetContext.startActivity(link)
     }
 
+    /** Finishes every activity still alive (the deep-link test's isn't owned by a scenario) and waits until it's gone. */
     private fun finishActivities() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        instrumentation.runOnMainSync {
-            ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED).forEach { it.finish() }
+        val live = listOf(Stage.PRE_ON_CREATE, Stage.CREATED, Stage.STARTED, Stage.RESUMED, Stage.PAUSED, Stage.STOPPED, Stage.RESTARTED)
+        fun alive() = live.flatMap { ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(it) }
+        instrumentation.runOnMainSync { alive().forEach { it.finish() } }
+        val deadline = System.currentTimeMillis() + 5_000
+        while (true) {
+            var remaining = 0
+            instrumentation.runOnMainSync { remaining = alive().size }
+            if (remaining == 0) break
+            check(System.currentTimeMillis() < deadline) { "$remaining activities still alive after the test" }
+            Thread.sleep(50)
         }
-        instrumentation.waitForIdleSync()
     }
 
     private fun signInAsAlice() {
@@ -107,10 +115,11 @@ class ShowcaseE2ETest {
         home.openTab("Catalog")
         catalog.search("Item 1")
         catalog.showsInOrder("Item 19", "Item 18", "Item 17") // newest first
-        catalog.doesNotSee("Item 2")
+        catalog.doesNotSee("Item 25") // the top of the unfiltered list
         catalog.filter("Music")
         catalog.showsInOrder("Item 19", "Item 15", "Item 11")
         catalog.doesNotSee("Item 18")
+        catalog.doesNotSee("Item 23") // Music, but doesn't match "Item 1"
         catalog.sortBy("Title A–Z")
         catalog.showsInOrder("Item 11", "Item 15", "Item 19")
         catalog.open("Item 11")
@@ -147,22 +156,46 @@ class ShowcaseE2ETest {
     @Test fun expiredAccessToken_refreshesSilently() {
         launch()
         signInAsAlice()
-        val before = backend.requests.count { it == REFRESH }
+        val from = backend.exchanges.size
         backend.expireAccessTokens()
         home.pullToRefresh("Alice")
-        compose.waitUntil(5_000) { backend.requests.count { it == REFRESH } > before }
+        val expected = listOf("get users/me 401 TOKEN_EXPIRED", "post auth/refresh 200", "get users/me 200")
+        compose.waitUntil(5_000) { sessionCalls(from).size >= expected.size }
+        // The original request was retried with the new pair and succeeded; nothing signed out.
+        assertEquals(expected, sessionCalls(from))
+        assertFalse(backend.requests.toString(), backend.requests.any { it.endsWith("/auth/logout") })
         home.greets("Alice")
-        signIn.doesNotSee("Sign in to Showcase")
-        assertEquals(backend.requests.toString(), before + 1, backend.requests.count { it == REFRESH })
     }
 
     @Test fun revokedSession_returnsToSignIn() {
         launch()
         signInAsAlice()
+        val from = backend.exchanges.size
         backend.revokeSessions()
         launch()
         signIn.isShown()
+        // Signed out because the backend refused the session, not for any other reason.
+        assertEquals(
+            listOf("get users/me 401 UNAUTHENTICATED", "post auth/refresh 401 INVALID_REFRESH_TOKEN"),
+            sessionCalls(from),
+        )
     }
+
+    @Test fun relaunch_withAValidSession_staysSignedIn() {
+        launch()
+        signInAsAlice()
+        launch()
+        home.greets("Alice")
+        signIn.doesNotSee("Sign in to Showcase")
+    }
+
+    /** The `users/me` and `auth/refresh` calls since exchange [from]: `"<method> <path> <status> [<code>]"`. */
+    private fun sessionCalls(from: Int): List<String> = backend.exchanges.drop(from)
+        .filter { it.path.endsWith("/users/me") || it.path.endsWith("/auth/refresh") }
+        .map { e ->
+            val code = Regex("\"code\":\"([A-Z_]+)\"").find(e.body)?.groupValues?.get(1)
+            listOfNotNull(e.method, e.path.removePrefix("/api/v1/"), e.status.toString(), code).joinToString(" ")
+        }
 
     @Test fun catalogDeepLink_whileSignedOut_opensAfterSignIn() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -174,7 +207,4 @@ class ShowcaseE2ETest {
         catalog.showsDetail("Sample item 7")
     }
 
-    private companion object {
-        const val REFRESH = "POST /api/v1/auth/refresh"
-    }
 }
