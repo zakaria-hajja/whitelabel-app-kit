@@ -73,6 +73,10 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
         addTestDependencies()
 
+        // -Pwhitelabel.mockApi=true: debug builds talk to :core:mockapi instead of a server.
+        mockApiDependency(mapOf(MOCK_API_PROPERTY to providers.gradleProperty(MOCK_API_PROPERTY).orNull))
+            ?.let { (configuration, module) -> dependencies.add(configuration, project(module)) }
+
         extensions.configure<ApplicationAndroidComponentsExtension> {
             onVariants { variant ->
                 val buildType = requireNotNull(variant.buildType)

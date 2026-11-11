@@ -3,6 +3,7 @@ package com.whitelabel.core.shell.diagnostics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.branding.BrandConfig
+import com.whitelabel.core.shell.brand.UsingMockApi
 import com.whitelabel.core.branding.hasBackend
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.onFailure
@@ -18,6 +19,8 @@ import javax.inject.Inject
 internal data class BrandPreviewState(
     val brand: BrandConfig,
     val health: HealthUi = HealthUi.Idle,
+    /** The in-memory mock backend answers instead of the network (`-Pwhitelabel.mockApi=true`). */
+    val usingMockApi: Boolean = false,
 ) {
     /** The backend ping only makes sense when the app has a backend. */
     val showPing: Boolean get() = brand.hasBackend
@@ -38,9 +41,10 @@ internal sealed interface BrandPreviewAction {
 internal class BrandPreviewViewModel @Inject constructor(
     brand: BrandConfig,
     private val health: HealthDataSource,
+    @UsingMockApi usingMockApi: Boolean = false,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(BrandPreviewState(brand = brand))
+    private val _state = MutableStateFlow(BrandPreviewState(brand = brand, usingMockApi = usingMockApi))
     val state: StateFlow<BrandPreviewState> = _state.asStateFlow()
 
     fun onAction(action: BrandPreviewAction) {

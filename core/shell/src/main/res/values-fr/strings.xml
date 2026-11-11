@@ -18,4 +18,6 @@
     <string name="preview_error_unknown">Une erreur est survenue</string>
     <string name="shell_no_features_title">Rien à afficher</string>
     <string name="shell_no_features_message">Aucune fonctionnalité de cette app n’est activée pour le moment.</string>
+    <string name="preview_label_backend">Backend</string>
+    <string name="preview_backend_mock">Simulé (en mémoire)</string>
 </resources>

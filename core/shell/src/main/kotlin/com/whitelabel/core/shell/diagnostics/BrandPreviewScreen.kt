@@ -55,7 +55,7 @@ internal fun BrandPreviewScreen(
                 modifier = Modifier.padding(AppTheme.spacing.md),
                 verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.sm),
             ) {
-                IdentityCard(brand = state.brand)
+                IdentityCard(brand = state.brand, usingMockApi = state.usingMockApi)
                 if (state.showPing) {
                     HealthRow(health = state.health, onPing = { onAction(BrandPreviewAction.OnPingClick) })
                 }
@@ -67,12 +67,13 @@ internal fun BrandPreviewScreen(
 }
 
 @Composable
-private fun IdentityCard(brand: BrandConfig) {
+private fun IdentityCard(brand: BrandConfig, usingMockApi: Boolean) {
     AppCard(modifier = Modifier.fillMaxWidth()) {
         LabeledValue(R.string.preview_label_app_name, brand.appName)
         LabeledValue(R.string.preview_label_slug, brand.tenant.orEmpty())
         LabeledValue(R.string.preview_label_environment, brand.environment.name)
         LabeledValue(R.string.preview_label_base_url, brand.apiBaseUrl ?: stringResource(R.string.preview_no_backend))
+        if (usingMockApi) LabeledValue(R.string.preview_label_backend, stringResource(R.string.preview_backend_mock))
     }
 }
 

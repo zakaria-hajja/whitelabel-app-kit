@@ -11,7 +11,7 @@
 # Always: application IDs and deep-link schemes are unique across apps.
 # Unless --config-only, for each app's built APK of each build type (aapt2 from the newest
 # build-tools): package, label and version match app.properties; no other app's application ID
-# appears in its dex; its deep links use only its own scheme; its launcher foreground differs from every other app's; the generated
+# appears in its dex; a release dex has no mock backend; its deep links use only its own scheme; its launcher foreground differs from every other app's; the generated
 # foundation_* config resources the shell reads exist, match app.properties and nothing else.
 # Prints one OK/FAIL line per check and exits non-zero if any check fails.
 set -eu
@@ -154,6 +154,15 @@ for type in $types; do
         ok "$app $type: no trace of $other ($other_id)"
       fi
     done
+
+    # The in-memory backend is debug-only; R8 may rename its classes, so also look for its token prefix.
+    if [ "$type" = release ]; then
+      if grep -aqE 'com/whitelabel/core/mockapi|fake-refresh-' "$tmp/dex"; then
+        bad "$app release: dex contains the mock backend (:core:mockapi)"
+      else
+        ok "$app release: no mock backend"
+      fi
+    fi
 
     if [ -n "$icon" ]; then
       echo "$(unzip -p "$apk" "$icon" | shasum | cut -d' ' -f1) $app" >> "$tmp/icons-$type"
