@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -134,6 +135,27 @@ class SettingsScreenTest {
         show(SettingsState(appName = "Sample"))
         assertThat(top("Appearance")).isLessThan(top("Theme"))
         rule.onNodeWithText("Retry").assertDoesNotExist()
+    }
+
+    /** Munch offers 15 reminder days and 14 currencies: on a small phone the list must scroll, Done must stay reachable. */
+    @Test
+    fun longChoiceList_scrollsToTheLastChoice() {
+        val picked = mutableListOf<Int>()
+        rule.setContent {
+            AppTheme {
+                SettingsChoiceSheet(
+                    title = "Pick",
+                    choices = (1..40).toList(),
+                    selected = 1,
+                    label = { "Choice $it" },
+                    onSelect = { picked += it },
+                    onDismiss = {},
+                )
+            }
+        }
+        rule.onNodeWithText("Choice 40").performScrollTo().performClick()
+        rule.runOnIdle { assertThat(picked).containsExactly(40) }
+        rule.onNodeWithText("Done").assertIsDisplayed()
     }
 
     @Test
