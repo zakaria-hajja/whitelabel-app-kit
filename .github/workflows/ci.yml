@@ -38,6 +38,12 @@ jobs:
       - name: Verify apps (identity, isolation, distinct icons)
         run: scripts/verify-apps.sh
 
+      - name: Release stays free of the mock backend, even with the flag on
+        # -Pwhitelabel.mockApi=true must only ever reach debug builds; this checks the real wiring.
+        run: |
+          ./gradlew -Pwhitelabel.mockApi=true assembleRelease
+          scripts/verify-apps.sh release
+
       - name: Standalone app fixture (an app repo with the foundation as a submodule)
         # Run from the fixture with app-relative paths, exactly as an app repo's CI does.
         working-directory: fixtures/standalone-app
