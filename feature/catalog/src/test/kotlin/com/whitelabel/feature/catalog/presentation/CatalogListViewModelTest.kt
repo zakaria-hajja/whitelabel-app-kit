@@ -164,4 +164,83 @@ class CatalogListViewModelTest {
         assertThat(catalog.calls.last().first.sort).isEqualTo(CatalogSort.OLDEST)
         assertThat(viewModel.state.value.endReached).isFalse()
     }
+
+    @Test fun `an item repeated on the next page is shown once`() = runTest {
+        // Offset paging: an item created meanwhile pushes page 1's last item onto page 2.
+        catalog.answer = { _, p, size ->
+            val start = if (p == 1) 0 else size - 1
+            Result.Success(Page(List(size) { item(start + it) }, p, size, totalItems = 30, totalPages = 6))
+        }
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        viewModel.onAction(CatalogListAction.OnNearEnd)
+        advanceUntilIdle()
+        val ids = viewModel.state.value.items.map { it.id }
+        assertThat(ids.size).isEqualTo(ids.toSet().size)
+        assertThat(ids.size).isEqualTo(9)
+    }
+
+    @Test fun `no page loads while a refresh is running`() = runTest {
+        val refresh = CompletableDeferred<Unit>()
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        catalog.answer = { _, p, size -> if (p == 1) refresh.await(); Result.Success(page(p, size, totalPages = 3)) }
+        viewModel.onAction(CatalogListAction.OnRefresh)
+        runCurrent()
+        viewModel.onAction(CatalogListAction.OnNearEnd)
+        runCurrent()
+        refresh.complete(Unit)
+        advanceUntilIdle()
+        assertThat(catalog.calls.map { it.second }).containsExactly(1, 1)
+        assertThat(viewModel.state.value.items.size).isEqualTo(5)
+        assertThat(viewModel.state.value.page).isEqualTo(1)
+    }
+
+    @Test fun `a query changed during a refresh never keeps the old list`() = runTest {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        val hang = CompletableDeferred<Unit>()
+        catalog.answer = { query, p, size ->
+            when {
+                query.category == "Music" -> Result.Error(DataError.Network.NO_INTERNET)
+                else -> { hang.await(); Result.Success(page(p, size, totalPages = 3)) }
+            }
+        }
+        viewModel.onAction(CatalogListAction.OnRefresh) // hangs
+        runCurrent()
+        viewModel.onAction(CatalogListAction.OnCategorySelect("Music")) // replaces it, then fails
+        advanceUntilIdle()
+        val state = viewModel.state.value
+        assertThat(state.items).isEqualTo(emptyList())
+        assertThat(state.firstPageError).isNotNull()
+        assertThat(state.isRefreshing).isFalse()
+    }
+
+    @Test fun `a successful refresh replaces the list from page one`() = runTest {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        viewModel.onAction(CatalogListAction.OnNearEnd)
+        advanceUntilIdle()
+        viewModel.onAction(CatalogListAction.OnRefresh)
+        advanceUntilIdle()
+        assertThat(viewModel.state.value.items.size).isEqualTo(5)
+        assertThat(viewModel.state.value.isRefreshing).isFalse()
+    }
+
+    @Test fun `a failed refresh keeps the list and says why`() = runTest {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        catalog.answer = { _, _, _ -> Result.Error(DataError.Network.NO_INTERNET) }
+        viewModel.onAction(CatalogListAction.OnRefresh)
+        advanceUntilIdle()
+        assertThat(viewModel.state.value.items.size).isEqualTo(5)
+        assertThat(viewModel.state.value.message).isNotNull()
+        assertThat(viewModel.state.value.firstPageError).isNull()
+    }
+
+    @Test fun `a query longer than 100 characters is capped`() = runTest {
+        val viewModel = viewModel()
+        viewModel.onAction(CatalogListAction.OnQueryChange("x".repeat(150)))
+        assertThat(viewModel.state.value.text.length).isEqualTo(100)
+    }
 }

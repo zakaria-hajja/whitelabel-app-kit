@@ -132,11 +132,14 @@ internal class CatalogListViewModel @AssistedInject constructor(
 
     private suspend fun loadFirst(query: CatalogQuery) {
         moreJob?.cancel()
+        // Only a refresh of the same query keeps the list on screen; a new query never shows the old one's items.
+        val keepList = _state.value.isRefreshing && query == currentQuery
         currentQuery = query
         _state.update {
             it.copy(
-                isLoadingFirst = !it.isRefreshing,
-                items = if (it.isRefreshing) it.items else emptyList(),
+                isLoadingFirst = !keepList,
+                isRefreshing = keepList,
+                items = if (keepList) it.items else emptyList(),
                 isLoadingMore = false,
                 endReached = false,
                 firstPageError = null,
@@ -164,7 +167,11 @@ internal class CatalogListViewModel @AssistedInject constructor(
 
     private fun loadMore() {
         val current = _state.value
-        if (current.isLoadingFirst || current.isLoadingMore || current.endReached || current.moreError != null || current.items.isEmpty()) return
+        if (current.isLoadingFirst || current.isRefreshing || current.isLoadingMore || current.endReached ||
+            current.moreError != null || current.items.isEmpty()
+        ) {
+            return
+        }
         _state.update { it.copy(isLoadingMore = true) }
         val query = currentQuery
         moreJob = viewModelScope.launch {
@@ -172,7 +179,8 @@ internal class CatalogListViewModel @AssistedInject constructor(
             when (val result = source.page(query, page = next, pageSize = options.pageSize)) {
                 is Result.Success -> _state.update {
                     it.copy(
-                        items = it.items + result.data.items,
+                        // Offset paging repeats an item when one is added meanwhile; a repeated key would crash the list.
+                        items = (it.items + result.data.items).distinctBy { item -> item.id },
                         page = next,
                         endReached = result.data.isLast(options.pageSize),
                         isLoadingMore = false,
