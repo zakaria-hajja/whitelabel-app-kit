@@ -10,6 +10,8 @@ android {
 }
 
 dependencies {
+    api(project(":feature:settings:shared"))
+    implementation(project(":core:presentation"))
     implementation(project(":core:shell"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))

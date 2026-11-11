@@ -37,9 +37,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 private val brand = BrandConfig(
     tenant = null, appName = "Sample", applicationId = "com.example.sample", versionName = "1.2.3",
@@ -97,9 +97,9 @@ class SettingsViewModelTest {
     private val source = FakeSource()
     private val analytics = FakeAnalytics()
 
-    @BeforeEach fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    @AfterEach fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel(session: FakeSession = FakeSession(SessionState.SignedIn)) =
         SettingsViewModel(session, preferences, language, config, brand, source, analytics)

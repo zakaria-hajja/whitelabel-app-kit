@@ -15,13 +15,12 @@ import com.whitelabel.core.domain.SessionRepository
 import com.whitelabel.core.domain.SessionState
 import com.whitelabel.core.domain.ThemePreference
 import com.whitelabel.core.domain.UserPreferencesRepository
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.core.ui.toUiText
+import com.whitelabel.core.presentation.UiText
+import com.whitelabel.core.presentation.toUiText
 import com.whitelabel.feature.settings.domain.NotificationKind
 import com.whitelabel.feature.settings.domain.NotificationSettings
 import com.whitelabel.feature.settings.domain.SettingsDataSource
 import com.whitelabel.feature.settings.domain.SettingsPatch
-import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -30,7 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-internal data class SettingsState(
+data class SettingsState(
     /** The theme in effect: the user's choice, else the app config's default. */
     val theme: ThemePreference = ThemePreference.SYSTEM,
     /** The app's own language, or `null` to follow the device. */
@@ -51,7 +50,7 @@ internal data class SettingsState(
     val showDiagnostics: Boolean = false,
 )
 
-internal sealed interface SettingsAction {
+sealed interface SettingsAction {
     data class OnThemeSelect(val theme: ThemePreference) : SettingsAction
     data class OnLanguageSelect(val languageTag: String?) : SettingsAction
     data class OnNotificationToggle(val kind: NotificationKind, val enabled: Boolean) : SettingsAction
@@ -67,10 +66,10 @@ internal sealed interface SettingsAction {
 
 /** The chosen language without its region (`fr-CA` → `fr`), as the app offers languages, not regions. */
 private fun LanguageRepository.currentLanguage(): String? =
-    current()?.let { Locale.forLanguageTag(it).language }?.takeIf { it.isNotEmpty() }
+    primaryLanguage(current())
 
 /** The app's languages that the backend also supports; all of them when the backend sets no list. */
-internal fun offeredLanguages(options: List<String>, remote: List<String>): List<String> =
+fun offeredLanguages(options: List<String>, remote: List<String>): List<String> =
     if (remote.isEmpty()) options else options.filter { it in remote }
 
 /**
@@ -79,7 +78,7 @@ internal fun offeredLanguages(options: List<String>, remote: List<String>): List
  * request runs in order with the others, and a failure puts back what the server last confirmed,
  * unless a newer toggle of the same kind is still on its way.
  */
-internal class SettingsViewModel(
+class SettingsViewModel(
     private val session: SessionRepository,
     private val preferences: UserPreferencesRepository,
     private val languages: LanguageRepository,
