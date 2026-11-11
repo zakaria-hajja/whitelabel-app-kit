@@ -53,8 +53,7 @@ import com.whitelabel.feature.catalog.CatalogSort
 import com.whitelabel.feature.catalog.R
 import com.whitelabel.feature.catalog.domain.CatalogItem
 import com.whitelabel.feature.catalog.presentation.CatalogImage
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 
 /** Ask for the next page when the last visible item is this close to the end. */
 private const val PREFETCH_DISTANCE = 5
@@ -132,12 +131,17 @@ private fun ItemList(state: CatalogListState, onAction: (CatalogListAction) -> U
     val listState = rememberLazyListState()
     val nearEnd by remember {
         derivedStateOf {
-            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            last >= listState.layoutInfo.totalItemsCount - PREFETCH_DISTANCE
+            val info = listState.layoutInfo
+            // Nothing is laid out yet on the first frame: that is not "near the end".
+            info.totalItemsCount > 0 &&
+                (info.visibleItemsInfo.lastOrNull()?.index ?: 0) >= info.totalItemsCount - PREFETCH_DISTANCE
         }
     }
-    LaunchedEffect(listState) {
-        snapshotFlow { nearEnd }.distinctUntilChanged().filter { it }.collect { onAction(CatalogListAction.OnNearEnd) }
+    // Asks once per page shown: when a page fits on screen the end stays visible, so waiting for
+    // "near the end" to turn true again would stall the list.
+    LaunchedEffect(listState, state.items.size) {
+        snapshotFlow { nearEnd }.first { it }
+        onAction(CatalogListAction.OnNearEnd)
     }
     LazyColumn(
         state = listState,

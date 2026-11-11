@@ -1,6 +1,9 @@
 package com.whitelabel.feature.catalog
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -8,6 +11,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.isEqualTo
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.feature.catalog.domain.CatalogItem
 import com.whitelabel.feature.catalog.presentation.list.CatalogListAction
@@ -55,5 +59,19 @@ class CatalogListScreenTest {
         show(CatalogListState(page = 1, endReached = true))
         rule.onNodeWithText("Music").performClick()
         rule.runOnIdle { assertThat(actions).contains(CatalogListAction.OnCategorySelect("Music")) }
+    }
+
+    @Test
+    fun aPageThatFitsOnScreen_keepsAskingForTheNext() {
+        var state by mutableStateOf(CatalogListState(items = List(3) { CatalogItem("i$it", "Item $it", null, null, null) }, page = 1))
+        rule.setContent {
+            AppTheme { CatalogListScreen(state = state, options = CatalogOptions(), onAction = { actions += it }, onItemClick = {}) }
+        }
+        rule.waitForIdle()
+        rule.runOnIdle { assertThat(actions.count { it == CatalogListAction.OnNearEnd }).isEqualTo(1) }
+        // Page 2 arrives and the end is still on screen: it must ask again.
+        state = state.copy(items = List(6) { CatalogItem("i$it", "Item $it", null, null, null) }, page = 2)
+        rule.waitForIdle()
+        rule.runOnIdle { assertThat(actions.count { it == CatalogListAction.OnNearEnd }).isEqualTo(2) }
     }
 }
