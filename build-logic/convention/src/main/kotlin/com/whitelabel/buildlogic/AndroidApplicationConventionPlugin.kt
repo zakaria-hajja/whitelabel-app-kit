@@ -26,7 +26,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         // After the Android plugin, so whitelabel.hilt picks the Android variant.
         pluginManager.apply("whitelabel.hilt")
 
-        val app = AppConfigLoader.load(projectDir)
+        val app = AppConfigLoader.load(projectDir, label = rootDir.toPath().relativize(projectDir.toPath()).toString())
 
         extensions.configure<ApplicationExtension> {
             configureKotlinAndroid(this)
