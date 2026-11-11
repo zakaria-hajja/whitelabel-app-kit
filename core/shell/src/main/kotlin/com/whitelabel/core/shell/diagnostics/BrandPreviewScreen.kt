@@ -34,17 +34,18 @@ import com.whitelabel.core.designsystem.theme.AppTheme
  * [diagnostics]; Phase 4 makes it debug-only under Settings › About.
  */
 @Composable
-internal fun BrandPreviewRoot(viewModel: BrandPreviewViewModel = hiltViewModel()) {
+internal fun BrandPreviewRoot(onBack: () -> Unit, viewModel: BrandPreviewViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    BrandPreviewScreen(state = state, onAction = viewModel::onAction)
+    BrandPreviewScreen(state = state, onAction = viewModel::onAction, onBack = onBack)
 }
 
 @Composable
 internal fun BrandPreviewScreen(
     state: BrandPreviewState,
     onAction: (BrandPreviewAction) -> Unit,
+    onBack: () -> Unit = {},
 ) {
-    AppScaffold(title = state.brand.appName) { innerPadding ->
+    AppScaffold(title = state.brand.appName, onNavigateBack = onBack) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

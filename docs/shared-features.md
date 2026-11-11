@@ -9,6 +9,7 @@ analytics events it sends. To add a feature to an app, add the module to the app
 | Feature | Call | Flag key | Needs `auth()` |
 |---|---|---|---|
 | Authentication | `auth()` | none | n/a (it is the gate) |
+| Settings | `settings()` | none | no (account parts appear when signed in) |
 
 ## Authentication (`:feature:authentication`)
 
@@ -37,3 +38,33 @@ auth(AuthOptions(allowRegistration = true, allowPasswordReset = true))
 - **Endpoints:** `POST auth/login`, `auth/register`, `auth/logout`, `auth/forgot-password`,
   `auth/reset-password`, and `auth/refresh` (by `:core:network`).
 - **Analytics:** `login` and `sign_up`, each with `{method: password}` only.
+
+## Settings (`:feature:settings`)
+
+A settings tab that works with or without `auth()`.
+
+```kotlin
+settings(SettingsOptions(showNotifications = true, languages = listOf("en", "fr")))
+```
+
+| Option | Default | Effect |
+|---|---|---|
+| `showNotifications` | `true` | Shows the push, email and marketing toggles (signed in only) |
+| `languages` | `en`, `fr` | The languages offered for the app, as BCP 47 tags; limited further by the backend's `runtime.supportedLanguages` when it sends one |
+
+- **Theme:** system, light or dark. The default is the backend's `runtime.defaultTheme`.
+- **Theme and language:** device settings, applied at once, offline and signed out too. When signed
+  in they are also sent to the server, as a best effort. On Android 13+ the language is the
+  system's per-app language, so it also shows in the system settings.
+- **Notifications:** stored on the server. A toggle shows at once. Requests run in order, and a
+  failed one flips the toggle back with a message.
+- **About:**
+  - the version;
+  - "Contact support" (the remote `support.email`, else `defaults.support.email`);
+  - privacy and terms links (remote, else `app.properties`);
+  - Diagnostics, in debug builds only.
+- **Account:** sign out, after a confirmation (signed in only).
+- **Endpoints:** `GET`/`PATCH settings` and `POST auth/logout`.
+- **Analytics:** `logout`.
+- **Route:** `SettingsRoute` is public, so an app can name it (for example in a home shortcut).
+

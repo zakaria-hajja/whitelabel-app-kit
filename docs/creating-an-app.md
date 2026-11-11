@@ -5,8 +5,8 @@ This repo is a foundation for many independent Android apps. A new app is a smal
 features it uses. The shared modules (`core/*`, and later `feature/*`) provide the rest: the launcher
 activity, splash, theme, navigation, networking, storage and the design system.
 
-The worked example is `apps/globex`. It is Globex's own app, with a local notes feature and the
-shared diagnostics screen. Creating it touched only `apps/globex/**` and `settings.gradle.kts`.
+The worked example is `apps/globex`. It is Globex's own app: sign-in, a local notes feature and
+the shared settings. Creating it touched only `apps/globex/**` and `settings.gradle.kts`.
 
 ## 0. Before you start
 
@@ -110,14 +110,16 @@ object GlobexDefinition {
     fun definition(): AppDefinition = appDefinition {
         auth()                  // shared: sign-in gates the whole app
         notes()                 // app-specific feature (step 6)
-        diagnostics()           // shared: identity, backend ping, design-system catalog
+        settings()              // shared: theme, language, notifications, about, sign out
         startTab(NotesRoute)    // optional; defaults to the first tab
     }
 }
 ```
 
 - **Features:** each one you add is a single call, and the order is the order of the bottom-bar
-  tabs. The shared features, their options and flag keys are listed in
+  tabs.
+- **Diagnostics:** debug builds get a diagnostics screen (identity, backend ping, design-system
+  catalog) under Settings › About. It is not in release builds, and you don't add it. The shared features, their options and flag keys are listed in
   [shared-features.md](shared-features.md).
 - **Sign-in:** `auth()` makes the whole app sign-in only. Features that need a session (profile,
   home, catalog) refuse to start without it, with a message naming `auth()`. Without `auth()` the
@@ -142,6 +144,7 @@ android {
 dependencies {
     implementation(project(":core:shell"))
     implementation(project(":feature:authentication"))   // one line per shared feature used
+    implementation(project(":feature:settings"))
     implementation(project(":apps:globex:notes"))        // app-specific feature modules
 }
 ```

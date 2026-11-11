@@ -52,7 +52,7 @@ npm run dev                                                             # http:/
 ```
 
 Showcase (tenant `acme`) and globex (tenant `globex`) both point their debug builds at
-`http://10.0.2.2:3000/api/v1/`. The diagnostics screen's **Ping** calls `GET health` and shows
+`http://10.0.2.2:3000/api/v1/`. In debug builds, Settings › About › Diagnostics has a **Ping** that calls `GET health` and shows
 whether the backend and its database are up.
 
 ## Requests and errors (for feature authors)

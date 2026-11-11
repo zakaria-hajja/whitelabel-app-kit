@@ -9,5 +9,6 @@ android {
 dependencies {
     implementation(project(":core:shell"))
     implementation(project(":feature:authentication"))
+    implementation(project(":feature:settings"))
     implementation(project(":apps:globex:notes"))
 }

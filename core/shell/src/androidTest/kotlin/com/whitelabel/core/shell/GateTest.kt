@@ -64,6 +64,8 @@ class GateTest {
     private var consumed = 0
     private lateinit var nav: NavHostController
 
+    private var diagnostics = false
+
     private fun show() {
         rule.setContent {
             nav = rememberNavController()
@@ -76,6 +78,7 @@ class GateTest {
                     deepLink = deepLink,
                     onDeepLinkConsumed = { consumed++; deepLink = null },
                     navController = nav,
+                    diagnostics = diagnostics,
                 )
             }
         }
@@ -133,4 +136,22 @@ class GateTest {
         rule.runOnIdle { assertThat(consumed).isEqualTo(1) }
     }
 
+
+    @Test
+    fun diagnostics_registeredOnlyWhenEnabled() {
+        signedIn = true
+        show()
+        rule.runOnIdle { assertThat(nav.graph.findNode<MainGraph>()?.let { (it as androidx.navigation.NavGraph).findNode<com.whitelabel.core.shell.diagnostics.DiagnosticsRoute>() }).isNull() }
+    }
+
+    @Test
+    fun diagnostics_registeredInMainGraphWhenEnabled() {
+        signedIn = true
+        diagnostics = true
+        show()
+        rule.runOnIdle {
+            val main = nav.graph.findNode<MainGraph>() as androidx.navigation.NavGraph
+            assertThat(main.findNode<com.whitelabel.core.shell.diagnostics.DiagnosticsRoute>() != null).isEqualTo(true)
+        }
+    }
 }

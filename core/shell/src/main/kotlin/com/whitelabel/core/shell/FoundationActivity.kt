@@ -14,6 +14,7 @@ import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.AnalyticsEvents
 import com.whitelabel.core.branding.BrandConfig
+import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.domain.SessionState
 import com.whitelabel.core.domain.ThemePreference
@@ -59,6 +60,7 @@ class FoundationActivity : AppCompatActivity() {
                         signedIn = state.session == SessionState.SignedIn,
                         deepLink = deepLink,
                         onDeepLinkConsumed = viewModel::onDeepLinkConsumed,
+                        diagnostics = brand.environment == Environment.DEVELOPMENT,
                         onScreenView = { screen ->
                             analytics.track(AnalyticsEvent(AnalyticsEvents.SCREEN_VIEW, mapOf("screen" to screen)))
                         },

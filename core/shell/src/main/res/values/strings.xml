@@ -16,7 +16,6 @@
     <string name="preview_error_unexpected_response">Unexpected response from the server</string>
     <string name="preview_error_server">The server returned an error</string>
     <string name="preview_error_unknown">Something went wrong</string>
-    <string name="shell_diagnostics_tab">Diagnostics</string>
     <string name="shell_no_features_title">Nothing to show</string>
     <string name="shell_no_features_message">No feature of this app is enabled right now.</string>
 </resources>
