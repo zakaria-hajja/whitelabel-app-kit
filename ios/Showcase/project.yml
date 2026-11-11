@@ -21,7 +21,10 @@ targets:
   Showcase:
     type: application
     platform: iOS
-    sources: [Showcase]
+    sources:
+      - Showcase
+      # The kit's screen labels: a static framework's resources ship through the app.
+      - path: ../WhitelabelKit/Resources/WhitelabelKit.xcstrings
     dependencies:
       - target: WhitelabelKit
     settings:

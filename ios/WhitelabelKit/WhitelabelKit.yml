@@ -8,6 +8,10 @@
 #   WL_SHARED_FRAMEWORKS  where Gradle puts it: <module>/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
 #   WL_GRADLE_ARGS        -Pwhitelabel.mockApi=true in Debug (links the fake backend), empty in Release
 #
+# The app target also adds ../WhitelabelKit/Resources/WhitelabelKit.xcstrings (the kit's labels),
+# links Shared (-framework Shared), runs embedAndSign itself (strings into the app) and excludes
+# x86_64 simulators: see ios/Showcase/project.yml.
+#
 # A local Swift package can't see a framework the app's own build produces, so the kit is a static
 # framework target: it builds Shared first through Gradle and compiles against it; the app links Shared.
 targets:
