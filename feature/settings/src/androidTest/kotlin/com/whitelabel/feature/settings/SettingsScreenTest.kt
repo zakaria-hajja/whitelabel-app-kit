@@ -12,7 +12,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import assertk.assertThat
+import androidx.compose.material3.Text
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import assertk.assertions.containsExactly
+import assertk.assertions.isGreaterThan
+import assertk.assertions.isLessThan
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.domain.ThemePreference
 import com.whitelabel.feature.settings.presentation.SettingsAction
@@ -88,6 +92,38 @@ class SettingsScreenTest {
         rule.onNodeWithText("Theme").performClick()
         tester.emulateSavedInstanceStateRestore()
         rule.onNodeWithText("Light").assertExists()
+    }
+
+    private fun top(text: String) = rule.onNodeWithText(text).getUnclippedBoundsInRoot().top
+
+    @Test
+    fun appSection_rendersAboveTheme() {
+        val currency = SettingsSection(R.string.settings_account) { SettingsValueRow("Currency", "Euro (€)", onClick = {}) }
+        show(SettingsState(appName = "Sample"), SettingsOptions(sections = listOf(currency)))
+        rule.onNodeWithText("Account").assertExists()
+        assertThat(top("Currency")).isLessThan(top("Theme"))
+    }
+
+    @Test
+    fun untitledSection_drawsNoHeader() {
+        val callout = SettingsSection(null) { Text("Reminders are blocked") }
+        show(SettingsState(appName = "Sample"), SettingsOptions(sections = listOf(callout)))
+        rule.onNodeWithText("Reminders are blocked").assertExists()
+        assertThat(top("Reminders are blocked")).isLessThan(top("Appearance"))
+    }
+
+    @Test
+    fun aboutNote_showsUnderVersion() {
+        show(SettingsState(appName = "Sample", versionName = "1.0.0"), SettingsOptions(aboutNote = R.string.settings_retry))
+        rule.onNodeWithText("Retry").performScrollTo()
+        assertThat(top("Retry")).isGreaterThan(top("Version 1.0.0"))
+    }
+
+    @Test
+    fun noSections_keepsTheSharedScreen() {
+        show(SettingsState(appName = "Sample"))
+        assertThat(top("Appearance")).isLessThan(top("Theme"))
+        rule.onNodeWithText("Retry").assertDoesNotExist()
     }
 
     @Test

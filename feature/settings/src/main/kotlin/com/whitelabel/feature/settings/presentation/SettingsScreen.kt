@@ -94,6 +94,9 @@ internal fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(vertical = AppTheme.spacing.sm),
         ) {
+            options.sections.forEach { section ->
+                Section(section.title?.let { stringResource(it) }, section.content)
+            }
             Section(stringResource(R.string.settings_appearance)) {
                 SettingsValueRow(
                     label = stringResource(R.string.settings_theme),
@@ -119,6 +122,14 @@ internal fun SettingsScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = AppTheme.spacing.md, vertical = AppTheme.spacing.sm),
                 )
+                options.aboutNote?.let { note ->
+                    Text(
+                        text = stringResource(note),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = AppTheme.spacing.md),
+                    )
+                }
                 state.supportEmail?.let { email ->
                     LinkRow(stringResource(R.string.settings_contact_support)) { onOpenUrl("mailto:$email") }
                 }
@@ -191,14 +202,16 @@ private fun NotificationsSection(state: SettingsState, onAction: (SettingsAction
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
+private fun Section(title: String?, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xs)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = AppTheme.spacing.md, vertical = AppTheme.spacing.sm),
-        )
+        if (title != null) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = AppTheme.spacing.md, vertical = AppTheme.spacing.sm),
+            )
+        }
         content()
         HorizontalDivider(Modifier.padding(top = AppTheme.spacing.sm))
     }
