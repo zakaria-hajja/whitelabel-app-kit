@@ -2,9 +2,9 @@ package com.whitelabel.feature.settings
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.navigation.compose.composable
 import com.whitelabel.core.shell.AppDefinitionBuilder
 import com.whitelabel.core.shell.FeatureEntry
+import com.whitelabel.core.shell.screen
 import com.whitelabel.core.shell.Tab
 import com.whitelabel.core.shell.diagnostics.DiagnosticsRoute
 import com.whitelabel.feature.settings.presentation.SettingsRoot
@@ -30,7 +30,7 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
             id = "settings",
             tab = Tab(SettingsRoute, R.string.settings_tab, Icons.Default.Settings),
             routes = { scope ->
-                composable<SettingsRoute> {
+                screen<SettingsRoute> {
                     SettingsRoot(
                         options = options,
                         onOpenUrl = scope.navigator::openUrl,

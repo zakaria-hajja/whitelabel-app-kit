@@ -4,9 +4,9 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.compose.composable
 import com.whitelabel.core.shell.AppDefinitionBuilder
 import com.whitelabel.core.shell.FeatureEntry
+import com.whitelabel.core.shell.screen
 import com.whitelabel.core.shell.Tab
 import com.whitelabel.feature.home.presentation.HomeRoot
 import kotlinx.serialization.Serializable
@@ -33,7 +33,7 @@ fun AppDefinitionBuilder.home(options: HomeOptions = HomeOptions()) {
             requiresSignIn = true,
             tab = Tab(HomeRoute, R.string.home_tab, Icons.Default.Home),
             routes = { scope ->
-                composable<HomeRoute> {
+                screen<HomeRoute> {
                     HomeRoot(options = options, canOpenTab = scope.navigator::canOpenTab, onOpenTab = scope.navigator::toTab)
                 }
             },

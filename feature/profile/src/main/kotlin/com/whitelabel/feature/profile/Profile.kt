@@ -2,9 +2,9 @@ package com.whitelabel.feature.profile
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.navigation.compose.composable
 import com.whitelabel.core.shell.AppDefinitionBuilder
 import com.whitelabel.core.shell.FeatureEntry
+import com.whitelabel.core.shell.screen
 import com.whitelabel.core.shell.Tab
 import com.whitelabel.feature.profile.presentation.password.ChangePasswordRoot
 import com.whitelabel.feature.profile.presentation.profile.ProfileRoot
@@ -33,11 +33,11 @@ fun AppDefinitionBuilder.profile(options: ProfileOptions = ProfileOptions()) {
             requiresSignIn = true,
             tab = Tab(ProfileRoute, R.string.profile_tab, Icons.Default.Person),
             routes = { scope ->
-                composable<ProfileRoute> {
+                screen<ProfileRoute> {
                     ProfileRoot(options = options, onChangePassword = { scope.navigator.navigate(ChangePasswordRoute) })
                 }
                 if (options.allowPasswordChange) {
-                    composable<ChangePasswordRoute> { ChangePasswordRoot(onBack = scope.navigator::back) }
+                    screen<ChangePasswordRoute> { ChangePasswordRoot(onBack = scope.navigator::back) }
                 }
             },
         ),

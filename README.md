@@ -35,6 +35,8 @@ Debug builds talk to `http://10.0.2.2:3000/api/v1/`, the host machine as seen fr
 (`cd ../backend-api && docker compose up -d postgres && npm run db:deploy && npm run db:seed && npm run dev`).
 The seed creates `alice@shared.test` and `bob@shared.test` (password `Password123!`) in both
 tenants: showcase uses `acme`, globex uses `globex`. Or create an account in the app.
+
+**Android Studio:** pick the `showcase` or `globex` run configuration (shared in `.run/`).
 Release builds are unsigned unless the app has a `signing.properties`; see
 [docs/release-signing.md](docs/release-signing.md).
 
