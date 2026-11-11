@@ -1,6 +1,6 @@
 import SwiftUI
 
-/** A setting and its current value on one row; tapping opens its choices. */
+/** A setting and its current value, on one line or with the value under the label as the pack says; tapping opens its choices. */
 public struct AppValueRow: View {
     @Environment(\.appStyle) private var style
     private let label: String
@@ -16,9 +16,18 @@ public struct AppValueRow: View {
     public var body: some View {
         Button(action: action) {
             HStack {
-                Text(label).font(style.typography.body).foregroundStyle(style.colors.onSurface)
-                Spacer(minLength: Spacing.md)
-                Text(value).font(style.typography.body).foregroundStyle(style.colors.onSurfaceVariant)
+                switch style.pack.valueRows {
+                case .inline:
+                    Text(label).font(style.typography.body).foregroundStyle(style.colors.onSurface)
+                    Spacer(minLength: Spacing.md)
+                    Text(value).font(style.typography.body).foregroundStyle(style.colors.onSurfaceVariant)
+                case .stacked:
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(label).font(style.typography.body).foregroundStyle(style.colors.onSurface)
+                        Text(value).font(style.typography.label).foregroundStyle(style.colors.onSurfaceVariant)
+                    }
+                    Spacer(minLength: Spacing.md)
+                }
                 Image(systemName: "chevron.right").font(.footnote).foregroundStyle(style.colors.onSurfaceVariant).accessibilityHidden(true)
             }
             .frame(minHeight: style.pack.sizing.listRowMinHeight)

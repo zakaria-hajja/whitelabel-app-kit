@@ -20,6 +20,9 @@ final class StylePackTests: XCTestCase {
         XCTAssertEqual(gallery.motion.emphasis, .spring(dampingRatio: 0.55, stiffness: 380))
         XCTAssertEqual(gallery.motion.snackbar, .tween(milliseconds: 200, CubicBezier(0.2, 0, 0, 1)))
         XCTAssertEqual(gallery.haptics, [.confirm: .tick, .success: .confirm, .toggle: .toggle])
+        XCTAssertEqual(gallery.topBar, .flat)
+        XCTAssertEqual(gallery.sectionHeader, .caption)
+        XCTAssertEqual(gallery.valueRows, .stacked)
     }
 
     func testMaterialMatchesKotlin() {
@@ -28,6 +31,9 @@ final class StylePackTests: XCTestCase {
         XCTAssertEqual(material.corners, Corners(small: 8, medium: 12, large: 16)) // the foundation's brand_corner_* defaults
         XCTAssertEqual(material.surfaces, .shadow)
         XCTAssertEqual(material.sizing, Sizing(controlHeight: 48, listRowMinHeight: 56, screenGutter: 16))
+        XCTAssertEqual(material.topBar, .raised)
+        XCTAssertEqual(material.sectionHeader, .accent)
+        XCTAssertEqual(material.valueRows, .inline)
         XCTAssertFalse(material.type.titlesUseBodyFont)
         XCTAssertEqual(material.motion.screenEnter, .tween(milliseconds: 700, CubicBezier(0.4, 0, 0.2, 1)))
         XCTAssertEqual(material.motion.emphasis, .spring(dampingRatio: 1, stiffness: 400))
