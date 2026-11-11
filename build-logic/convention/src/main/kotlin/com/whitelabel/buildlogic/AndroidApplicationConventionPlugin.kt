@@ -36,7 +36,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 versionCode = app.versionCode
                 versionName = app.versionName
                 targetSdk = TARGET_SDK
-                testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                testInstrumentationRunner = "com.whitelabel.core.testing.android.FoundationTestRunner"
                 resValue("string", "app_name", androidStringResource(app.appName))
                 manifestPlaceholders["deepLinkScheme"] = app.deepLinkScheme
             }
@@ -72,6 +72,12 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         }
 
         addTestDependencies()
+
+        // End-to-end tests: a Hilt test app talking to the in-memory backend, never a server.
+        dependencies.add("androidTestImplementation", project(":core:testing-android"))
+        dependencies.add("androidTestImplementation", project(":core:mockapi"))
+        dependencies.add("androidTestImplementation", libs.library("hilt-android-testing"))
+        dependencies.add("kspAndroidTest", libs.library("hilt-compiler"))
 
         // -Pwhitelabel.mockApi=true: debug builds talk to :core:mockapi instead of a server.
         mockApiDependency(mapOf(MOCK_API_PROPERTY to providers.gradleProperty(MOCK_API_PROPERTY).orNull))
