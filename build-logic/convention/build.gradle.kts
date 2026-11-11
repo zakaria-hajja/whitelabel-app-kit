@@ -48,6 +48,10 @@ gradlePlugin {
             id = "whitelabel.kmp.library"
             implementationClass = "com.whitelabel.buildlogic.KmpLibraryConventionPlugin"
         }
+        register("kmpResources") {
+            id = "whitelabel.kmp.resources"
+            implementationClass = "com.whitelabel.buildlogic.KmpResourcesConventionPlugin"
+        }
         register("hilt") {
             id = "whitelabel.hilt"
             implementationClass = "com.whitelabel.buildlogic.HiltConventionPlugin"

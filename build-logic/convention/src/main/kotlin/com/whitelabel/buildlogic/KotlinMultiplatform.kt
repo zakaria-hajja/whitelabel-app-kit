@@ -27,7 +27,10 @@ internal fun Project.configureKotlinMultiplatform() {
             namespace = kmpNamespace(path)
             compileSdk = COMPILE_SDK
             minSdk = MIN_SDK
-            withDeviceTestBuilder { sourceSetTreeName = "test" }.configure {
+            // Device tests are only for Android-specific code (Context, Keystore): their own source
+            // set, not commonTest, which already runs on the JVM and iOS (and whose backtick names
+            // D8 rejects below DEX 040).
+            withDeviceTestBuilder {}.configure {
                 instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
             }
         }
@@ -48,6 +51,12 @@ internal fun Project.configureKotlinMultiplatform() {
         add("jvmTestImplementation", libs.library("kotlin-test-junit5"))
         add("jvmTestImplementation", libs.library("junit-jupiter"))
         add("jvmTestRuntimeOnly", libs.library("junit-platform-launcher"))
+        // Device tests run under AndroidJUnitRunner, i.e. JUnit 4.
+        add("androidDeviceTestImplementation", libs.library("kotlin-test-junit"))
+        add("androidDeviceTestImplementation", libs.library("assertk"))
+        add("androidDeviceTestImplementation", libs.library("kotlinx-coroutines-test"))
+        add("androidDeviceTestImplementation", libs.library("androidx-test-runner"))
+        add("androidDeviceTestImplementation", libs.library("androidx-test-ext-junit"))
     }
 
     tasks.withType<Test>().configureEach { useJUnitPlatform() }
