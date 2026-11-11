@@ -89,6 +89,9 @@ Leave `api.debug.baseUrl`, `api.release.baseUrl` and `api.tenant` out of `app.pr
 - the app refuses to start if its definition includes `auth()` or any feature that calls the API,
   with a message naming the feature.
 
+Local notifications (renewal reminders and the like) need no backend either: see
+[reminders.md](reminders.md).
+
 ## 5. Backups
 
 The shell backs up the app's `JsonStore` files (`filesDir/datastore/`) through Android backup, so

@@ -15,6 +15,7 @@ val sharedModules = listOf(
     ":core:network",
     ":core:designsystem",
     ":core:datastore",
+    ":core:reminders",
     ":core:shell",
     ":core:ui",
     ":core:analytics",
