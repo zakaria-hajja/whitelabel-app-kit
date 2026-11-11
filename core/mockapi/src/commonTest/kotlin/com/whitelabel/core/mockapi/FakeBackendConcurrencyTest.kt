@@ -41,4 +41,27 @@ class FakeBackendConcurrencyTest {
         assertThat(outcomes.toSet().size).isEqualTo(50)
         assertThat(backend.exchanges.map { it.status }).doesNotContain(500)
     }
+
+    // The Debug app saves each report: the last one written must be the current state, or a
+    // relaunch restores a rotated-away refresh token and signs the user out.
+    @Test fun `the last sessions report is the current state under parallel requests`() = runTest {
+        repeat(20) {
+            val backend = FakeBackend()
+            var last: String? = null
+            backend.onSessionsChanged = { last = it }
+            withContext(Dispatchers.Default) {
+                coroutineScope {
+                    (1..20).map {
+                        async {
+                            val login = buildJsonObject { put("email", "alice@shared.test"); put("password", FakeData.PASSWORD) }
+                            val signedIn = backend.client().postPublicResult<JsonObject, JsonObject>("auth/login", login)
+                            val refresh = (signedIn as Result.Success).data["tokens"]!!.jsonObject["refreshToken"]!!.jsonPrimitive.content
+                            backend.client().postPublicResult<JsonObject, JsonObject>("auth/refresh", buildJsonObject { put("refreshToken", refresh) })
+                        }
+                    }.awaitAll()
+                }
+            }
+            assertThat(last).isEqualTo(backend.exportSessions())
+        }
+    }
 }

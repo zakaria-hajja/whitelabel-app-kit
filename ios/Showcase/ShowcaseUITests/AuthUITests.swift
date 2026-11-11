@@ -66,7 +66,8 @@ final class AuthUITests: XCTestCase {
         XCTAssertTrue(offers.waitForExistence(timeout: 10))
         offers.switches.firstMatch.tap()
         XCTAssertTrue(waitFor(offers, value: "1"))
-        sleep(2)
+        // As Android's E2E: the expired token was refused, refreshed once, and the request retried.
+        XCTAssertTrue(app.fakeRequests().contains("401 PATCH /api/v1/settings | 200 POST /api/v1/auth/refresh | 200 PATCH /api/v1/settings"))
         XCTAssertFalse(signIn.title.exists)
         XCTAssertEqual(offers.value as? String, "1")
     }
@@ -88,9 +89,14 @@ final class AuthUITests: XCTestCase {
         app.launchFresh(["-fakeResetToken", "t1"])
         signIn.signInToTabs()
         app.openLink("showcase://reset-password?token=t1")
-        sleep(2)
+        sleep(1)
         XCTAssertFalse(app.staticTexts["Choose a new password"].exists)
         XCTAssertTrue(app.tabBars.buttons["Settings"].exists)
+        // Ignored, not held: signing out doesn't bring it back.
+        settings.open().signOut()
+        XCTAssertTrue(signIn.waitForSignIn())
+        sleep(1)
+        XCTAssertFalse(app.staticTexts["Choose a new password"].exists)
     }
 
     /** Review Focus 3: without the Keychain key (a reinstall, a restored backup) the token file can't be read: signed out, no crash. */

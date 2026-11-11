@@ -32,7 +32,7 @@ struct ForgotPasswordForm: View {
                 SharedTextField(label: KitStrings.text("Email"), text: Binding(get: { state.email }, set: { send(ForgotPasswordActionOnEmailChange(email: $0)) }), error: state.emailError)
                     .emailInput()
                 FormError(error: state.error)
-                SubmitButton(label: KitStrings.text("Send link"), enabled: !state.email.trimmingCharacters(in: .whitespaces).isEmpty, loading: state.isSubmitting) {
+                SubmitButton(label: KitStrings.text("Send link"), enabled: state.canSubmit, loading: state.isSubmitting) {
                     send(ForgotPasswordActionOnSubmit.shared)
                 }
             }

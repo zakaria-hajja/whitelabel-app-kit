@@ -49,7 +49,7 @@ internal fun ForgotPasswordScreen(state: ForgotPasswordState, onAction: (ForgotP
         AppPrimaryButton(
             text = stringResource(R.string.auth_send_link),
             onClick = { onAction(ForgotPasswordAction.OnSubmit) },
-            enabled = state.email.isNotBlank() && !state.isSubmitting,
+            enabled = state.canSubmit,
             loading = state.isSubmitting,
             modifier = Modifier.fillMaxWidth(),
         )

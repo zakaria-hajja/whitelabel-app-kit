@@ -10,7 +10,8 @@ import Shared
  * - `-fakeResetToken t1`: the fake issues reset token `t1`, already issued for alice@shared.test;
  * - `-fakeFeatures catalog=false,profile=true`: the fake's remote flags;
  * - `-fakeConfigDelayMs 5000`: the fake answers the config that late;
- * - `<scheme>://_fake/offline|online|expire-tokens|revoke-sessions`: steer the running fake.
+ * - `<scheme>://_fake/offline|online|expire-tokens|revoke-sessions`: steer the running fake;
+ * - `<scheme>://_fake/log`: show the fake's recent requests in the `debug.fakeLog` probe.
  *
  * The fake keeps its sessions in Caches across launches, as a real server would, so a relaunch
  * stays signed in (accounts registered in a run are not kept).
@@ -59,6 +60,13 @@ struct DebugControls {
         }
     }
 
+    /** The fake's last requests, oldest first: `401 PATCH /api/v1/settings | 200 POST /api/v1/auth/refresh | …`. */
+    @MainActor static func recentRequests(limit: Int = 12) -> String {
+        IosMock.shared.fakeBackend().exchanges.suffix(limit)
+            .map { "\($0.status) \($0.method.uppercased()) \($0.path)" }
+            .joined(separator: " | ")
+    }
+
     /** A `_fake/<command>` link. */
     @MainActor static func run(_ command: String) {
         let fake = IosMock.shared.fakeBackend()
@@ -72,16 +80,28 @@ struct DebugControls {
     }
 }
 
-/** The color scheme in effect, for UI tests (a theme change must apply at once). */
-struct ColorSchemeProbe: View {
+/** Invisible values UI tests read: the applied color scheme, the last link received, the fake's log. */
+struct DebugProbes: View {
+    let lastLink: String
+    let fakeLog: String
     @SwiftUI.Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        Text(colorScheme == .dark ? "dark" : "light")
+        VStack(alignment: .leading, spacing: 0) {
+            probe(colorScheme == .dark ? "dark" : "light", id: "debug.colorScheme")
+            probe(lastLink, id: "debug.lastLink")
+            probe(fakeLog, id: "debug.fakeLog")
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func probe(_ value: String, id: String) -> some View {
+        Text(value.isEmpty ? "-" : value)
             .font(.system(size: 1))
+            .lineLimit(1)
+            .frame(width: 2, height: 1, alignment: .leading)
             .opacity(0.01)
-            .allowsHitTesting(false)
-            .accessibilityIdentifier("debug.colorScheme")
+            .accessibilityIdentifier(id)
     }
 }
 #endif

@@ -69,7 +69,7 @@ class FakeBackend internal constructor(private val now: () -> Instant) {
      * across launches as a real server would (accounts registered in a run are not kept).
      */
     @Volatile var onSessionsChanged: ((String) -> Unit)? = null
-        set(value) {
+        set(value) = synchronized(lock) {
             lastExport = exportSessions()
             field = value
         }
@@ -160,11 +160,19 @@ class FakeBackend internal constructor(private val now: () -> Instant) {
         refresh.putAll(restored.third)
     }
 
+    /**
+     * Export, compare and notify under one lock: a request that exported earlier can never report
+     * after a newer one, so the last report written is always the current state.
+     */
     private fun reportSessions() {
-        val listener = onSessionsChanged ?: return
-        val export = exportSessions()
-        val changed = synchronized(lock) { (export != lastExport).also { lastExport = export } }
-        if (changed) listener(export)
+        if (onSessionsChanged == null) return
+        synchronized(lock) {
+            val listener = onSessionsChanged ?: return
+            val export = exportSessions()
+            if (export == lastExport) return
+            lastExport = export
+            listener(export)
+        }
     }
 
     private data class Access(val userId: String, val sessionId: String, val expiresAt: Instant)

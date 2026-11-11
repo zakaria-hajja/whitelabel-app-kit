@@ -45,7 +45,7 @@ struct ResetPasswordForm: View {
                 SharedTextField(label: KitStrings.text("New password"), text: Binding(get: { state.password }, set: { send(ResetPasswordActionOnPasswordChange(password: $0)) }), error: state.passwordError, isSecure: true)
                     .textContentType(.newPassword)
                 FormError(error: state.error)
-                SubmitButton(label: KitStrings.text("Save password"), enabled: !state.password.isEmpty, loading: state.isSubmitting) {
+                SubmitButton(label: KitStrings.text("Save password"), enabled: state.canSubmit, loading: state.isSubmitting) {
                     send(ResetPasswordActionOnSubmit.shared)
                 }
             }
