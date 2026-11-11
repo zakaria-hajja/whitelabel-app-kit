@@ -70,7 +70,8 @@ internal fun offeredLanguages(options: List<String>, remote: List<String>): List
 /**
  * Theme and language are device settings: applied at once, offline and signed out too, and sent to
  * the server only as a best effort. Notifications live on the server: a toggle shows at once, its
- * request runs in order with the others, and a failure puts the toggle back.
+ * request runs in order with the others, and a failure puts back what the server last confirmed,
+ * unless a newer toggle of the same kind is still on its way.
  */
 @HiltViewModel
 internal class SettingsViewModel @Inject constructor(
@@ -94,6 +95,13 @@ internal class SettingsViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     private val notificationWrites = Mutex()
+
+    /** What the server last confirmed; the switches may be ahead of it while requests run. */
+    private var confirmed: NotificationSettings? = null
+
+    /** The newest toggle per kind, so a failure only reverts when no newer toggle of that kind follows. */
+    private val latestToggle = mutableMapOf<NotificationKind, Int>()
+    private var toggleCount = 0
 
     init {
         viewModelScope.launch {
@@ -151,18 +159,33 @@ internal class SettingsViewModel @Inject constructor(
     private suspend fun loadNotifications() {
         _state.update { it.copy(notificationsError = null) }
         source.get()
-            .onSuccess { settings -> _state.update { it.copy(notifications = settings) } }
+            .onSuccess { settings ->
+                confirmed = settings
+                _state.update { it.copy(notifications = settings) }
+            }
             .onFailure { error -> _state.update { it.copy(notificationsError = error.toUiText()) } }
     }
 
     private fun toggle(kind: NotificationKind, enabled: Boolean) {
         if (_state.value.notifications == null) return
+        val toggle = ++toggleCount
+        latestToggle[kind] = toggle
         _state.update { it.copy(notifications = it.notifications?.with(kind, enabled)) }
         viewModelScope.launch {
             notificationWrites.withLock {
-                source.patch(kind.patch(enabled)).onFailure { error ->
-                    _state.update { it.copy(notifications = it.notifications?.with(kind, !enabled), message = error.toUiText()) }
-                }
+                source.patch(kind.patch(enabled))
+                    .onSuccess { confirmed = confirmed?.with(kind, enabled) }
+                    .onFailure { error ->
+                        // A newer toggle of this kind will set the server (and the switch) itself.
+                        val serverValue = confirmed?.valueOf(kind)
+                        _state.update {
+                            val revert = latestToggle[kind] == toggle && serverValue != null
+                            it.copy(
+                                notifications = if (revert) it.notifications?.with(kind, checkNotNull(serverValue)) else it.notifications,
+                                message = error.toUiText(),
+                            )
+                        }
+                    }
             }
         }
     }
@@ -180,6 +203,12 @@ private fun NotificationSettings.with(kind: NotificationKind, enabled: Boolean) 
     NotificationKind.PUSH -> copy(push = enabled)
     NotificationKind.EMAIL -> copy(email = enabled)
     NotificationKind.MARKETING -> copy(marketing = enabled)
+}
+
+private fun NotificationSettings.valueOf(kind: NotificationKind) = when (kind) {
+    NotificationKind.PUSH -> push
+    NotificationKind.EMAIL -> email
+    NotificationKind.MARKETING -> marketing
 }
 
 private fun NotificationKind.patch(enabled: Boolean) = when (this) {

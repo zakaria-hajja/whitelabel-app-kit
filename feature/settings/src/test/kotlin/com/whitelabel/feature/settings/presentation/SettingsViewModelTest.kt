@@ -166,6 +166,34 @@ class SettingsViewModelTest {
         assertThat(viewModel.state.value.notifications?.push).isEqualTo(false)
     }
 
+    @Test fun `a failed toggle followed by newer ones ends where the server does`() = runTest {
+        // push starts on. Off (fails), on (ok), off (ok): the server ends off, and so must the switch.
+        val first = CompletableDeferred<Unit>()
+        source.patchAnswer = { patch ->
+            if (source.patches.size == 1) {
+                first.await()
+                Result.Error(DataError.Network.NO_INTERNET)
+            } else {
+                Result.Success(Unit)
+            }
+        }
+        val viewModel = viewModel()
+        viewModel.onAction(SettingsAction.OnNotificationToggle(NotificationKind.PUSH, false))
+        viewModel.onAction(SettingsAction.OnNotificationToggle(NotificationKind.PUSH, true))
+        viewModel.onAction(SettingsAction.OnNotificationToggle(NotificationKind.PUSH, false))
+        first.complete(Unit)
+        assertThat(source.patches.last()).isEqualTo(SettingsPatch(push = false))
+        assertThat(viewModel.state.value.notifications?.push).isEqualTo(false)
+    }
+
+    @Test fun `the latest toggle failing restores what the server last confirmed`() = runTest {
+        source.patchAnswer = { patch -> if (patch.push == false) Result.Error(DataError.Network.NO_INTERNET) else Result.Success(Unit) }
+        val viewModel = viewModel()
+        viewModel.onAction(SettingsAction.OnNotificationToggle(NotificationKind.PUSH, false)) // fails: server still on
+        assertThat(viewModel.state.value.notifications?.push).isEqualTo(true)
+        assertThat(viewModel.state.value.message).isNotNull()
+    }
+
     @Test fun `sign out asks first then signs out`() = runTest {
         val session = FakeSession(SessionState.SignedIn)
         val viewModel = viewModel(session)
