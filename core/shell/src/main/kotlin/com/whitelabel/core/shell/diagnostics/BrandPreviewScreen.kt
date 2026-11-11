@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.whitelabel.core.shell.R
 import com.whitelabel.core.branding.BrandConfig
@@ -34,7 +34,7 @@ import com.whitelabel.core.designsystem.theme.AppTheme
  * [diagnostics]; Phase 4 makes it debug-only under Settings › About.
  */
 @Composable
-internal fun BrandPreviewRoot(onBack: () -> Unit, viewModel: BrandPreviewViewModel = hiltViewModel()) {
+internal fun BrandPreviewRoot(onBack: () -> Unit, viewModel: BrandPreviewViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     BrandPreviewScreen(state = state, onAction = viewModel::onAction, onBack = onBack)
 }

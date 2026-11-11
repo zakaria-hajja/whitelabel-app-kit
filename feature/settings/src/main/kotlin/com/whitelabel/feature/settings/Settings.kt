@@ -28,7 +28,7 @@ data class SettingsOptions(
 /**
  * An app's own settings section, shown above the shared ones in list order. A null [title] draws no
  * header (for a callout). [content] is composed inside the settings screen, so it may use
- * `hiltViewModel()` for its own state; build its rows from [SettingsValueRow] and [SettingsChoiceSheet].
+ * `koinViewModel()` for its own state; build its rows from [SettingsValueRow] and [SettingsChoiceSheet].
  */
 class SettingsSection(@StringRes val title: Int?, val content: @Composable () -> Unit)
 

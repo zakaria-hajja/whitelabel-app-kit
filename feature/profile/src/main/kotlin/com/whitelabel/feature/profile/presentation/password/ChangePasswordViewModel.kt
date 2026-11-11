@@ -12,8 +12,6 @@ import com.whitelabel.core.ui.UiText
 import com.whitelabel.core.ui.toUiText
 import com.whitelabel.feature.profile.R
 import com.whitelabel.feature.profile.domain.PasswordDataSource
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -42,8 +40,7 @@ internal sealed interface ChangePasswordAction {
 }
 
 /** Passwords are never trimmed and never saved (no SavedStateHandle). */
-@HiltViewModel
-internal class ChangePasswordViewModel @Inject constructor(
+internal class ChangePasswordViewModel(
     private val passwords: PasswordDataSource,
 ) : ViewModel() {
 

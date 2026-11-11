@@ -9,8 +9,6 @@ import com.whitelabel.core.domain.UserRepository
 import com.whitelabel.core.ui.UiText
 import com.whitelabel.core.ui.toUiText
 import com.whitelabel.feature.profile.R
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -45,8 +43,7 @@ internal sealed interface ProfileAction {
 }
 
 /** Edits the signed-in user's names. The email is shown, not edited. */
-@HiltViewModel
-internal class ProfileViewModel @Inject constructor(
+internal class ProfileViewModel(
     private val users: UserRepository,
 ) : ViewModel() {
 

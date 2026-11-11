@@ -19,8 +19,6 @@ import com.whitelabel.feature.authentication.R
 import com.whitelabel.feature.authentication.domain.AuthValidator
 import com.whitelabel.feature.authentication.presentation.toAuthUiText
 import com.whitelabel.feature.authentication.presentation.toUiText
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -54,8 +52,7 @@ private const val KEY_FIRST = "firstName"
 private const val KEY_LAST = "lastName"
 
 /** Registration signs in too; the shell then shows the app. */
-@HiltViewModel
-internal class RegisterViewModel @Inject constructor(
+internal class RegisterViewModel(
     private val session: SessionRepository,
     private val analytics: Analytics,
     private val savedState: SavedStateHandle,

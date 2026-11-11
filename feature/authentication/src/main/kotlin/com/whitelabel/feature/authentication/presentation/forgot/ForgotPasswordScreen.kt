@@ -11,7 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.whitelabel.core.designsystem.component.AppPrimaryButton
 import com.whitelabel.core.designsystem.component.AppTextButton
@@ -22,7 +22,7 @@ import com.whitelabel.feature.authentication.presentation.AuthForm
 import com.whitelabel.feature.authentication.presentation.FormError
 
 @Composable
-internal fun ForgotPasswordRoot(onBack: () -> Unit, viewModel: ForgotPasswordViewModel = hiltViewModel()) {
+internal fun ForgotPasswordRoot(onBack: () -> Unit, viewModel: ForgotPasswordViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     ForgotPasswordScreen(state = state, onAction = viewModel::onAction, onBack = onBack)
 }

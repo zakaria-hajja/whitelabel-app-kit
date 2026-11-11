@@ -16,10 +16,6 @@ import com.whitelabel.feature.catalog.data.MAX_QUERY_LENGTH
 import com.whitelabel.feature.catalog.domain.CatalogDataSource
 import com.whitelabel.feature.catalog.domain.CatalogItem
 import com.whitelabel.feature.catalog.domain.CatalogQuery
-import dagger.assisted.Assisted
-import dagger.assisted.AssistedFactory
-import dagger.assisted.AssistedInject
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,17 +67,11 @@ internal sealed interface CatalogListAction {
  * so an older query's results never replace a newer one's.
  */
 @OptIn(FlowPreview::class)
-@HiltViewModel(assistedFactory = CatalogListViewModel.Factory::class)
-internal class CatalogListViewModel @AssistedInject constructor(
-    @Assisted private val options: CatalogOptions,
+internal class CatalogListViewModel(
+    private val options: CatalogOptions,
     private val source: CatalogDataSource,
     private val analytics: Analytics,
 ) : ViewModel() {
-
-    @AssistedFactory
-    interface Factory {
-        fun create(options: CatalogOptions): CatalogListViewModel
-    }
 
     private val _state = MutableStateFlow(CatalogListState(sort = options.defaultSort))
     val state = _state.asStateFlow()

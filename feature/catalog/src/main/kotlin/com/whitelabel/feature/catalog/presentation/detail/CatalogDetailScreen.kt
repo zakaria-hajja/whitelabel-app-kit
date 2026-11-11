@@ -20,7 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.whitelabel.core.designsystem.component.AppLoadingIndicator
 import com.whitelabel.core.designsystem.component.AppScaffold
@@ -32,7 +32,7 @@ import com.whitelabel.feature.catalog.domain.CatalogItem
 import com.whitelabel.feature.catalog.presentation.CatalogImage
 
 @Composable
-internal fun CatalogDetailRoot(onBack: () -> Unit, viewModel: CatalogDetailViewModel = hiltViewModel()) {
+internal fun CatalogDetailRoot(onBack: () -> Unit, viewModel: CatalogDetailViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     CatalogDetailScreen(state = state, onAction = viewModel::onAction, onBack = onBack)
 }

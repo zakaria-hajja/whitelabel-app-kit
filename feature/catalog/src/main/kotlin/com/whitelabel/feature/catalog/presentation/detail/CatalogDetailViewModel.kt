@@ -14,8 +14,6 @@ import com.whitelabel.core.ui.UiText
 import com.whitelabel.core.ui.toUiText
 import com.whitelabel.feature.catalog.domain.CatalogDataSource
 import com.whitelabel.feature.catalog.domain.CatalogItem
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -34,8 +32,7 @@ internal sealed interface CatalogDetailAction {
 }
 
 /** One item, opened from the list or from `<scheme>://catalog/{id}`; the id is the route's `id`. */
-@HiltViewModel
-internal class CatalogDetailViewModel @Inject constructor(
+internal class CatalogDetailViewModel(
     private val source: CatalogDataSource,
     private val analytics: Analytics,
     savedState: SavedStateHandle,

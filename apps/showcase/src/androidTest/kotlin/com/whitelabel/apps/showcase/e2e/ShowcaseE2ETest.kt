@@ -2,6 +2,10 @@ package com.whitelabel.apps.showcase.e2e
 
 import android.content.Intent
 import android.net.Uri
+import com.whitelabel.core.testing.android.waitForText
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
@@ -13,31 +17,26 @@ import com.whitelabel.apps.showcase.e2e.robots.ProfileRobot
 import com.whitelabel.core.mockapi.FakeBackend
 import com.whitelabel.core.mockapi.FakeData
 import com.whitelabel.core.shell.FoundationActivity
-import com.whitelabel.core.testing.android.EndAppScopeRule
-import com.whitelabel.core.testing.android.ResetAppDataRule
+import com.whitelabel.core.testing.android.FreshAppRule
 import com.whitelabel.core.testing.android.robots.SettingsRobot
 import com.whitelabel.core.testing.android.robots.SignInRobot
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
-import javax.inject.Inject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
+import org.koin.core.context.GlobalContext
 
 /** Showcase's main flows, end to end, against the in-memory backend. Each test starts signed out. */
-@HiltAndroidTest
 class ShowcaseE2ETest {
 
-    private val hilt = HiltAndroidRule(this)
     private val compose = createEmptyComposeRule()
 
-    @get:Rule val rules: RuleChain = RuleChain.outerRule(ResetAppDataRule()).around(hilt).around(EndAppScopeRule()).around(compose)
+    @get:Rule val rules: RuleChain = RuleChain.outerRule(FreshAppRule()).around(compose)
 
-    @Inject lateinit var backend: FakeBackend
+    /** This test's fake: read from the graph each time, since every test starts a new one. */
+    private val backend: FakeBackend get() = GlobalContext.get().get()
 
     private val signIn = SignInRobot(compose, appName = "Showcase")
     private val home = HomeRobot(compose)
@@ -45,8 +44,6 @@ class ShowcaseE2ETest {
     private val profile = ProfileRobot(compose)
     private val settings = SettingsRobot(compose)
     private var scenario: ActivityScenario<FoundationActivity>? = null
-
-    @Before fun inject() = hilt.inject()
 
     @After fun close() {
         scenario?.close()
@@ -207,4 +204,17 @@ class ShowcaseE2ETest {
         catalog.showsDetail("Sample item 7")
     }
 
+    /** A reset link's token reaches the reset screen through navigation and SavedStateHandle. */
+    @Test fun resetLink_carriesItsTokenToTheReset() {
+        val token = checkNotNull(backend.issueResetToken("alice@shared.test"))
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val link = Intent(Intent.ACTION_VIEW, Uri.parse("showcase://reset-password?token=$token"))
+            .setClassName(context, FoundationActivity::class.java.name)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        launchWith(link)
+        compose.waitForText("Choose a new password")
+        compose.onNodeWithText("New password").performTextInput("Another-pass-1")
+        compose.onNodeWithText("Save password").performClick()
+        compose.waitForText("Your password has been changed. Sign in with your new password.")
+    }
 }

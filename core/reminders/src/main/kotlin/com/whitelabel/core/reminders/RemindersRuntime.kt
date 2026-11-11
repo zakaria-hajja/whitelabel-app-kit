@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * One engine per process, shared by the app (through Hilt) and the receivers (which run without Hilt,
+ * One engine per process, shared by the app (through Koin) and the receivers (which run without Koin,
  * e.g. right after a reboot). A JsonStore file may only be open once per process, hence the singleton.
  */
 internal class RemindersRuntime private constructor(context: Context) {

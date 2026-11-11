@@ -6,9 +6,8 @@ import com.whitelabel.core.common.map
 import com.whitelabel.core.network.getResult
 import io.ktor.client.HttpClient
 import kotlinx.serialization.Serializable
-import javax.inject.Inject
 
-internal class KtorHealthDataSource @Inject constructor(
+internal class KtorHealthDataSource(
     private val httpClient: HttpClient,
 ) : HealthDataSource {
     override suspend fun check(): Result<HealthStatus, DataError> =

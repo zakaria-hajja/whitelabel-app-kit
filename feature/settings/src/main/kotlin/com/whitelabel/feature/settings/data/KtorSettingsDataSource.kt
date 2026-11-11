@@ -11,7 +11,6 @@ import com.whitelabel.feature.settings.domain.NotificationSettings
 import com.whitelabel.feature.settings.domain.SettingsDataSource
 import com.whitelabel.feature.settings.domain.SettingsPatch
 import io.ktor.client.HttpClient
-import javax.inject.Inject
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -33,7 +32,7 @@ private data class SettingsPatchDto(
 @Serializable
 private data class NotificationsPatchDto(val push: Boolean? = null, val email: Boolean? = null, val marketing: Boolean? = null)
 
-internal class KtorSettingsDataSource @Inject constructor(
+internal class KtorSettingsDataSource(
     private val client: HttpClient,
 ) : SettingsDataSource {
 

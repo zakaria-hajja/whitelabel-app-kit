@@ -28,6 +28,9 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
+/** Base URL for apps without a backend: `.invalid` never resolves (RFC 2606), and nothing calls it. */
+internal const val NO_BACKEND_BASE_URL = "https://no-backend.invalid/"
+
 /** Qualifies the Boolean that is true when a contributor (the mock backend) replaced the HTTP engine. */
 internal const val USING_MOCK_API = "usingMockApi"
 

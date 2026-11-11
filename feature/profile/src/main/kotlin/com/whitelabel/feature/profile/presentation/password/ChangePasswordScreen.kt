@@ -18,7 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.whitelabel.core.designsystem.component.AppPrimaryButton
 import com.whitelabel.core.designsystem.component.AppScaffold
@@ -27,7 +27,7 @@ import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.feature.profile.R
 
 @Composable
-internal fun ChangePasswordRoot(onBack: () -> Unit, viewModel: ChangePasswordViewModel = hiltViewModel()) {
+internal fun ChangePasswordRoot(onBack: () -> Unit, viewModel: ChangePasswordViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     ChangePasswordScreen(state = state, onAction = viewModel::onAction, onBack = onBack)
 }

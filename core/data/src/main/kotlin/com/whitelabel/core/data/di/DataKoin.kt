@@ -31,23 +31,23 @@ import org.koin.dsl.module
 import org.koin.dsl.onClose
 
 /** The scope that lives as long as the app's graph, for work that must outlive a screen. Cancelled when Koin stops. */
-val ApplicationScopeQualifier: Qualifier = named("applicationScope")
+val ApplicationScope: Qualifier = named("applicationScope")
 
 /**
  * The repositories and their stores. Needs a platform module for [StorePaths], [TokenCipher] and
  * [LanguageRepository] ([androidDataModule] on Android), plus `HttpClient` and `BrandConfig`.
  */
 val dataModule = module {
-    single<CoroutineScope>(ApplicationScopeQualifier) { CoroutineScope(SupervisorJob() + Dispatchers.Default) } onClose { it?.cancel() }
-    single { TokenStore(get<StorePaths>().file("session"), get(), get(ApplicationScopeQualifier)) }
-    single { UserCache(get<StorePaths>().file("user"), get(ApplicationScopeQualifier)) }
-    single { AppConfigCache(get<StorePaths>().file("app_config"), get(ApplicationScopeQualifier)) }
-    single<UserPreferencesRepository> { DefaultUserPreferencesRepository(get<StorePaths>().file("preferences"), get(ApplicationScopeQualifier)) }
+    single<CoroutineScope>(ApplicationScope) { CoroutineScope(SupervisorJob() + Dispatchers.Default) } onClose { it?.cancel() }
+    single { TokenStore(get<StorePaths>().file("session"), get(), get(ApplicationScope)) }
+    single { UserCache(get<StorePaths>().file("user"), get(ApplicationScope)) }
+    single { AppConfigCache(get<StorePaths>().file("app_config"), get(ApplicationScope)) }
+    single<UserPreferencesRepository> { DefaultUserPreferencesRepository(get<StorePaths>().file("preferences"), get(ApplicationScope)) }
     single { LocalSession(get(), get()) }
     single<SessionTokenStore> { StoreSessionTokens(get()) }
-    single<SessionRepository> { DefaultSessionRepository(get(), get(), get(ApplicationScopeQualifier)) }
+    single<SessionRepository> { DefaultSessionRepository(get(), get(), get(ApplicationScope)) }
     single<UserRepository> { DefaultUserRepository(get(), get()) }
-    single<AppConfigRepository> { DefaultAppConfigRepository(get(), get(), get(), get(ApplicationScopeQualifier)) }
+    single<AppConfigRepository> { DefaultAppConfigRepository(get(), get(), get(), get(ApplicationScope)) }
 }
 
 /** Android's side of [dataModule]: files under `filesDir/datastore`, the Keystore cipher, the app language. */

@@ -3,7 +3,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- The app manifest only adds android:name (its @HiltAndroidApp Application). -->
+    <!-- The app manifest only adds android:name (its FoundationApplication subclass). -->
     <!-- Backup: JsonStore app data only, never the session (its Keystore key can't be restored).
          fullBackupContent covers API 26-30, dataExtractionRules covers 31+. -->
     <application

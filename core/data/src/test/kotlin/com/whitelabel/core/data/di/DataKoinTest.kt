@@ -35,7 +35,7 @@ class DataKoinTest {
             single<LanguageRepository> { NoLanguage }
         }
         val app = koinApplication { modules(dataModule, platform) }
-        val scope = app.koin.get<CoroutineScope>(ApplicationScopeQualifier)
+        val scope = app.koin.get<CoroutineScope>(ApplicationScope)
 
         app.close()
 

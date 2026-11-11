@@ -1,7 +1,6 @@
 plugins {
     id("whitelabel.android.library")
     id("whitelabel.android.library.compose")
-    id("whitelabel.hilt")
     id("whitelabel.koin")
     alias(libs.plugins.kotlin.serialization)
 }
@@ -29,7 +28,6 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.hilt.navigation.compose)
 
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.turbine)

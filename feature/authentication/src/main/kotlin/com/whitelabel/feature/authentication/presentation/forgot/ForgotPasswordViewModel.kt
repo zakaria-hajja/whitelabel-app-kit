@@ -10,8 +10,6 @@ import com.whitelabel.core.ui.toUiText
 import com.whitelabel.feature.authentication.domain.AuthValidator
 import com.whitelabel.feature.authentication.domain.PasswordResetDataSource
 import com.whitelabel.feature.authentication.presentation.toUiText
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -33,8 +31,7 @@ internal sealed interface ForgotPasswordAction {
 
 private const val KEY_EMAIL = "email"
 
-@HiltViewModel
-internal class ForgotPasswordViewModel @Inject constructor(
+internal class ForgotPasswordViewModel(
     private val source: PasswordResetDataSource,
     private val savedState: SavedStateHandle,
 ) : ViewModel() {

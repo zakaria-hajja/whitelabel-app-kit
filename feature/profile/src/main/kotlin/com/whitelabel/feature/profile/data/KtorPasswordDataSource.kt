@@ -6,14 +6,13 @@ import com.whitelabel.core.common.asEmptyResult
 import com.whitelabel.core.network.patchResult
 import com.whitelabel.feature.profile.domain.PasswordDataSource
 import io.ktor.client.HttpClient
-import javax.inject.Inject
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
 private data class ChangePasswordRequest(val currentPassword: String, val newPassword: String)
 
-internal class KtorPasswordDataSource @Inject constructor(
+internal class KtorPasswordDataSource(
     private val client: HttpClient,
 ) : PasswordDataSource {
 

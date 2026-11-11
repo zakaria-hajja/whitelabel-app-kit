@@ -4,12 +4,11 @@ import com.whitelabel.core.data.user.UserCache
 import com.whitelabel.core.data.user.UserDto
 import com.whitelabel.core.datastore.StoredTokens
 import com.whitelabel.core.datastore.TokenStore
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
 /** Everything stored for the signed-in user, started and cleared together. */
-internal class LocalSession @Inject constructor(
+internal class LocalSession(
     private val tokenStore: TokenStore,
     private val userCache: UserCache,
 ) {

@@ -21,9 +21,7 @@ import com.whitelabel.feature.settings.domain.NotificationKind
 import com.whitelabel.feature.settings.domain.NotificationSettings
 import com.whitelabel.feature.settings.domain.SettingsDataSource
 import com.whitelabel.feature.settings.domain.SettingsPatch
-import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Locale
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -81,8 +79,7 @@ internal fun offeredLanguages(options: List<String>, remote: List<String>): List
  * request runs in order with the others, and a failure puts back what the server last confirmed,
  * unless a newer toggle of the same kind is still on its way.
  */
-@HiltViewModel
-internal class SettingsViewModel @Inject constructor(
+internal class SettingsViewModel(
     private val session: SessionRepository,
     private val preferences: UserPreferencesRepository,
     private val languages: LanguageRepository,

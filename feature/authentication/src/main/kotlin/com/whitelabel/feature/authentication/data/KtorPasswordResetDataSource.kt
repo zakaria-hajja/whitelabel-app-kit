@@ -6,7 +6,6 @@ import com.whitelabel.core.common.asEmptyResult
 import com.whitelabel.core.network.postPublicResult
 import com.whitelabel.feature.authentication.domain.PasswordResetDataSource
 import io.ktor.client.HttpClient
-import javax.inject.Inject
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -16,7 +15,7 @@ private data class ForgotPasswordRequest(val email: String)
 @Serializable
 private data class ResetPasswordRequest(val token: String, val newPassword: String)
 
-internal class KtorPasswordResetDataSource @Inject constructor(
+internal class KtorPasswordResetDataSource(
     private val client: HttpClient,
 ) : PasswordResetDataSource {
 

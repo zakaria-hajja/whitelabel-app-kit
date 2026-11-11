@@ -5,7 +5,7 @@ import androidx.annotation.StringRes
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 
-/** The app's notification channels. Bind one in Hilt (`@Provides fun config() = ReminderConfig(...)`); it's optional. */
+/** The app's notification channels, passed to `remindersModule(config)`; optional. */
 data class ReminderConfig(val channels: List<ReminderChannel>)
 
 /** A notification channel; [name] is what the user sees in system settings. */
@@ -36,7 +36,7 @@ internal fun ensureDefaultChannel(context: Context) {
 }
 
 /**
- * Hands the Hilt-provided config to code that runs outside Hilt (the receivers).
+ * Hands the app's config to code that runs outside Koin (the receivers).
  * After a reboot the config may not be pushed yet; the channels created on an earlier run still exist then.
  */
 internal object ReminderConfigProvider {

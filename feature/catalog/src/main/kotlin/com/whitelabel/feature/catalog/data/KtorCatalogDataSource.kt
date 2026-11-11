@@ -11,7 +11,6 @@ import com.whitelabel.feature.catalog.domain.CatalogItem
 import com.whitelabel.feature.catalog.domain.CatalogQuery
 import io.ktor.client.HttpClient
 import io.ktor.http.encodeURLParameter
-import javax.inject.Inject
 import kotlinx.serialization.Serializable
 
 /** The backend allows a search of at most this many characters. */
@@ -28,7 +27,7 @@ private data class CatalogItemDto(
 
 private fun CatalogItemDto.toItem() = CatalogItem(id, title, description, category, imageUrl)
 
-internal class KtorCatalogDataSource @Inject constructor(
+internal class KtorCatalogDataSource(
     private val client: HttpClient,
 ) : CatalogDataSource {
 

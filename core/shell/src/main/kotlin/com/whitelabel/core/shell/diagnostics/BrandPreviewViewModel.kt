@@ -3,18 +3,15 @@ package com.whitelabel.core.shell.diagnostics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.branding.BrandConfig
-import com.whitelabel.core.shell.brand.UsingMockApi
 import com.whitelabel.core.branding.hasBackend
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.onFailure
 import com.whitelabel.core.common.onSuccess
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 internal data class BrandPreviewState(
     val brand: BrandConfig,
@@ -37,11 +34,10 @@ internal sealed interface BrandPreviewAction {
     data object OnPingClick : BrandPreviewAction
 }
 
-@HiltViewModel
-internal class BrandPreviewViewModel @Inject constructor(
+internal class BrandPreviewViewModel(
     brand: BrandConfig,
     private val health: HealthDataSource,
-    @UsingMockApi usingMockApi: Boolean = false,
+    usingMockApi: Boolean = false,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BrandPreviewState(brand = brand, usingMockApi = usingMockApi))

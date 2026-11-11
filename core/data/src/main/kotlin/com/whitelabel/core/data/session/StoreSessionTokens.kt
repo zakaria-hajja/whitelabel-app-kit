@@ -3,10 +3,9 @@ package com.whitelabel.core.data.session
 import com.whitelabel.core.datastore.StoredTokens
 import com.whitelabel.core.network.SessionTokenStore
 import com.whitelabel.core.network.SessionTokens
-import javax.inject.Inject
 
 /** The HTTP client's view of the stored session. */
-internal class StoreSessionTokens @Inject constructor(
+internal class StoreSessionTokens(
     private val session: LocalSession,
 ) : SessionTokenStore {
 
