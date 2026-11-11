@@ -19,6 +19,12 @@ data class StylePack(
     val motion: MotionSpec,
     /** Which feedback each event plays; an event not in the map plays nothing. */
     val haptics: Map<HapticEvent, HapticPattern>,
+    /** How screen top bars look (`AppScaffold`). */
+    val topBar: TopBarStyle = TopBarStyle.Raised,
+    /** How section titles look (`AppSectionHeader`). */
+    val sectionHeader: SectionHeaderStyle = SectionHeaderStyle.Accent,
+    /** How a setting and its value sit in a row (`SettingsValueRow`). */
+    val valueRows: ValueRowLayout = ValueRowLayout.Inline,
 ) {
     /** This pack with "Remove animations" applied: every motion becomes [MotionSpec.Reduced]. */
     fun reduced(): StylePack = copy(motion = MotionSpec.Reduced)
@@ -33,6 +39,9 @@ data class StylePack(
             sizing = Sizing(controlHeight = 48.dp, listRowMinHeight = 56.dp, screenGutter = 16.dp),
             motion = MotionSpec.Material,
             haptics = emptyMap(),
+            topBar = TopBarStyle.Raised,
+            sectionHeader = SectionHeaderStyle.Accent,
+            valueRows = ValueRowLayout.Inline,
         )
 
         /** Editorial and quiet: small radii, hairlines instead of shadows, roomier controls, soft motion. */
@@ -48,6 +57,9 @@ data class StylePack(
                 HapticEvent.Success to HapticPattern.Confirm,
                 HapticEvent.Toggle to HapticPattern.Toggle,
             ),
+            topBar = TopBarStyle.Flat,
+            sectionHeader = SectionHeaderStyle.Caption,
+            valueRows = ValueRowLayout.Stacked,
         )
     }
 }
@@ -64,6 +76,33 @@ data class Corners(val small: Dp, val medium: Dp, val large: Dp)
 
 /** How containers separate from the background: elevation shadows, or 1 dp hairline outlines. */
 enum class SurfaceStyle { Shadow, Hairline }
+
+/** A screen's top bar. */
+enum class TopBarStyle {
+    /** Material's top app bar on the surface color, title in `titleLarge`. */
+    Raised,
+
+    /** On the page background with no elevation or scroll tint, title in `headlineSmall`. */
+    Flat,
+}
+
+/** A section title. */
+enum class SectionHeaderStyle {
+    /** `titleSmall` in the primary color, as written. */
+    Accent,
+
+    /** A small caption: `labelSmall`, uppercase, letter-spaced, in `onSurfaceVariant`. */
+    Caption,
+}
+
+/** A setting's label and value. */
+enum class ValueRowLayout {
+    /** The label at the start, the value at the end of the same line. */
+    Inline,
+
+    /** The label, then the value under it in a muted color. */
+    Stacked,
+}
 
 data class Sizing(val controlHeight: Dp, val listRowMinHeight: Dp, val screenGutter: Dp)
 
