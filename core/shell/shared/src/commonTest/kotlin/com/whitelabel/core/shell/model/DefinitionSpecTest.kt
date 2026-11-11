@@ -52,4 +52,14 @@ class DefinitionSpecTest {
         assertThat(needing.backendProblem(hasBackend = true)).isNull()
         assertThat(spec(feature("settings", tab = "settings")).backendProblem(hasBackend = false)).isNull()
     }
+
+    @Test fun `a tab route used twice is rejected naming it`() {
+        assertFailure { spec(feature("a", tab = "root"), feature("b", tab = "root")).validate() }
+            .messageContains("Tab route added more than once: root")
+    }
+
+    @Test fun `validationError gives the message instead of throwing for Swift`() {
+        assertThat(spec(feature("a")).validationError()).isEqualTo("An app definition needs at least one tab")
+        assertThat(spec(feature("a", tab = "a")).validationError()).isNull()
+    }
 }

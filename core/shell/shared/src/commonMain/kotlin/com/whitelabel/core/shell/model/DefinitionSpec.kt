@@ -19,12 +19,18 @@ data class DefinitionSpec(val features: List<FeatureSpec>, val startTabRoute: St
 
     val hasGate: Boolean get() = features.any { it.isGate }
 
-    /** Checks the rules every definition follows and returns it, or throws naming what's wrong. */
+    /**
+     * Checks the rules every definition follows and returns it, or throws naming what's wrong.
+     * Swift can't catch a Kotlin exception (the process aborts): it calls [validationError] instead.
+     */
+    @Throws(IllegalArgumentException::class)
     fun validate(): DefinitionSpec {
         val duplicates = features.groupBy { it.id }.filterValues { it.size > 1 }.keys
         require(duplicates.isEmpty()) { "Feature added more than once: ${duplicates.joinToString()}" }
         val tabs = features.mapNotNull { it.tabRoute }
         require(tabs.isNotEmpty()) { "An app definition needs at least one tab" }
+        val repeatedTabs = tabs.groupBy { it }.filterValues { it.size > 1 }.keys
+        require(repeatedTabs.isEmpty()) { "Tab route added more than once: ${repeatedTabs.joinToString()}" }
         startTabRoute?.let { start -> require(start in tabs) { "Start tab $start is not one of the tabs: ${tabs.joinToString()}" } }
         val gates = features.filter { it.isGate }
         require(gates.size <= 1) { "Only one feature may gate the app: ${gates.joinToString { it.id }}" }
@@ -33,6 +39,14 @@ data class DefinitionSpec(val features: List<FeatureSpec>, val startTabRoute: St
             "${needSignIn.joinToString { it.id }} need sign-in: add auth() to the app definition"
         }
         return this
+    }
+
+    /** What [validate] would reject, or null when the definition is valid. */
+    fun validationError(): String? = try {
+        validate()
+        null
+    } catch (e: IllegalArgumentException) {
+        e.message
     }
 
     /** Why this definition can't run without a backend, or null if it can. */

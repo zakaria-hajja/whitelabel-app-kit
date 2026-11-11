@@ -13,13 +13,15 @@ import com.whitelabel.core.shell.model.FeatureSpec
 /** A bottom-bar destination. [route] is a `@Serializable` route object registered by the entry's graph. */
 /**
  * A bottom-bar tab. [routeId] is the platform-neutral id the shared shell model and iOS use (the
- * foundation's features pass their `<Name>Routes` constant); it defaults to the route's class name.
+ * foundation's features pass their `<Name>Routes` constant); it defaults to the route's fully
+ * qualified class name, unique even after R8 renames classes. Set it explicitly for a tab that also
+ * exists on iOS, so both platforms use the same id.
  */
 data class Tab(
     val route: Any,
     @StringRes val label: Int,
     val icon: ImageVector,
-    val routeId: String = route::class.simpleName ?: route.toString(),
+    val routeId: String = route::class.qualifiedName ?: route.toString(),
 )
 
 /** Makes the whole app sign-in only: signed out, the app shows only this entry's graph, starting at [startRoute]. */
@@ -140,5 +142,5 @@ internal fun AppDefinition.toSpec(): DefinitionSpec = DefinitionSpec(
             requiresBackend = it.requiresBackend,
         )
     },
-    startTabRoute = startTabRoute?.let { start -> tabs.firstOrNull { it.route == start }?.routeId ?: start::class.simpleName },
+    startTabRoute = startTabRoute?.let { start -> tabs.firstOrNull { it.route == start }?.routeId ?: start::class.qualifiedName },
 )
