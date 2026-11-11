@@ -6,6 +6,7 @@
     <string name="preview_label_slug">Tenant</string>
     <string name="preview_label_environment">Environment</string>
     <string name="preview_label_base_url">API</string>
+    <string name="preview_no_backend">No backend</string>
     <string name="preview_ping">Ping</string>
     <string name="preview_health_idle">Not checked yet</string>
     <string name="preview_health_checking">Checking…</string>

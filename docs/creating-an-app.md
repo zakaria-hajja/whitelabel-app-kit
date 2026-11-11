@@ -63,15 +63,19 @@ The build validates this file and reports every problem at once, naming the file
 | `app.versionCode` | `1` | Integer, 1..2100000000 |
 | `app.versionName` | `1.0.0` | Non-blank |
 | `app.deepLinkScheme` | `globex` | `^[a-z][a-z0-9+.-]*$`; unique across apps |
-| `api.debug.baseUrl` | `http://10.0.2.2:3000/api/v1/` | `http` only to `10.0.2.2` or `localhost`; otherwise `https` |
-| `api.release.baseUrl` | `https://api.globex.example/api/v1/` | `https`, and not a local host |
-| `api.tenant` | `globex` | Optional. The backend tenant slug, `^[a-z0-9][a-z0-9-]{1,62}$` |
+| `api.debug.baseUrl` | `http://10.0.2.2:3000/api/v1/` | Optional, together with `api.release.baseUrl`. `http` only to `10.0.2.2` or `localhost`; otherwise `https` |
+| `api.release.baseUrl` | `https://api.globex.example/api/v1/` | Optional, together with `api.debug.baseUrl`. `https`, and not a local host |
+| `api.tenant` | `globex` | Optional. The backend tenant slug, `^[a-z0-9][a-z0-9-]{1,62}$`. Needs the base URLs |
 | `defaults.support.email` | `support@globex.example` | Optional |
 | `defaults.legal.privacyPolicyUrl` | `https://globex.example/privacy` | `https` |
 | `defaults.legal.termsUrl` | `https://globex.example/terms` | `https` |
 | `defaults.features` | `catalog,profile` | Optional. Flagged features that are on when remote config is unavailable |
 
 - **Base URLs** are the versioned API root. A missing trailing `/` is added for you.
+- **No backend:** leave out both base URLs (and `api.tenant`) for a local-only app. The shell then
+  skips the startup config fetch, and the app refuses to start if its definition includes a feature
+  that signs in or calls the API (`auth()`, or any entry with `requiresBackend`). Setting only one
+  base URL is a build error.
 - **Environment:** debug builds are `DEVELOPMENT` (with an `.debug` application ID suffix) and
   release builds are `PRODUCTION`.
 - **More detail:** see [api-environments.md](api-environments.md).

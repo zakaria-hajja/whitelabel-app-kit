@@ -27,15 +27,15 @@ object AppConfigLoader {
         "src/main/res/drawable/ic_launcher_foreground.xml",
     )
 
-    fun load(appDir: File): AppConfig {
+    /** [label] names the app in messages: its directory relative to the build's root. */
+    fun load(appDir: File, label: String = "apps/${appDir.name}"): AppConfig {
         val problems = mutableListOf<String>()
-        val config = parse(appDir, problems)
+        val config = parse(appDir, label, problems)
         if (problems.isNotEmpty() || config == null) throw InvalidAppConfigException(problems)
         return config
     }
 
-    private fun parse(dir: File, problems: MutableList<String>): AppConfig? {
-        val label = "apps/${dir.name}"
+    private fun parse(dir: File, label: String, problems: MutableList<String>): AppConfig? {
         val file = File(dir, "app.properties")
         if (!file.isFile) {
             problems += "$label: missing app.properties"
@@ -96,8 +96,18 @@ object AppConfigLoader {
         }
         val versionName = required("app.versionName")
         val deepLinkScheme = check("app.deepLinkScheme", required("app.deepLinkScheme"), DEEP_LINK_SCHEME)
-        val debugUrl = url("api.debug.baseUrl", httpsOnly = false, normalize = true, cleartextHosts = DEBUG_CLEARTEXT_HOSTS)
-        val releaseUrl = url("api.release.baseUrl", httpsOnly = true, notLocal = true, normalize = true)
+        // Both base URLs, or neither (an app without a backend).
+        val hasDebugUrl = value("api.debug.baseUrl") != null
+        val hasReleaseUrl = value("api.release.baseUrl") != null
+        val hasBackend = hasDebugUrl && hasReleaseUrl
+        if (hasDebugUrl != hasReleaseUrl) {
+            problems += "$prefix: api.debug.baseUrl and api.release.baseUrl must be set together"
+        }
+        if (!hasDebugUrl && !hasReleaseUrl && value("api.tenant") != null) {
+            problems += "$prefix: api.tenant needs api.debug.baseUrl and api.release.baseUrl"
+        }
+        val debugUrl = if (hasBackend) url("api.debug.baseUrl", httpsOnly = false, normalize = true, cleartextHosts = DEBUG_CLEARTEXT_HOSTS) else null
+        val releaseUrl = if (hasBackend) url("api.release.baseUrl", httpsOnly = true, notLocal = true, normalize = true) else null
         val privacyUrl = url("defaults.legal.privacyPolicyUrl", httpsOnly = true)
         val termsUrl = url("defaults.legal.termsUrl", httpsOnly = true)
         val features = value("defaults.features").orEmpty()
@@ -126,7 +136,7 @@ object AppConfigLoader {
             versionCode = versionCode!!,
             versionName = versionName!!,
             deepLinkScheme = deepLinkScheme!!,
-            apiBaseUrls = mapOf("debug" to debugUrl!!, "release" to releaseUrl!!),
+            apiBaseUrls = if (hasBackend) mapOf("debug" to debugUrl!!, "release" to releaseUrl!!) else null,
             supportEmail = value("defaults.support.email"),
             privacyPolicyUrl = privacyUrl!!,
             termsUrl = termsUrl!!,

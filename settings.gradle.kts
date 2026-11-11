@@ -17,19 +17,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "android-starter-kit"
 
+// Shared modules: listed once, in gradle/foundation.settings.gradle.kts (app repos apply it too).
+extra["foundationDir"] = settingsDir
+apply(from = "gradle/foundation.settings.gradle.kts")
+
 include(":apps:globex")
 include(":apps:globex:notes")
 include(":apps:showcase")
-include(":core:branding")
-include(":core:common")
-include(":core:network")
-include(":core:designsystem")
-include(":core:datastore")
-include(":core:shell")
-include(":core:ui")
-include(":core:analytics")
-include(":core:domain")
-include(":core:data")
-
-include(":feature:authentication")
-include(":feature:settings")

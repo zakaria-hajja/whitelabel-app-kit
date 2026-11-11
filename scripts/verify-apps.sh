@@ -1,7 +1,12 @@
 #!/bin/sh
-# Verifies every app under apps/ (each directory with an app.properties).
+# Verifies every app under apps/ (each directory with an app.properties), or one APK.
 #
 #   scripts/verify-apps.sh [--config-only] [debug|release ...]   (default: debug release)
+#   scripts/verify-apps.sh --apk FILE --properties FILE --type debug|release
+#
+# The second form checks a single APK against its app.properties (package, label, version,
+# deep-link scheme, config resources, launcher foreground present) and skips the checks that
+# compare apps with each other. App repos with the foundation as a submodule use it in CI.
 #
 # Always: application IDs and deep-link schemes are unique across apps.
 # Unless --config-only, for each app's built APK of each build type (aapt2 from the newest
@@ -10,11 +15,11 @@
 # foundation_* config resources the shell reads exist, match app.properties and nothing else.
 # Prints one OK/FAIL line per check and exits non-zero if any check fails.
 set -eu
+# --apk and --properties are relative to where the script is called from (an app repo), so
+# remember that before moving to the foundation root.
+caller=$(pwd)
 cd "$(dirname "$0")/.."
-
-config_only=false
-if [ "${1:-}" = "--config-only" ]; then config_only=true; shift; fi
-types=${*:-debug release}
+abs() { case "$1" in /*) echo "$1" ;; *) echo "$caller/$1" ;; esac; }
 
 failed=0
 ok() { echo "OK   $*"; }
@@ -22,6 +27,86 @@ bad() { echo "FAIL $*"; failed=1; }
 
 # prop FILE KEY: the trimmed value of KEY in a properties file.
 prop() { sed -n "s/^[[:space:]]*$2[[:space:]]*=[[:space:]]*//p" "$1" | head -n 1 | sed 's/[[:space:]]*$//'; }
+
+find_aapt2() {
+  sdk=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}
+  aapt2=$(ls -d "$sdk"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -n 1)
+  if [ -z "$aapt2" ]; then
+    echo "FAIL aapt2 not found under $sdk/build-tools"
+    exit 1
+  fi
+}
+
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+# verify_apk LABEL PROPS APK TYPE: the checks that need only this app's APK and app.properties.
+verify_apk() {
+  app=$1; props=$2; apk=$3; type=$4
+  id=$(prop "$props" app.applicationId)
+  [ "$type" = debug ] && id="$id.debug"
+  badging=$("$aapt2" dump badging "$apk")
+
+  echo "$badging" | grep -q "^package: name='$id' " && ok "$app $type: package $id" \
+    || bad "$app $type: package is not $id"
+  name=$(prop "$props" app.name)
+  echo "$badging" | grep -qF "application-label:'$name'" && ok "$app $type: label '$name'" \
+    || bad "$app $type: label is not '$name'"
+  code=$(prop "$props" app.versionCode); version=$(prop "$props" app.versionName)
+  echo "$badging" | grep -q "versionCode='$code' versionName='$version'" && ok "$app $type: version $code ($version)" \
+    || bad "$app $type: version is not $code ($version)"
+  # Deep links (reset password, catalog items) open the app only through its own scheme.
+  scheme=$(prop "$props" app.deepLinkScheme)
+  schemes=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" | sed -n 's/.*android:scheme([^)]*)="\([^"]*\)".*/\1/p' | sort -u | tr '\n' ' ')
+  [ "$schemes" = "$scheme " ] && ok "$app $type: deep links use scheme '$scheme'" \
+    || bad "$app $type: deep-link schemes are '$schemes', expected only '$scheme'"
+
+  # Config the shell reads at runtime: must match app.properties, and the generated names must be
+  # exactly the ones the shell declares (a renamed field would otherwise read as blank).
+  "$aapt2" dump resources "$apk" \
+    | awk '/string\/foundation_/ { sub(/.*string\//, ""); name = $1; next }
+           name != "" { v = $0; sub(/^[^"]*"/, "", v); sub(/"[^"]*$/, "", v); print name "=" v; name = "" }' \
+    | sort > "$tmp/config"
+  names=$(cut -d= -f1 "$tmp/config" | tr '\n' ' ')
+  expected_names="foundation_api_base_url foundation_app_name foundation_deep_link_scheme foundation_default_features foundation_environment foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
+  [ "$names" = "$expected_names" ] && ok "$app $type: config resources are the expected set" \
+    || bad "$app $type: config resources are [$names], expected [$expected_names]"
+  # No api.<type>.baseUrl means an app without a backend: the generated URL is empty.
+  url=$(prop "$props" "api.$type.baseUrl"); case "$url" in ""|*/) ;; *) url="$url/" ;; esac
+  for pair in "foundation_api_base_url=$url" "foundation_app_name=$name" "foundation_tenant=$(prop "$props" api.tenant)"; do
+    grep -qxF "$pair" "$tmp/config" && ok "$app $type: $pair" \
+      || bad "$app $type: expected $pair, APK has $(grep "^${pair%%=*}=" "$tmp/config" || echo 'nothing')"
+  done
+
+  icon=$("$aapt2" dump resources "$apk" \
+    | awk '/drawable\/ic_launcher_foreground$/ { found = 1; next } found && /\(file\)/ { print $3; exit }')
+  if [ -z "$icon" ]; then
+    bad "$app $type: no drawable/ic_launcher_foreground"
+  fi
+}
+
+if [ "${1:-}" = "--apk" ]; then
+  apk=""; props=""; type=""
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --apk) apk=$(abs "$2"); shift 2 ;;
+      --properties) props=$(abs "$2"); shift 2 ;;
+      --type) type=$2; shift 2 ;;
+      *) echo "FAIL unknown argument $1"; exit 2 ;;
+    esac
+  done
+  if [ ! -f "$apk" ] || [ ! -f "$props" ] || { [ "$type" != debug ] && [ "$type" != release ]; }; then
+    echo "FAIL usage: scripts/verify-apps.sh --apk FILE --properties FILE --type debug|release"
+    exit 2
+  fi
+  find_aapt2
+  verify_apk "$(basename "$(dirname "$props")")" "$props" "$apk" "$type"
+  exit "$failed"
+fi
+
+config_only=false
+if [ "${1:-}" = "--config-only" ]; then config_only=true; shift; fi
+types=${*:-debug release}
 
 apps=""
 for f in apps/*/app.properties; do
@@ -46,15 +131,7 @@ done
 
 if [ "$config_only" = true ]; then exit "$failed"; fi
 
-sdk=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}
-aapt2=$(ls -d "$sdk"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -n 1)
-if [ -z "$aapt2" ]; then
-  echo "FAIL aapt2 not found under $sdk/build-tools"
-  exit 1
-fi
-
-tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
+find_aapt2
 
 for type in $types; do
   : > "$tmp/icons-$type"
@@ -65,39 +142,7 @@ for type in $types; do
       bad "$app $type: no APK built (run ./gradlew :apps:$app:assemble$(echo "$type" | cut -c1 | tr a-z A-Z)$(echo "$type" | cut -c2-))"
       continue
     fi
-    id=$(prop "$props" app.applicationId)
-    [ "$type" = debug ] && id="$id.debug"
-    badging=$("$aapt2" dump badging "$apk")
-
-    echo "$badging" | grep -q "^package: name='$id' " && ok "$app $type: package $id" \
-      || bad "$app $type: package is not $id"
-    name=$(prop "$props" app.name)
-    echo "$badging" | grep -qF "application-label:'$name'" && ok "$app $type: label '$name'" \
-      || bad "$app $type: label is not '$name'"
-    code=$(prop "$props" app.versionCode); version=$(prop "$props" app.versionName)
-    echo "$badging" | grep -q "versionCode='$code' versionName='$version'" && ok "$app $type: version $code ($version)" \
-      || bad "$app $type: version is not $code ($version)"
-    # Deep links (reset password, catalog items) open the app only through its own scheme.
-    scheme=$(prop "$props" app.deepLinkScheme)
-    schemes=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" | sed -n 's/.*android:scheme([^)]*)="\([^"]*\)".*/\1/p' | sort -u | tr '\n' ' ')
-    [ "$schemes" = "$scheme " ] && ok "$app $type: deep links use scheme '$scheme'" \
-      || bad "$app $type: deep-link schemes are '$schemes', expected only '$scheme'"
-
-    # Config the shell reads at runtime: must match app.properties, and the generated names must be
-    # exactly the ones the shell declares (a renamed field would otherwise read as blank).
-    "$aapt2" dump resources "$apk" \
-      | awk '/string\/foundation_/ { sub(/.*string\//, ""); name = $1; next }
-             name != "" { v = $0; sub(/^[^"]*"/, "", v); sub(/"[^"]*$/, "", v); print name "=" v; name = "" }' \
-      | sort > "$tmp/config"
-    names=$(cut -d= -f1 "$tmp/config" | tr '\n' ' ')
-    expected_names="foundation_api_base_url foundation_app_name foundation_deep_link_scheme foundation_default_features foundation_environment foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
-    [ "$names" = "$expected_names" ] && ok "$app $type: config resources are the expected set" \
-      || bad "$app $type: config resources are [$names], expected [$expected_names]"
-    url=$(prop "$props" "api.$type.baseUrl"); case "$url" in */) ;; *) url="$url/" ;; esac
-    for pair in "foundation_api_base_url=$url" "foundation_app_name=$name" "foundation_tenant=$(prop "$props" api.tenant)"; do
-      grep -qxF "$pair" "$tmp/config" && ok "$app $type: $pair" \
-        || bad "$app $type: expected $pair, APK has $(grep "^${pair%%=*}=" "$tmp/config" || echo 'nothing')"
-    done
+    verify_apk "$app" "$props" "$apk" "$type"
 
     unzip -p "$apk" 'classes*.dex' > "$tmp/dex"
     for other in $apps; do
@@ -110,11 +155,7 @@ for type in $types; do
       fi
     done
 
-    icon=$("$aapt2" dump resources "$apk" \
-      | awk '/drawable\/ic_launcher_foreground$/ { found = 1; next } found && /\(file\)/ { print $3; exit }')
-    if [ -z "$icon" ]; then
-      bad "$app $type: no drawable/ic_launcher_foreground"
-    else
+    if [ -n "$icon" ]; then
       echo "$(unzip -p "$apk" "$icon" | shasum | cut -d' ' -f1) $app" >> "$tmp/icons-$type"
     fi
   done

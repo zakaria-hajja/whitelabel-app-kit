@@ -6,6 +6,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import com.whitelabel.core.branding.BrandConfig
 import com.whitelabel.core.branding.Environment
+import com.whitelabel.core.branding.hasBackend
 import com.whitelabel.core.branding.RuntimeDefaults
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.Result
@@ -79,5 +80,11 @@ class BrandPreviewViewModelTest {
             health.response.complete(Result.Error(DataError.Network.NO_INTERNET))
             assertThat(awaitItem().health).isEqualTo(HealthUi.Failed(DataError.Network.NO_INTERNET))
         }
+    }
+
+    @Test fun `ping is hidden without a backend`() {
+        val viewModel = BrandPreviewViewModel(brand.copy(apiBaseUrl = null), FakeHealthDataSource())
+        assertThat(viewModel.state.value.showPing).isEqualTo(false)
+        assertThat(BrandPreviewViewModel(brand, FakeHealthDataSource()).state.value.showPing).isEqualTo(true)
     }
 }

@@ -26,7 +26,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         // After the Android plugin, so whitelabel.hilt picks the Android variant.
         pluginManager.apply("whitelabel.hilt")
 
-        val app = AppConfigLoader.load(projectDir)
+        val app = AppConfigLoader.load(projectDir, label = rootDir.toPath().relativize(projectDir.toPath()).toString())
 
         extensions.configure<ApplicationExtension> {
             configureKotlinAndroid(this)
@@ -55,7 +55,8 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             // reads it only from a source res dir, not a generated one: so it is a checked-in file,
             // which clean and the configuration cache can't lose.
             androidResources.generateLocaleConfig = true
-            sourceSets.getByName("main").res.srcDir(rootDir.resolve("build-logic/convention/default-locale-res"))
+            // It sits next to the shell, which every app includes, so app repos find it too.
+            sourceSets.getByName("main").res.srcDir(project(":core:shell").projectDir.resolve("default-locale-res"))
 
             buildTypes {
                 getByName("debug") {

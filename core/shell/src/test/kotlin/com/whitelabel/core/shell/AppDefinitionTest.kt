@@ -88,4 +88,21 @@ class AppDefinitionTest {
             }
         }.isInstanceOf(IllegalArgumentException::class).messageContains("auth, sso")
     }
+
+    @Test fun `backendless app without backend features is fine`() {
+        val definition = appDefinition { add(entry("a", RouteA)) }
+        assertThat(definition.backendProblem(hasBackend = false)).isNull()
+    }
+
+    @Test fun `backend features need a backend`() {
+        val definition = appDefinition {
+            add(entry("auth", gate = Gate(RouteC)))
+            add(entry("a", RouteA, requiresSignIn = true))
+            add(entry("b", RouteB, requiresBackend = true))
+        }
+        assertThat(definition.backendProblem(hasBackend = false)).isEqualTo(
+            "auth, a, b call the backend: set api.debug.baseUrl and api.release.baseUrl in app.properties",
+        )
+        assertThat(definition.backendProblem(hasBackend = true)).isNull()
+    }
 }
