@@ -12,6 +12,7 @@ dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.compose.gradlePlugin)
+    compileOnly(libs.compose.multiplatform.gradlePlugin)
     compileOnly(libs.ksp.gradlePlugin)
     compileOnly(libs.hilt.gradlePlugin)
     compileOnly(libs.android.junit5.gradlePlugin)
@@ -42,6 +43,10 @@ gradlePlugin {
         register("androidApplication") {
             id = "whitelabel.android.application"
             implementationClass = "com.whitelabel.buildlogic.AndroidApplicationConventionPlugin"
+        }
+        register("kmpLibrary") {
+            id = "whitelabel.kmp.library"
+            implementationClass = "com.whitelabel.buildlogic.KmpLibraryConventionPlugin"
         }
         register("hilt") {
             id = "whitelabel.hilt"

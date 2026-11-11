@@ -2,7 +2,7 @@ package com.whitelabel.core.common
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 class ApiErrorCodeTest {
 
@@ -13,7 +13,7 @@ class ApiErrorCodeTest {
     }
 
     @Test
-    fun `unknown, null, blank and lowercase codes map to UNKNOWN`() {
+    fun `unknown null blank and lowercase codes map to UNKNOWN`() {
         listOf("NEW_CODE", null, "", "not_found", "UNKNOWN").forEach {
             assertThat(ApiErrorCode.fromWire(it)).isEqualTo(ApiErrorCode.UNKNOWN)
         }

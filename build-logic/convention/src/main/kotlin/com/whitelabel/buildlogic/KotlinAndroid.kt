@@ -63,7 +63,7 @@ internal fun Project.addTestDependencies(configuration: String = "testImplementa
  * Contract tests (`:core:testing`'s `OpenApiSpec`) read the vendored `api/openapi.json`, two levels
  * above `core/testing`: the repo root here, `foundation/` in an app repo.
  */
-private fun Project.pointTestsAtTheContract() {
+internal fun Project.pointTestsAtTheContract() {
     val testing = rootProject.findProject(":core:testing") ?: return
     val spec = testing.projectDir.resolve("../../api/openapi.json").normalize()
     tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach {
