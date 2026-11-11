@@ -33,6 +33,13 @@ object OpenApiSpec {
             ops.properties().map { it.key }.filter { it in METHODS }.map { path to it }
         }
 
+    /** The spec path an actual request path matches, e.g. `/api/v1/catalog/abc` → `/api/v1/catalog/{id}`. */
+    fun templateFor(actualPath: String): String? =
+        root.path("paths").properties().map { it.key }.firstOrNull { template ->
+            Regex("^" + template.split('/').joinToString("/") { if (it.startsWith("{")) "[^/]+" else Regex.escape(it) } + "$")
+                .matches(actualPath)
+        }
+
     /** The response statuses documented for an operation. */
     fun documentedStatuses(path: String, method: String): List<Int> =
         operation(path, method).path("responses").properties().mapNotNull { it.key.toIntOrNull() }

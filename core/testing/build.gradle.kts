@@ -6,4 +6,7 @@ plugins {
 dependencies {
     api(libs.kotlinx.serialization.json)
     api(libs.json.schema.validator)
+    api(project(":core:network"))
+    api(libs.ktor.client.core)
+    api(libs.ktor.client.mock)
 }

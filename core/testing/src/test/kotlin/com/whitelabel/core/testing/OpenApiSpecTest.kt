@@ -7,6 +7,8 @@ import assertk.assertions.isNotEmpty
 import assertk.assertions.messageContains
 import assertk.assertions.single
 import assertk.assertions.contains
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNull
 import org.junit.jupiter.api.Test
 
 class OpenApiSpecTest {
@@ -40,5 +42,13 @@ class OpenApiSpecTest {
         }
         assertThat(problems).isEmpty()
         assertThat(OpenApiSpec.operations()).isNotEmpty()
+    }
+}
+
+class TemplateTest {
+    @Test fun `an id path matches its template`() {
+        assertThat(OpenApiSpec.templateFor("/api/v1/catalog/abc-123")).isEqualTo("/api/v1/catalog/{id}")
+        assertThat(OpenApiSpec.templateFor("/api/v1/catalog")).isEqualTo("/api/v1/catalog")
+        assertThat(OpenApiSpec.templateFor("/api/v1/nope")).isNull()
     }
 }
