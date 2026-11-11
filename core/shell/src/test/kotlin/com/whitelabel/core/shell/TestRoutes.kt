@@ -16,11 +16,13 @@ fun entry(
     flagKey: String? = null,
     requiresSignIn: Boolean = false,
     gate: Gate? = null,
+    requiresBackend: Boolean = false,
 ) = FeatureEntry(
     id = id,
     flagKey = flagKey,
     tab = route?.let(::tab),
     requiresSignIn = requiresSignIn,
     gate = gate,
+    requiresBackend = requiresBackend,
     routes = {},
 )

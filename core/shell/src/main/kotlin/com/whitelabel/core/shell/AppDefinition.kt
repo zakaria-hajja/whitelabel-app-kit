@@ -35,6 +35,8 @@ class FeatureEntry(
     val tab: Tab? = null,
     val requiresSignIn: Boolean = false,
     val gate: Gate? = null,
+    /** The feature calls the backend, so the app needs `api.*` base URLs. Implied by [requiresSignIn] and [gate]. */
+    val requiresBackend: Boolean = false,
     val routes: NavGraphBuilder.(FeatureScope) -> Unit,
 )
 
@@ -92,6 +94,18 @@ class AppDefinitionBuilder internal constructor() {
         }
         return AppDefinition(entries.toList(), startTabRoute, analytics, crashReporter)
     }
+}
+
+/**
+ * Why this definition can't run without a backend, or `null` if it can: features that sign in or
+ * call the API need the app's `api.*` base URLs.
+ */
+internal fun AppDefinition.backendProblem(hasBackend: Boolean): String? {
+    if (hasBackend) return null
+    val needing = entries.filter { it.gate != null || it.requiresSignIn || it.requiresBackend }
+    if (needing.isEmpty()) return null
+    return "${needing.joinToString { it.id }} call the backend: " +
+        "set api.debug.baseUrl and api.release.baseUrl in app.properties"
 }
 
 /** Declares an app's features, e.g. `appDefinition { auth(); notes(); settings(); startTab(NotesRoute) }`. */

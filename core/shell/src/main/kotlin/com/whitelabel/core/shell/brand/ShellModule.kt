@@ -20,6 +20,9 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import javax.inject.Singleton
 
+/** Base URL for apps without a backend: `.invalid` never resolves (RFC 2606), and nothing calls it. */
+internal const val NO_BACKEND_BASE_URL = "https://no-backend.invalid/"
+
 @Module
 @InstallIn(SingletonComponent::class)
 internal object ShellModule {
@@ -30,7 +33,7 @@ internal object ShellModule {
     @Provides
     @Singleton
     fun networkConfig(brand: BrandConfig): NetworkConfig = NetworkConfig(
-        baseUrl = brand.apiBaseUrl,
+        baseUrl = brand.apiBaseUrl ?: NO_BACKEND_BASE_URL,
         tenant = brand.tenant,
         userAgent = "${brand.applicationId}/${brand.versionName} (Android ${Build.VERSION.RELEASE})",
         logger = if (brand.environment == Environment.PRODUCTION) null else { line -> Log.d("Http", line) },

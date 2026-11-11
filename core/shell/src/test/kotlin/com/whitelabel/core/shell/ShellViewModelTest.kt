@@ -1,6 +1,9 @@
 package com.whitelabel.core.shell
 
+import assertk.assertFailure
 import assertk.assertThat
+import assertk.assertions.isInstanceOf
+import assertk.assertions.messageContains
 import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
@@ -91,7 +94,10 @@ class ShellViewModelTest {
 
     @AfterEach fun tearDown() = Dispatchers.resetMain()
 
-    private fun TestScope.viewModel(): ShellViewModel {
+    private fun TestScope.viewModel(
+        brand: BrandConfig = com.whitelabel.core.shell.brand,
+        definition: AppDefinition = this@ShellViewModelTest.definition,
+    ): ShellViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         return ShellViewModel(definition, brand, appConfig, preferences, session, users, savedState)
     }
@@ -167,5 +173,24 @@ class ShellViewModelTest {
         assertThat(restored.pendingDeepLink.value).isEqualTo("sample://catalog/1")
         restored.onDeepLinkConsumed()
         assertThat(restored.pendingDeepLink.value).isEqualTo(null)
+    }
+
+    @Test fun `backendless app never refreshes the config and is ready at once`() = runTest {
+        var refreshes = 0
+        appConfig.onRefresh = { refreshes++; awaitCancellation() }
+        val viewModel = viewModel(brand = brand.copy(apiBaseUrl = null))
+        runCurrent()
+        assertThat(viewModel.current.ready).isTrue()
+        assertThat(refreshes).isEqualTo(0)
+    }
+
+    @Test fun `backendless app with a gated feature fails at startup`() = runTest {
+        val gated = appDefinition {
+            add(entry("auth", gate = Gate(RouteC)))
+            add(entry("a", RouteA))
+        }
+        assertFailure { viewModel(brand = brand.copy(apiBaseUrl = null), definition = gated) }
+            .isInstanceOf(IllegalStateException::class)
+            .messageContains("auth call the backend")
     }
 }
