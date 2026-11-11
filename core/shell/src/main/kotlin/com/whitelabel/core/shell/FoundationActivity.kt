@@ -51,7 +51,7 @@ class FoundationActivity : AppCompatActivity() {
                 ThemePreference.LIGHT -> false
                 ThemePreference.DARK -> true
             }
-            AppTheme(darkTheme = darkTheme) {
+            AppTheme(darkTheme = darkTheme, stylePack = definition.stylePack) {
                 if (state.showsContent(hasGate)) {
                     ShellNavHost(
                         definition = definition,

@@ -1,5 +1,14 @@
 package com.whitelabel.core.shell
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import com.whitelabel.core.designsystem.motion.LocalSharedTransitionScope
+import com.whitelabel.core.designsystem.theme.AppTheme
+import com.whitelabel.core.designsystem.theme.SurfaceStyle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -57,6 +66,7 @@ internal data object MainGraph
  * [diagnostics] registers the diagnostics screen ([DiagnosticsRoute]) with the app's tabs, for
  * DEVELOPMENT builds.
  */
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun ShellNavHost(
     definition: AppDefinition,
@@ -115,22 +125,43 @@ internal fun ShellNavHost(
             .padding(innerPadding)
             // Consume what the shell padded for, so feature scaffolds don't pad for the system bars again.
             .consumeWindowInsets(innerPadding)
-        if (gate == null) {
-            NavHost(navController = navController, startDestination = checkNotNull(startTab).route, modifier = hostModifier) {
-                enabled.forEach { entry -> entry.routes(this, scope) }
-                if (diagnostics) diagnosticsScreen(onBack = navigator::back)
-            }
-        } else {
-            NavHost(
-                navController = navController,
-                startDestination = if (signedIn) MainGraph else AuthGraph,
-                modifier = hostModifier,
-            ) {
-                navigation<AuthGraph>(startDestination = checkNotNull(gate.gate).startRoute) { gate.routes(this, scope) }
-                if (startTab != null) {
-                    navigation<MainGraph>(startDestination = startTab.route) {
-                        enabled.filter { it !== gate }.forEach { entry -> entry.routes(this, scope) }
+        val motion = AppTheme.style.motion
+        val transitions = remember(motion, visibleTabs) {
+            ShellTransitions(motion, visibleTabs.mapNotNull { it.route::class.qualifiedName }.toSet())
+        }
+        // Shared elements between destinations: features use Modifier.sharedElementTransition(key).
+        SharedTransitionLayout {
+            CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+                if (gate == null) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = checkNotNull(startTab).route,
+                        modifier = hostModifier,
+                        enterTransition = transitions.enter,
+                        exitTransition = transitions.exit,
+                        popEnterTransition = transitions.enter,
+                        popExitTransition = transitions.exit,
+                    ) {
+                        enabled.forEach { entry -> entry.routes(this, scope) }
                         if (diagnostics) diagnosticsScreen(onBack = navigator::back)
+                    }
+                } else {
+                    NavHost(
+                        navController = navController,
+                        startDestination = if (signedIn) MainGraph else AuthGraph,
+                        modifier = hostModifier,
+                        enterTransition = transitions.enter,
+                        exitTransition = transitions.exit,
+                        popEnterTransition = transitions.enter,
+                        popExitTransition = transitions.exit,
+                    ) {
+                        navigation<AuthGraph>(startDestination = checkNotNull(gate.gate).startRoute) { gate.routes(this, scope) }
+                        if (startTab != null) {
+                            navigation<MainGraph>(startDestination = startTab.route) {
+                                enabled.filter { it !== gate }.forEach { entry -> entry.routes(this, scope) }
+                                if (diagnostics) diagnosticsScreen(onBack = navigator::back)
+                            }
+                        }
                     }
                 }
             }
@@ -166,15 +197,20 @@ private fun NavHostController.showGraph(graph: Any) {
 private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val destination = backStackEntry?.destination
-    NavigationBar(modifier = Modifier.testTag(BOTTOM_BAR_TAG)) {
-        tabs.forEach { tab ->
-            val label = stringResource(tab.label)
-            NavigationBarItem(
-                selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true,
-                onClick = { navController.navigateToTab(tab.route) },
-                icon = { Icon(tab.icon, contentDescription = null) },
-                label = { Text(label) },
-            )
+    // Hairline packs draw a 1 dp rule above the bar instead of relying on its tonal elevation.
+    val hairline = AppTheme.style.surfaces == SurfaceStyle.Hairline
+    Column {
+        if (hairline) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        NavigationBar(modifier = Modifier.testTag(BOTTOM_BAR_TAG)) {
+            tabs.forEach { tab ->
+                val label = stringResource(tab.label)
+                NavigationBarItem(
+                    selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true,
+                    onClick = { navController.navigateToTab(tab.route) },
+                    icon = { Icon(tab.icon, contentDescription = null) },
+                    label = { Text(label) },
+                )
+            }
         }
     }
 }

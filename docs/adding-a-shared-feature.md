@@ -39,7 +39,7 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
             flagKey = null,                                  // or a key, to allow switching it off remotely
             tab = Tab(SettingsRoute, R.string.settings_tab, Icons.Default.Settings),
             requiresSignIn = false,                          // true if it calls endpoints that need a session
-            routes = { scope -> composable<SettingsRoute> { SettingsRoot(options, scope.navigator) } },
+            routes = { scope -> screen<SettingsRoute> { SettingsRoot(options, scope.navigator) } },
         ),
     )
 }
@@ -67,6 +67,16 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
   `values-fr`.
 - **Components:** use the design-system components (`AppScaffold`, `EmptyState`, `ErrorState`, …)
   so every app's brand applies.
+- **Destinations and motion:** register destinations with `screen<Route> { }` (from the shell)
+  rather than `composable<Route>`, so shared elements work inside them:
+  - mark an element that moves to the next screen with `Modifier.sharedElementTransition(key)`
+    (same content, e.g. an avatar) or a container that morphs with `Modifier.sharedBoundsTransition(key)`,
+    using the same `key` on both screens. Both do nothing outside the shell;
+  - time in-screen animations with `AppTheme.style.motion` (`emphasis`, `snackbar`, …) and
+    `toAnimationSpec()`, never with hard-coded durations, and skip ambient animations when
+    `AppTheme.reducedMotion` is true;
+  - play feedback with `val haptics = rememberHaptics()` then `haptics(HapticEvent.Confirm)`; the
+    app's pack decides whether anything plays.
 
 ## Data
 

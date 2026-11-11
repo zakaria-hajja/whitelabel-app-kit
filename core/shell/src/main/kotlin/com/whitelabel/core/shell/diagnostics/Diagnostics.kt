@@ -1,7 +1,7 @@
 package com.whitelabel.core.shell.diagnostics
 
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.compose.composable
+import com.whitelabel.core.shell.screen
 import kotlinx.serialization.Serializable
 
 /**
@@ -12,5 +12,5 @@ import kotlinx.serialization.Serializable
 data object DiagnosticsRoute
 
 internal fun NavGraphBuilder.diagnosticsScreen(onBack: () -> Unit) {
-    composable<DiagnosticsRoute> { BrandPreviewRoot(onBack = onBack) }
+    screen<DiagnosticsRoute> { BrandPreviewRoot(onBack = onBack) }
 }

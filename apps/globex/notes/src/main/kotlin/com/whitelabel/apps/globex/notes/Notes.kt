@@ -2,7 +2,7 @@ package com.whitelabel.apps.globex.notes
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.navigation.compose.composable
+import com.whitelabel.core.shell.screen
 import com.whitelabel.core.shell.AppDefinitionBuilder
 import com.whitelabel.core.shell.FeatureEntry
 import com.whitelabel.core.shell.Tab
@@ -18,7 +18,7 @@ fun AppDefinitionBuilder.notes() {
         FeatureEntry(
             id = "notes",
             tab = Tab(NotesRoute, R.string.notes_tab, Icons.Default.Edit),
-            routes = { composable<NotesRoute> { NotesRoot() } },
+            routes = { screen<NotesRoute> { NotesRoot() } },
         ),
     )
 }

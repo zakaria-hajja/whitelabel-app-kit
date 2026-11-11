@@ -2,11 +2,11 @@ package com.whitelabel.feature.catalog
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import com.whitelabel.core.shell.AppDefinitionBuilder
 import com.whitelabel.core.shell.FeatureEntry
 import com.whitelabel.core.shell.Tab
+import com.whitelabel.core.shell.screen
 import com.whitelabel.feature.catalog.presentation.detail.CatalogDetailRoot
 import com.whitelabel.feature.catalog.presentation.list.CatalogListRoot
 import kotlinx.serialization.Serializable
@@ -55,10 +55,10 @@ fun AppDefinitionBuilder.catalog(options: CatalogOptions = CatalogOptions()) {
             requiresSignIn = true,
             tab = Tab(CatalogRoute, R.string.catalog_tab, Icons.AutoMirrored.Filled.List),
             routes = { scope ->
-                composable<CatalogRoute> {
+                screen<CatalogRoute> {
                     CatalogListRoot(options = options, onItemClick = { id -> scope.navigator.navigate(CatalogDetailRoute(id)) })
                 }
-                composable<CatalogDetailRoute>(
+                screen<CatalogDetailRoute>(
                     deepLinks = listOf(navDeepLink<CatalogDetailRoute>(basePath = "${scope.deepLinkScheme}://catalog")),
                 ) {
                     CatalogDetailRoot(onBack = scope.navigator::back)
