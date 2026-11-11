@@ -15,7 +15,11 @@
 # foundation_* config resources the shell reads exist, match app.properties and nothing else.
 # Prints one OK/FAIL line per check and exits non-zero if any check fails.
 set -eu
+# --apk and --properties are relative to where the script is called from (an app repo), so
+# remember that before moving to the foundation root.
+caller=$(pwd)
 cd "$(dirname "$0")/.."
+abs() { case "$1" in /*) echo "$1" ;; *) echo "$caller/$1" ;; esac; }
 
 failed=0
 ok() { echo "OK   $*"; }
@@ -85,8 +89,8 @@ if [ "${1:-}" = "--apk" ]; then
   apk=""; props=""; type=""
   while [ $# -gt 0 ]; do
     case "$1" in
-      --apk) apk=$2; shift 2 ;;
-      --properties) props=$2; shift 2 ;;
+      --apk) apk=$(abs "$2"); shift 2 ;;
+      --properties) props=$(abs "$2"); shift 2 ;;
       --type) type=$2; shift 2 ;;
       *) echo "FAIL unknown argument $1"; exit 2 ;;
     esac
