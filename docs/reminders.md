@@ -81,8 +81,12 @@ still fires at 09:00 after the user flies somewhere else.
 - **Blocked notifications.** Scheduling always works. If notifications are blocked when the time
   comes, nothing is shown and the reminder is removed; the app isn't told.
 - **The content is the app's.** The module never groups, throttles or rewords notifications.
+- **Force stops.** A force stop (from Settings, or from some phone makers' battery managers) removes
+  every alarm and no broadcast follows. The module re-arms everything stored when `Reminders` is
+  first created in a process, so inject it at app start (or soon after) if the app relies on reminders.
 - **Not backed up.** Pending reminders stay on the phone (`noBackupFilesDir`): a restored copy would
-  have no alarms armed. After a restore the app replans them, as it does after any change.
+  have no alarms armed. After a restore nothing is pending, so an app whose data is backed up should
+  replan its reminders with `setAll` when it starts.
 
 ## Permission
 

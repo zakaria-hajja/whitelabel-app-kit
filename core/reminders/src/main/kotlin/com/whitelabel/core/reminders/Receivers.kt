@@ -3,6 +3,8 @@ package com.whitelabel.core.reminders
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,18 +41,31 @@ class ReminderSystemReceiver : BroadcastReceiver() {
     }
 }
 
-/** Runs [block] off the main thread within the broadcast's time; inline when called directly (no pending result). */
+/**
+ * Runs [block] off the main thread within the broadcast's time; inline when called directly (no pending
+ * result). A failure is logged, never thrown: an uncaught one would crash the app in the background on every boot.
+ */
 private fun BroadcastReceiver.runAsync(block: suspend () -> Unit) {
     val pending = goAsync()
     if (pending == null) {
-        runBlocking { block() }
+        runBlocking { logFailure { block() } }
         return
     }
     CoroutineScope(Dispatchers.Default).launch {
         try {
-            block()
+            logFailure { block() }
         } finally {
             pending.finish()
         }
+    }
+}
+
+private suspend fun logFailure(block: suspend () -> Unit) {
+    try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w("Reminders", "A reminder broadcast failed", e)
     }
 }

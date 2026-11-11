@@ -18,6 +18,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import java.io.File
 import java.time.LocalDateTime
+import java.util.Optional
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -68,6 +69,15 @@ class RemindersDeviceTest {
 
         assertThat(File(context.noBackupFilesDir, "reminders.json").exists()).isEqualTo(true)
         assertThat(File(context.filesDir, "datastore/reminders.json").exists()).isEqualTo(false)
+    }
+
+    /** A force stop removes every alarm and no broadcast follows; creating Reminders at app start re-arms them. */
+    @Test fun creatingRemindersReArmsStoredReminders() = runBlocking {
+        runtime.store.update { listOf(reminder("t2", LocalDateTime.now().plusSeconds(3), "After a force stop")) }
+
+        RemindersModule.reminders(context, Optional.empty())
+
+        assertThat(waitFor(15_000) { posted("After a force stop") != null }).isEqualTo(true)
     }
 
     @Test fun aReminderFiresAndPosts() = runBlocking {

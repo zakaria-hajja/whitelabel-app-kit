@@ -2,7 +2,10 @@ package com.whitelabel.core.reminders
 
 import java.time.Duration
 import java.time.LocalDateTime
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -22,7 +25,7 @@ class ReminderEngine(
     private val lock = Mutex()
 
     /** Stores and arms [reminder], replacing (and disarming) one with the same id. A past time follows the late rule. */
-    suspend fun schedule(reminder: Reminder) = lock.withLock {
+    suspend fun schedule(reminder: Reminder) = locked {
         val existing = current().find { it.id == reminder.id }
         if (existing != null) alarms.cancel(existing.id)
         place(reminder)
@@ -32,7 +35,7 @@ class ReminderEngine(
      * Makes the stored reminders whose id starts with [idPrefix] exactly [reminders]:
      * new and changed ones are armed, unchanged ones are left alone, the rest under the prefix are cancelled.
      */
-    suspend fun setAll(reminders: List<Reminder>, idPrefix: String) = lock.withLock {
+    suspend fun setAll(reminders: List<Reminder>, idPrefix: String) = locked {
         require(reminders.all { it.id.startsWith(idPrefix) }) { "Every reminder id must start with \"$idPrefix\"" }
         val wanted = reminders.associateBy { it.id }
         val stored = current().filter { it.id.startsWith(idPrefix) }
@@ -50,21 +53,21 @@ class ReminderEngine(
         }
     }
 
-    suspend fun cancel(id: String) = lock.withLock {
+    suspend fun cancel(id: String) = locked {
         if (current().any { it.id == id }) {
             alarms.cancel(id)
             store.update { list -> list.filterNot { it.id == id } }
         }
     }
 
-    suspend fun cancelAll() = lock.withLock {
+    suspend fun cancelAll() = locked {
         current().forEach { alarms.cancel(it.id) }
         store.update { emptyList() }
     }
 
     /** The alarm for [id] went off: show it if it's still pending and due, then forget it. */
-    suspend fun onAlarm(id: String) = lock.withLock {
-        val reminder = current().find { it.id == id } ?: return@withLock
+    suspend fun onAlarm(id: String) = locked {
+        val reminder = current().find { it.id == id } ?: return@locked
         if (reminder.at.isAfter(now())) {
             alarms.set(reminder.id, reminder.at) // woke early (e.g. the clock moved): wait for the real time
         } else {
@@ -73,14 +76,22 @@ class ReminderEngine(
     }
 
     /** After a reboot, a clock or time-zone change, or an app update: alarms are gone or wrong, so rebuild them. */
-    suspend fun onSystemChange() = lock.withLock {
+    suspend fun onSystemChange() = locked {
         val time = now()
         current().forEach { reminder ->
-            if (reminder.at.isAfter(time)) alarms.set(reminder.id, reminder.at) else fire(reminder)
+            // One failure (e.g. the system's alarm limit) must not leave the rest unarmed.
+            runCatching { if (reminder.at.isAfter(time)) alarms.set(reminder.id, reminder.at) else fire(reminder) }
+                .onFailure { if (it is CancellationException) throw it }
         }
     }
 
     suspend fun pending(): List<Reminder> = current()
+
+    /**
+     * Serialized and not cancellable: a store write and its alarm happen together, even when the caller
+     * (say a ViewModel scope) is cancelled halfway, so no reminder is ever stored without its alarm.
+     */
+    private suspend fun <T> locked(block: suspend () -> T): T = withContext(NonCancellable) { lock.withLock { block() } }
 
     private suspend fun current(): List<Reminder> = store.reminders.first()
 

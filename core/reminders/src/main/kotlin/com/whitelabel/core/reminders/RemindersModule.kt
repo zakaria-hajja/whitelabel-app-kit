@@ -23,7 +23,9 @@ abstract class RemindersModule {
         fun reminders(@ApplicationContext context: Context, config: Optional<ReminderConfig>): Reminders {
             ReminderConfigProvider.config = config.orElse(null)
             ensureChannels(context, ReminderConfigProvider.config)
-            return Reminders(RemindersRuntime.get(context).engine)
+            val runtime = RemindersRuntime.get(context)
+            runtime.rearmOnce()
+            return Reminders(runtime.engine)
         }
     }
 }

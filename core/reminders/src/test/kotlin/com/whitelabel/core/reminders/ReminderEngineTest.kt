@@ -5,7 +5,10 @@ import assertk.assertions.containsExactly
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import java.time.LocalDateTime
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -139,6 +142,30 @@ class ReminderEngineTest {
         assertThat(alarms.log.filter { it.startsWith("set") }).isEmpty()
     }
 
+    @Test fun `a cancelled caller still leaves the reminder armed`() = runTest {
+        val gate = CompletableDeferred<Unit>()
+        val slowStore = MemoryStore(afterWrite = { gate.await() })
+        val engine = ReminderEngine(slowStore, alarms, poster) { now }
+
+        val job = launch { engine.schedule(reminder("a", at(9))) }
+        testScheduler.advanceUntilIdle()
+        job.cancel()
+        gate.complete(Unit)
+        job.join()
+
+        assertThat(slowStore.reminders.first()).containsExactly(reminder("a", at(9)))
+        assertThat(alarms.log).containsExactly("set a ${at(9)}")
+    }
+
+    @Test fun `onSystemChange keeps re-arming after one alarm fails`() = runTest {
+        store.seed(reminder("a", at(9)), reminder("b", at(10)))
+        alarms.failFor = "a"
+
+        engine.onSystemChange()
+
+        assertThat(alarms.log).containsExactly("set b ${at(10)}")
+    }
+
     @Test fun `setAll with a past time follows the same late rule`() = runTest {
         engine.setAll(
             listOf(reminder("m:recent", LocalDateTime.of(2027, 3, 9, 20, 1)), reminder("m:old", LocalDateTime.of(2027, 3, 9, 19, 59))),
@@ -150,11 +177,12 @@ class ReminderEngineTest {
     }
 }
 
-private class MemoryStore : ReminderStore {
+private class MemoryStore(private val afterWrite: suspend () -> Unit = {}) : ReminderStore {
     private val state = MutableStateFlow<List<Reminder>>(emptyList())
     override val reminders: Flow<List<Reminder>> = state
     override suspend fun update(transform: (List<Reminder>) -> List<Reminder>) {
         state.value = transform(state.value)
+        afterWrite() // like DataStore: the write is committed, then the caller may see a cancellation
     }
     fun seed(vararg items: Reminder) {
         state.value = items.toList()
@@ -163,7 +191,11 @@ private class MemoryStore : ReminderStore {
 
 private class FakeAlarms : AlarmScheduler {
     val log = mutableListOf<String>()
-    override fun set(id: String, at: LocalDateTime) { log += "set $id $at" }
+    var failFor: String? = null
+    override fun set(id: String, at: LocalDateTime) {
+        if (id == failFor) throw IllegalStateException("alarm limit")
+        log += "set $id $at"
+    }
     override fun cancel(id: String) { log += "cancel $id" }
 }
 
