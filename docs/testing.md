@@ -3,6 +3,8 @@
 | Kind | Where | Runs in | Tools |
 |---|---|---|---|
 | Unit (JVM) | `src/test` of each module | `scripts/check.sh`, CI | JUnit 5, AssertK, Turbine, `kotlinx-coroutines-test` |
+| Unit (KMP) | `src/commonTest` (JVM and iOS), `src/jvmTest`, `src/iosTest` of each KMP module | `scripts/check.sh`, CI (JVM only; iOS on a Mac with Xcode) | `kotlin.test`, AssertK, Turbine, `kotlinx-coroutines-test` |
+| Android device (KMP) | `src/androidDeviceTest`: only code that needs a `Context` or the Keystore | locally on an emulator | `kotlin.test` on JUnit 4, AssertK |
 | Build logic | `build-logic/convention/src/test` | `scripts/check.sh`, CI | JUnit 5, AssertK, temp directories |
 | Instrumented (Compose UI) | `src/androidTest` | locally on an emulator; CI in Phase 5 | `createAndroidComposeRule`, AssertK |
 | App identity | `apps/<name>/src/test/.../<Name>IdentityTest.kt` | `scripts/check.sh`, CI | asserts every `BuildConfig` field for both build types |
@@ -19,7 +21,8 @@ These follow the project's Android skills:
 - **Network tests** use Ktor `MockEngine` via `HttpClientFactory`, so they exercise the real
   headers, envelope and error mapping.
 - **Write the test first** and watch it fail before the implementation exists.
-- **Name tests by behaviour:** `` `blank or whitespace draft is not added` ``.
+- **Name tests by behaviour:** `` `blank or whitespace draft is not added` ``. In KMP tests, leave
+  out `, . ; [ ] / < > :`: Kotlin/Native rejects them in names.
 
 ## Commands
 
@@ -27,6 +30,8 @@ These follow the project's Android skills:
 scripts/check.sh                                  # Gradle check for every module + build-logic tests
 ./gradlew :feature:catalog:testDebugUnitTest      # one module
 ./gradlew -p build-logic :convention:test         # the app config loader
+./gradlew :core:common:allTests                   # a KMP module: jvmTest, plus iosSimulatorArm64Test on a Mac
+./gradlew :core:presentation:connectedAndroidDeviceTest   # a KMP module's Android device tests
 
 # Instrumented: start an emulator first
 ~/Library/Android/sdk/emulator/emulator -avd Medium_Phone_API_36.1 -no-window -no-audio -no-boot-anim &
@@ -36,6 +41,10 @@ adb wait-for-device
 
 ./gradlew assembleDebug assembleRelease && scripts/verify-apps.sh
 ```
+
+iOS tests need Xcode (not only the Command Line Tools) and run only on macOS:
+`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` once. On Linux, iOS tasks are
+skipped (`kotlin.native.ignoreDisabledTargets`).
 
 If lint ever fails with "Unexpected failure during lint analysis", that is stale incremental lint
 data, not your code. Delete `<module>/build/intermediates/lint*` and run again.

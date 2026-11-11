@@ -8,6 +8,8 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
+import org.jetbrains.kotlin.gradle.tasks.KotlinNativeLink
 
 /**
  * The Android namespace (and package) of a KMP module, from its Gradle path: `:core:common` →
@@ -60,5 +62,9 @@ internal fun Project.configureKotlinMultiplatform() {
     }
 
     tasks.withType<Test>().configureEach { useJUnitPlatform() }
+    if (!iosTestsEnabled(mapOf(SKIP_IOS_TESTS_PROPERTY to providers.gradleProperty(SKIP_IOS_TESTS_PROPERTY).orNull))) {
+        tasks.withType<KotlinNativeTest>().configureEach { enabled = false }
+        tasks.withType<KotlinNativeLink>().configureEach { if (name.contains("Test")) enabled = false }
+    }
     pointTestsAtTheContract()
 }

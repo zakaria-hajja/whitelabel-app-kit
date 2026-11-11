@@ -10,8 +10,9 @@ business features. The design is in
 
 | Module | Status | Responsibility |
 |---|---|---|
-| `build-logic` | Built | Convention plugins: `whitelabel.android.application` (app modules), `.android.library`, `.android.library.compose`, `.jvm.library`, `.hilt`. Also the app config loader that validates each `apps/<name>/app.properties` |
-| `:core:common` | Built | `Result<T, E>`, `DataError`, `ApiErrorCode`. Pure Kotlin |
+| `build-logic` | Built | Convention plugins: `whitelabel.android.application` (app modules), `.android.library`, `.android.library.compose`, `.jvm.library`, `.hilt`, and for Kotlin Multiplatform `whitelabel.kmp.library` and `whitelabel.kmp.resources` (see §5). Also the app config loader that validates each `apps/<name>/app.properties` |
+| `:core:common` | Built | `Result<T, E>`, `DataError`, `ApiErrorCode`. Kotlin Multiplatform (Android, iOS) |
+| `:core:presentation` | Built | Shared presentation types for Android and iOS: `UiText` (text or a shared string resource) and `DataError.toUiText()` with the generic error messages. Kotlin Multiplatform with Compose resources |
 | `:core:branding` | Built | `BrandConfig`, the app's typed build-time identity (tenant, name, API URL, environment, runtime defaults). Pure Kotlin |
 | `:core:network` | Built | Ktor client factory, backend envelope unwrapping, error mapping, typed request helpers, the optional `X-Client-Id` tenant header, and the bearer session with single-flight refresh. It reads tokens through `SessionTokenStore`, so it never depends on storage. Pure Kotlin with Hilt |
 | `:core:designsystem` | Built | `AppTheme` built from brand resources and the app's style pack (`StylePack.Material`/`Gallery`: corners, surfaces, sizing, motion, haptics), shared-element helpers, spacing tokens, components (buttons, text field, card, scaffold, loading, empty and error states, dialog), contrast helpers |
@@ -21,7 +22,7 @@ business features. The design is in
 | `:apps:showcase` | Built | Reference app that will use every shared feature. It uses all of them: sign-in, home, catalog, profile and settings |
 | `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Pure Kotlin |
 | `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference |
-| `:core:ui` | Built | Presentation helpers for features: `UiText`, `DataError.toUiText()`, `ObserveAsEvents` |
+| `:core:ui` | Built | Presentation helpers for features: `UiText`, `DataError.toUiText()`, `ObserveAsEvents`. The `UiText` here is Android-only and is replaced by `:core:presentation`'s as features move to KMP |
 | `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Pure Kotlin |
 | `:feature:authentication` | Built | `auth()`: the whole-app sign-in gate with sign-in, registration and password reset. See [shared-features.md](shared-features.md) |
 | `:feature:settings` | Built | `settings()`: theme, language, notifications, about, legal links and sign-out. See [shared-features.md](shared-features.md) |
@@ -123,7 +124,33 @@ Rules, enforced by module boundaries and by review:
 
 See [api-environments.md](api-environments.md).
 
-## 5. Further reading
+## 5. Kotlin Multiplatform
+
+The foundation is moving to Kotlin Multiplatform so apps can ship on iOS with the same logic: rules,
+data and ViewModels are shared, and each platform draws its own UI (Jetpack Compose on Android,
+SwiftUI on iOS). Design: [2026-11-11-ios-kmp-stack-design.md](superpowers/specs/2026-11-11-ios-kmp-stack-design.md);
+progress: [2026-11-11-kmp-migration.md](superpowers/plans/2026-11-11-kmp-migration.md).
+
+- **`whitelabel.kmp.library`** builds a module for:
+  - Android, with AGP's `com.android.kotlin.multiplatform.library`;
+  - iOS (`iosArm64`, `iosSimulatorArm64`);
+  - the JVM. The JVM target ships nowhere. It runs host tests on plain JUnit 5 and lets the
+    JVM-only `:core:testing` fixtures be used from `jvmTest`.
+
+  The namespace and package come from the Gradle path (`:core:common` →
+  `com.whitelabel.core.common`).
+- **Source sets:**
+  - `commonMain` holds everything that isn't platform code.
+  - `androidMain` and `iosMain` hold only adapters behind interfaces.
+  - Tests live in `commonTest` (all targets), `jvmTest`, `androidDeviceTest` (code that needs a
+    `Context`) and `iosTest`.
+- **`whitelabel.kmp.resources`** adds Compose Multiplatform resources. Strings shared code shows go
+  in `src/commonMain/composeResources/values{,-fr}/strings.xml`, and the generated `Res` lives in
+  `<namespace>.resources`.
+  - Write apostrophes plainly (`'`): Compose resources don't unescape Android's `\'`.
+  - Strings that only screens use stay in each platform's own resources.
+
+## 6. Further reading
 
 - [creating-an-app.md](creating-an-app.md): build app #N step by step
 - [adding-a-shared-feature.md](adding-a-shared-feature.md): add a reusable feature
