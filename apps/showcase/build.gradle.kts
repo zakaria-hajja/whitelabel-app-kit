@@ -11,4 +11,5 @@ dependencies {
     implementation(project(":feature:authentication"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:profile"))
+    implementation(project(":feature:home"))
 }
