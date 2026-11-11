@@ -42,6 +42,7 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
         FeatureEntry(
             id = "settings",
             tab = Tab(SettingsRoute, R.string.settings_tab, Icons.Default.Settings),
+            modules = listOf(settingsModule),
             routes = { scope ->
                 screen<SettingsRoute> {
                     SettingsRoot(

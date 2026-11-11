@@ -36,6 +36,7 @@ fun AppDefinitionBuilder.auth(options: AuthOptions = AuthOptions()) {
         FeatureEntry(
             id = "auth",
             gate = Gate(LoginRoute),
+            modules = listOf(authenticationModule),
             routes = { scope ->
                 val navigator = scope.navigator
                 screen<LoginRoute> {

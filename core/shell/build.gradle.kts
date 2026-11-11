@@ -2,6 +2,7 @@ plugins {
     id("whitelabel.android.library")
     id("whitelabel.android.library.compose")
     id("whitelabel.hilt")
+    id("whitelabel.koin")
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -34,4 +35,5 @@ dependencies {
     testImplementation(libs.turbine)
     androidTestImplementation(libs.assertk)
     testImplementation(project(":core:testing"))
+    testImplementation(project(":core:mockapi"))
 }

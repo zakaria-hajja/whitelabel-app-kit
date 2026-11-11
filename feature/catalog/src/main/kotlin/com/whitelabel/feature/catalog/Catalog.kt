@@ -54,6 +54,7 @@ fun AppDefinitionBuilder.catalog(options: CatalogOptions = CatalogOptions()) {
             flagKey = "catalog",
             requiresSignIn = true,
             tab = Tab(CatalogRoute, R.string.catalog_tab, Icons.AutoMirrored.Filled.List),
+            modules = listOf(catalogModule),
             routes = { scope ->
                 screen<CatalogRoute> {
                     CatalogListRoot(options = options, onItemClick = { id -> scope.navigator.navigate(CatalogDetailRoute(id)) })
