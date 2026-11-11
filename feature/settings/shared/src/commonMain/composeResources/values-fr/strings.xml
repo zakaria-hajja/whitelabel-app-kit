@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- Under the language row on iOS, which applies an app language at the next launch. -->
+    <string name="settings_language_applies_on_restart">S\'applique à la prochaine ouverture de l\'app.</string>
 </resources>

@@ -25,4 +25,9 @@ final class IosLanguageRepositoryTests: XCTestCase {
         // Only the app's own override goes; reads still fall back to the device's languages.
         XCTAssertNil(defaults.persistentDomain(forName: "wl.language-tests")?["AppleLanguages"])
     }
+
+    /** iOS reads the app's language only at launch, so settings tells the user it applies next time. */
+    func testAChangeAppliesAtTheNextLaunch() {
+        XCTAssertFalse(IosLanguageRepository(defaults: defaults).appliesImmediately)
+    }
 }

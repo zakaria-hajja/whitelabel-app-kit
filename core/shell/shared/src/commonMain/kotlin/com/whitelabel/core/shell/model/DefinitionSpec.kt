@@ -59,14 +59,22 @@ data class DefinitionSpec(val features: List<FeatureSpec>, val startTabRoute: St
 }
 
 /**
- * The tab routes to show, in order. A feature without a flag key is always visible; one with a
- * key uses the remote value when present, otherwise whether the key is in [defaultFeatures].
+ * The features that are on, in order. A feature without a flag key is always on; one with a key
+ * uses the remote value when present, otherwise whether the key is in [defaultFeatures]. A feature
+ * that is off shows no tab, and no deep link opens it.
  */
+fun DefinitionSpec.enabledFeatureIds(remoteFlags: Map<String, Boolean>, defaultFeatures: Set<String>): List<String> =
+    enabledFeatures(remoteFlags, defaultFeatures).map { it.id }
+
+/** The tab routes to show, in order: the tabs of the [enabledFeatureIds]. */
 fun DefinitionSpec.visibleTabRoutes(remoteFlags: Map<String, Boolean>, defaultFeatures: Set<String>): List<String> =
+    enabledFeatures(remoteFlags, defaultFeatures).mapNotNull { it.tabRoute }
+
+private fun DefinitionSpec.enabledFeatures(remoteFlags: Map<String, Boolean>, defaultFeatures: Set<String>): List<FeatureSpec> =
     features.filter { feature ->
         val key = feature.flagKey ?: return@filter true
         remoteFlags[key] ?: (key in defaultFeatures)
-    }.mapNotNull { it.tabRoute }
+    }
 
 /** The declared start tab if visible, else the first visible tab, else null (nothing to show). */
 fun DefinitionSpec.resolveStartTab(visible: List<String>): String? =

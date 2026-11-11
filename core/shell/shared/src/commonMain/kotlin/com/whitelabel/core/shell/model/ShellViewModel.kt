@@ -30,6 +30,8 @@ data class ShellState(
     val ready: Boolean = false,
     /** The shared route ids of the visible tabs, in order (`<Name>Routes` constants). */
     val visibleTabRoutes: List<String> = emptyList(),
+    /** The ids of the features that are on (decided with the tabs); a link into another one is dropped. */
+    val enabledFeatureIds: List<String> = emptyList(),
     val theme: ThemePreference = ThemePreference.SYSTEM,
     val session: SessionState = SessionState.Unknown,
 ) {
@@ -67,13 +69,17 @@ class ShellViewModel(
         savedState[KEY_DEEP_LINK] = null
     }
 
-    private val tabs = MutableStateFlow<List<String>?>(null)
+    /** The tabs and enabled features, decided once per process. */
+    private class Decision(val tabs: List<String>, val enabled: List<String>)
 
-    val state: StateFlow<ShellState> = combine(tabs, preferences.theme, appConfig.config, session.state) {
-            tabs, theme, config, sessionState ->
+    private val decision = MutableStateFlow<Decision?>(null)
+
+    val state: StateFlow<ShellState> = combine(decision, preferences.theme, appConfig.config, session.state) {
+            decision, theme, config, sessionState ->
         ShellState(
-            ready = tabs != null,
-            visibleTabRoutes = tabs.orEmpty(),
+            ready = decision != null,
+            visibleTabRoutes = decision?.tabs.orEmpty(),
+            enabledFeatureIds = decision?.enabled.orEmpty(),
             theme = theme ?: config.defaultTheme,
             session = sessionState,
         )
@@ -87,7 +93,9 @@ class ShellViewModel(
                 val refresh = launch { appConfig.refresh() }
                 withTimeoutOrNull(CONFIG_WAIT_MS) { refresh.join() }
             }
-            tabs.value = definition.visibleTabRoutes(appConfig.current().features, brand.runtimeDefaults.enabledFeatures)
+            val flags = appConfig.current().features
+            val defaults = brand.runtimeDefaults.enabledFeatures
+            decision.value = Decision(definition.visibleTabRoutes(flags, defaults), definition.enabledFeatureIds(flags, defaults))
         }
         viewModelScope.launch {
             if (session.state.first { it != SessionState.Unknown } == SessionState.SignedIn) users.refresh()

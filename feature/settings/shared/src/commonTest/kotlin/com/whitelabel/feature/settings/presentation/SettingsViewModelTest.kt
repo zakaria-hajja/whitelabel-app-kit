@@ -60,7 +60,7 @@ private class FakePreferences : UserPreferencesRepository {
     override suspend fun setTheme(theme: ThemePreference) { this.theme.value = theme }
 }
 
-private class FakeLanguage : LanguageRepository {
+private class FakeLanguage(override val appliesImmediately: Boolean = true) : LanguageRepository {
     var tag: String? = null
     override fun current() = tag
     override fun set(languageTag: String?) { tag = languageTag }
@@ -130,6 +130,22 @@ class SettingsViewModelTest {
         viewModel.onAction(SettingsAction.OnLanguageSelect(null))
         assertThat(language.tag).isNull()
         assertThat(source.patches).containsExactly(SettingsPatch(language = "fr"))
+    }
+
+    // iOS applies an app language at the next launch: the screen says so instead of half-translating.
+    @Test fun `a language change that applies on restart says so`() = runTest {
+        val viewModel = SettingsViewModel(FakeSession(SessionState.SignedOut), preferences, FakeLanguage(appliesImmediately = false), config, brand, source, analytics)
+        assertThat(viewModel.state.value.languageNote).isNull()
+        viewModel.onAction(SettingsAction.OnLanguageSelect("fr"))
+        assertThat(viewModel.state.value.languageAppliesOnRestart).isTrue()
+        assertThat(viewModel.state.value.languageNote).isNotNull()
+    }
+
+    @Test fun `a language change that applies at once says nothing`() = runTest {
+        val viewModel = viewModel()
+        viewModel.onAction(SettingsAction.OnLanguageSelect("fr"))
+        assertThat(viewModel.state.value.languageAppliesOnRestart).isFalse()
+        assertThat(viewModel.state.value.languageNote).isNull()
     }
 
     @Test fun `a language changed outside the app shows when the screen is back`() = runTest {
