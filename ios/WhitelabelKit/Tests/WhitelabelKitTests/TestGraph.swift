@@ -4,6 +4,8 @@ import Shared
 
 /** Starts the shared graph on the fake backend with a settings-only definition, as a test needs it. */
 enum TestGraph {
+    static let cipherService = "com.whitelabel.kit.tests"
+
     static let brand = BrandConfig(
         tenant: nil, appName: "Showcase", applicationId: "com.whitelabel.showcase.tests", versionName: "1.0",
         environment: .development, apiBaseUrl: "https://api.showcase.example/api/v1/", deepLinkScheme: "showcase",
@@ -17,7 +19,7 @@ enum TestGraph {
             startTabRoute: nil
         )
         let platform = IosPlatform(
-            tokenCipher: KeychainTokenCipher(service: "com.whitelabel.kit.tests"),
+            tokenCipher: KeychainTokenCipher(service: cipherService),
             language: IosLanguageRepository(defaults: UserDefaults(suiteName: "wl.tests")!),
             brand: brand,
             logger: { _ in }

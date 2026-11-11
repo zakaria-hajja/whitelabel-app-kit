@@ -80,7 +80,8 @@ class TokenStore(
      * as a `ProviderException`. Signing out is recoverable; crashing on every launch is not.
      */
     private suspend fun SealedDocument.open(): StoredTokens? = decryptOrNull() ?: null.also {
-        if (iv != null || ciphertext != null) clear()
+        // A key store that is only unavailable for now (a locked device) keeps the tokens for later.
+        if ((iv != null || ciphertext != null) && cipher.isAvailable()) clear()
     }
 
 }

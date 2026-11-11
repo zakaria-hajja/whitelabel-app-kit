@@ -34,6 +34,17 @@ public final class KeychainTokenCipher: NSObject, TokenCipher {
         return try AES.GCM.open(box, using: try key(createIfMissing: false)).kotlinByteArray
     }
 
+    /**
+     * False only while the Keychain can't be read for now (the device is locked, or it's not ready):
+     * the stored tokens are then kept for later. A missing key is "available": the session is gone.
+     */
+    public func isAvailable() -> Bool {
+        var query = query()
+        query[kSecReturnData as String] = false
+        let status = SecItemCopyMatching(query as CFDictionary, nil)
+        return status != errSecInteractionNotAllowed && status != errSecNotAvailable
+    }
+
     /** Removes the key (tests, and a full reset): what was encrypted with it can't be read again. */
     public func deleteKey() {
         SecItemDelete(query() as CFDictionary)
