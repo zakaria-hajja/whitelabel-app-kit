@@ -18,3 +18,10 @@ local.properties
 .superpowers/
 AGENTS.md
 apps/*/signing.properties
+
+# iOS: generated project, config and build output (XcodeGen and generateIosConfig recreate them)
+ios/**/*.xcodeproj
+ios/**/*.generated.xcconfig
+ios/**/build/
+ios/**/.build/
+ios/**/DerivedData/

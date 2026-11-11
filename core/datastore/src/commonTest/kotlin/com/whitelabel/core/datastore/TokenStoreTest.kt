@@ -18,7 +18,8 @@ import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 
 /** Reversible stand-in for the Keystore cipher; [failDecrypt] simulates an invalidated key. */
-private class XorCipher(var failDecrypt: Boolean = false, var keystoreFault: Boolean = false) : TokenCipher {
+private class XorCipher(var failDecrypt: Boolean = false, var keystoreFault: Boolean = false, var available: Boolean = true) : TokenCipher {
+    override fun isAvailable() = available
     private val iv = byteArrayOf(7, 7, 7)
     override fun encrypt(plain: ByteArray) = Sealed(iv, plain.map { (it.toInt() xor 0x5A).toByte() }.toByteArray())
     override fun decrypt(sealed: Sealed): ByteArray {
@@ -103,5 +104,13 @@ class TokenStoreTest {
         }
         withStore(fixedIv) { it.write(StoredTokens("a", "r")) }
         assertThat(fileSystem.read(file) { readUtf8() }).contains("\"iv\":\"AAECAw==\"")
+    }
+
+    /** iOS: the Keychain can be unavailable for a moment (device locked); that must not throw the session away. */
+    @Test fun `an unavailable cipher reads signed out but keeps the tokens`() = runTest {
+        withStore { it.write(tokens) }
+        assertThat(withStore(XorCipher(failDecrypt = true, available = false)) { it.tokens.first() }).isNull()
+        // Kept: once the cipher is available again the session is back.
+        assertThat(withStore { it.tokens.first() }).isEqualTo(tokens)
     }
 }

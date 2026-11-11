@@ -4,32 +4,41 @@ plugins {
     // ViewModels' messages resolve in the iOS app.
     id("whitelabel.kmp.resources")
     id("whitelabel.koin")
+    // StateFlow → Swift async sequences, sealed types → Swift enums, suspend → async.
+    alias(libs.plugins.skie)
+    id("whitelabel.ios.app")
 }
 
-// Showcase's shared code as one iOS framework (ShowcaseShared), for the iOS app (step 5 of the iOS
-// design). The modules Swift calls are exported, so their types appear in the framework's API.
+// Showcase's shared code as one iOS framework. Every app's framework is named "Shared", so the
+// reusable Swift kit (ios/WhitelabelKit) imports the same module whatever the app.
 val exported = listOf(
     ":core:common", ":core:domain", ":core:presentation", ":core:data", ":core:network", ":core:datastore",
-    ":core:branding", ":core:analytics",
+    ":core:branding", ":core:analytics", ":core:shell:shared", ":core:ios",
     ":feature:authentication:shared", ":feature:settings:shared", ":feature:profile:shared",
     ":feature:home:shared", ":feature:catalog:shared",
 )
 
+// -Pwhitelabel.mockApi=true (passed only by the Xcode Debug configuration) links the fake backend;
+// Release builds never contain it.
+val withMockApi = providers.gradleProperty("whitelabel.mockApi").orNull == "true"
+val linked = if (withMockApi) exported + ":core:ios:mock" else exported
+
 kotlin {
     listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
         target.binaries.framework {
-            baseName = "ShowcaseShared"
+            baseName = "Shared"
             isStatic = true
-            exported.forEach { export(project(it)) }
+            linked.forEach { export(project(it)) }
         }
     }
     sourceSets {
         commonMain.dependencies {
-            exported.forEach { api(project(it)) }
-        }
-        iosTest.dependencies {
-            implementation(libs.ktor.client.mock)
-            implementation(libs.androidx.lifecycle.viewmodel.savedstate)
+            linked.forEach { api(project(it)) }
         }
     }
+}
+
+iosApp {
+    androidApp.set(rootProject.layout.projectDirectory.dir("apps/showcase"))
+    iosConfigDir.set(rootProject.layout.projectDirectory.dir("ios/Showcase/Config"))
 }

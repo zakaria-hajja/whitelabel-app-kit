@@ -20,6 +20,7 @@ business features. The design is in
 | `:core:reminders` | Built | `Reminders`: local notifications at a date and time that survive reboots, clock and time-zone changes and app updates, with a 12-hour rule for missed ones; the app's channels through `ReminderConfig`; `rememberNotificationPermission()` and `openNotificationSettings()`. See [reminders.md](reminders.md) |
 | `:core:reminders:shared` | Built | The reminder engine, its ports (`AlarmScheduler`, `NotificationPoster`, `ReminderStore`), `Reminder` (on `kotlinx-datetime`) and the stored format. Kotlin Multiplatform (Android, iOS) |
 | `:core:shell:shared` | Built | The shell's platform-neutral model, shared with iOS: `DefinitionSpec`/`FeatureSpec` and their rules (`validate()`, the backend check), visible tabs and the start tab, the deep-link policy, and `ShellViewModel` (tabs once per process, theme, session, pending deep link). Kotlin Multiplatform (Android, iOS) |
+| `:core:ios` | Built | The iOS app's entry point (`SharedGraph`): starts the shared graph with Swift-provided platform pieces and gives each shared ViewModel through a typed accessor. `:core:ios:mock` adds the fake backend in Debug. See [ios.md](ios.md) |
 | `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, remote feature flags, the theme and language preferences, analytics wiring, the sign-in gate, and the diagnostics screen (debug builds only, opened from Settings) |
 | `:apps:showcase` | Built | Reference app that will use every shared feature. It uses all of them: sign-in, home, catalog, profile and settings |
 | `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Kotlin Multiplatform (Android, iOS) |
@@ -37,6 +38,7 @@ business features. The design is in
 | `:feature:catalog` | Built | `catalog()`: paginated search with categories and sort, item screen and its deep link. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
 | `:feature:catalog:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
 | `:apps:showcase:shared` | Built | Showcase's shared code as one iOS framework (`ShowcaseShared`, with every shared module's strings) and `showcaseSharedModules(platform)`, its Koin modules. The Swift-facing entry point comes with the iOS starter |
+| `ios/WhitelabelKit`, `ios/Showcase` | Built | The Swift half: the reusable kit (bridge, platform pieces; design system, shell and screens to come) and showcase's iOS project. See [ios.md](ios.md) |
 | `fixtures/standalone-app` | Built | A minimal backendless app wired like an app in its own repo; CI builds and verifies it |
 
 **Apps in their own repo.** An app can also live in a separate repository, with this foundation as a
