@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performScrollTo
 import assertk.assertThat
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.unit.dp
 import assertk.assertions.containsExactly
 import assertk.assertions.isGreaterThan
 import assertk.assertions.isLessThan
@@ -110,6 +111,15 @@ class SettingsScreenTest {
         show(SettingsState(appName = "Sample"), SettingsOptions(sections = listOf(callout)))
         rule.onNodeWithText("Reminders are blocked").assertExists()
         assertThat(top("Reminders are blocked")).isLessThan(top("Appearance"))
+    }
+
+    @Test
+    fun longValue_wrapsInsteadOfCrushingTheLabel() {
+        val long = "Dollar des États-Unis ($) et encore quelques mots pour remplir la ligne"
+        val row = SettingsSection(null) { SettingsValueRow("Currency", long, onClick = {}) }
+        show(SettingsState(appName = "Sample"), SettingsOptions(sections = listOf(row)))
+        val label = rule.onNodeWithText("Currency", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertThat(label.right - label.left).isGreaterThan(64.dp)
     }
 
     @Test

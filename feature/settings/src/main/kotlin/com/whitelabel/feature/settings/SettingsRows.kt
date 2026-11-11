@@ -44,7 +44,8 @@ fun SettingsValueRow(label: String, value: String, onClick: () -> Unit, modifier
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.End,
-            modifier = Modifier.padding(start = AppTheme.spacing.md),
+            // Weighted without filling: a short value hugs the end, a long one wraps instead of crushing the label.
+            modifier = Modifier.weight(1f, fill = false).padding(start = AppTheme.spacing.md),
         )
     }
 }
