@@ -1,0 +1,9 @@
+plugins {
+    id("whitelabel.jvm.library")
+}
+
+// Test fixtures only: modules add it as testImplementation, never to production code.
+dependencies {
+    api(libs.kotlinx.serialization.json)
+    api(libs.json.schema.validator)
+}
