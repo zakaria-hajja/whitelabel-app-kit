@@ -7,6 +7,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
 import assertk.assertions.isEqualTo
 import assertk.assertions.messageContains
+import com.whitelabel.core.designsystem.theme.StylePack
 import org.junit.jupiter.api.Test
 
 class AppDefinitionTest {
@@ -104,5 +105,18 @@ class AppDefinitionTest {
             "auth, a, b call the backend: set api.debug.baseUrl and api.release.baseUrl in app.properties",
         )
         assertThat(definition.backendProblem(hasBackend = true)).isNull()
+    }
+
+    @Test fun `style defaults to material`() {
+        assertThat(appDefinition { add(entry("a", RouteA)) }.stylePack).isEqualTo(StylePack.Material)
+    }
+
+    @Test fun `last style call wins`() {
+        val definition = appDefinition {
+            add(entry("a", RouteA))
+            style(StylePack.Gallery)
+            style(StylePack.Material)
+        }
+        assertThat(definition.stylePack).isEqualTo(StylePack.Material)
     }
 }

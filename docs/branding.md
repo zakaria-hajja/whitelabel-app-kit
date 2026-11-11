@@ -43,7 +43,35 @@ surface_variant on_surface_variant outline`
 ## Shapes
 
 `dimen/brand_corner_small`, `brand_corner_medium` and `brand_corner_large`. The defaults are 8, 12
-and 16dp; globex uses 0, 2 and 4dp for a square look.
+and 16dp; globex uses 0, 2 and 4dp for a square look. A style pack that sets `corners` (Gallery
+does) replaces these; see below.
+
+## Style packs (look and motion)
+
+Colors and fonts come from resources (above). Everything else about the look is a **style pack**,
+a `StylePack` from `:core:designsystem`, picked in the app definition:
+
+```kotlin
+appDefinition {
+    style(StylePack.Gallery)
+    // ...features
+}
+```
+
+| Part | Material (default) | Gallery |
+|---|---|---|
+| Corners | `brand_corner_*` resources | 4 / 8 / 14 dp |
+| Surfaces | elevation shadows | 1 dp hairlines (cards outlined, a rule above the bottom bar) |
+| Controls | 48 dp | 52 dp |
+| Type | Material weights; titles in the display font | display and headlines at regular weight; titles in the body font |
+| Motion | Navigation's default 700 ms fades | 420 ms pushes and shared elements, 320 ms back, a 210 ms fade-through between tabs |
+| Haptics | none | a tick on confirm, a confirm on success, a toggle click |
+
+- An app that never calls `style()` gets `Material`, which is exactly the look apps had before packs.
+- Vary a pack with `copy`: `StylePack.Gallery.copy(sizing = StylePack.Gallery.sizing.copy(controlHeight = 56.dp))`.
+- With Android's "Remove animations" on, every transition becomes a 150 ms crossfade, and
+  `AppTheme.reducedMotion` is true so features can stop their own ambient animations.
+- The diagnostics catalog shows the active pack's name.
 
 ## Fonts (optional)
 

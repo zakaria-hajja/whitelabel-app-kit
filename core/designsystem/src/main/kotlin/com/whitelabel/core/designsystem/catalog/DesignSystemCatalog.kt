@@ -39,6 +39,7 @@ fun DesignSystemCatalog(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.md),
     ) {
         Section("Typography") {
+            Text("Style pack: ${AppTheme.style.name}", style = MaterialTheme.typography.labelLarge)
             Text("Headline", style = MaterialTheme.typography.headlineMedium)
             Text("Title", style = MaterialTheme.typography.titleMedium)
             Text("Body", style = MaterialTheme.typography.bodyLarge)

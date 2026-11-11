@@ -1,5 +1,6 @@
 package com.whitelabel.core.shell
 
+import com.whitelabel.core.designsystem.theme.StylePack
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraphBuilder
@@ -47,6 +48,8 @@ class AppDefinition internal constructor(
     internal val startTabRoute: Any?,
     internal val analytics: Analytics?,
     internal val crashReporter: CrashReporter?,
+    /** The look and motion the shell applies; [StylePack.Material] unless the app calls `style()`. */
+    internal val stylePack: StylePack = StylePack.Material,
 ) {
     internal val tabs: List<Tab> get() = entries.mapNotNull { it.tab }
 
@@ -59,6 +62,7 @@ class AppDefinitionBuilder internal constructor() {
     private var startTabRoute: Any? = null
     private var analytics: Analytics? = null
     private var crashReporter: CrashReporter? = null
+    private var stylePack: StylePack = StylePack.Material
 
     fun add(entry: FeatureEntry) {
         entries += entry
@@ -66,6 +70,11 @@ class AppDefinitionBuilder internal constructor() {
 
     fun startTab(route: Any) {
         startTabRoute = route
+    }
+
+    /** Applies [pack]'s look and motion to the whole app; the last call wins. */
+    fun style(pack: StylePack) {
+        stylePack = pack
     }
 
     /** Sends analytics to [analytics] instead of logcat. */
@@ -92,7 +101,7 @@ class AppDefinitionBuilder internal constructor() {
         require(needSignIn.isEmpty() || gates.isNotEmpty()) {
             "${needSignIn.joinToString { it.id }} need sign-in: add auth() to the app definition"
         }
-        return AppDefinition(entries.toList(), startTabRoute, analytics, crashReporter)
+        return AppDefinition(entries.toList(), startTabRoute, analytics, crashReporter, stylePack)
     }
 }
 
