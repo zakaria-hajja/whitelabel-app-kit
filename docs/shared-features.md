@@ -53,8 +53,12 @@ settings(SettingsOptions(showNotifications = true, languages = listOf("en", "fr"
 | Option | Default | Effect |
 |---|---|---|
 | `showNotifications` | `true` | Shows the push, email and marketing toggles (signed in only) |
-| `languages` | `en`, `fr` | The languages offered for the app, as BCP 47 tags; limited further by the backend's `runtime.supportedLanguages` when it sends one |
+| `languages` | `en`, `fr` | The languages offered for the app, as BCP 47 tags; limited further by the backend's `runtime.supportedLanguages` when it sends one. An empty list hides the language row |
+| `sections` | none | The app's own sections, shown above the shared ones (see below) |
+| `aboutNote` | none | A line under the version in About, e.g. "Your data stays on this phone." |
 
+- **Appearance:** theme and language are rows showing their current value; a tap opens a sheet
+  where a choice applies at once and **Done** closes it.
 - **Theme:** system, light or dark. The default is the backend's `runtime.defaultTheme`.
 - **Theme and language:** device settings, applied at once, offline and signed out too. When signed
   in they are also sent to the server, as a best effort. On Android 13+ the language is the
@@ -70,6 +74,42 @@ settings(SettingsOptions(showNotifications = true, languages = listOf("en", "fr"
 - **Endpoints:** `GET`/`PATCH settings` and `POST auth/logout`.
 - **Analytics:** `logout`.
 - **Route:** `SettingsRoute` is public, so an app can name it (for example in a home shortcut).
+
+### The app's own sections
+
+An app adds sections above the shared ones with `SettingsSection(title, content)`. A null title draws
+no header, which suits a callout. The content is composed inside the settings screen, so it can use
+`hiltViewModel()` for its own state. Build its rows from the same pieces as the shared rows:
+
+- `SettingsValueRow(label, value, onClick)`: a setting and its current value on one row;
+- `SettingsChoiceSheet(title, choices, selected, label, onSelect, onDismiss)`: the sheet to pick a value.
+
+```kotlin
+settings(
+    SettingsOptions(
+        languages = emptyList(),
+        sections = listOf(SettingsSection(R.string.reminders) { ReminderTimeRow() }),
+        aboutNote = R.string.data_stays_here,
+    ),
+)
+
+@Composable
+private fun ReminderTimeRow(viewModel: ReminderSettingsViewModel = hiltViewModel()) {
+    val time by viewModel.time.collectAsStateWithLifecycle()
+    var open by rememberSaveable { mutableStateOf(false) }
+    SettingsValueRow("Reminder time", time.toString(), onClick = { open = true })
+    if (open) {
+        SettingsChoiceSheet(
+            title = "Reminder time",
+            choices = listOf(LocalTime.of(8, 0), LocalTime.of(9, 0), LocalTime.of(18, 0)),
+            selected = time,
+            label = { it.toString() },
+            onSelect = viewModel::setTime,
+            onDismiss = { open = false },
+        )
+    }
+}
+```
 
 ## Profile (`:feature:profile`)
 

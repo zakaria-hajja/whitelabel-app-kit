@@ -25,4 +25,5 @@
     <string name="settings_sign_out_title">Se déconnecter ?</string>
     <string name="settings_sign_out_text">Vous devrez vous reconnecter pour utiliser %1$s.</string>
     <string name="settings_cancel">Annuler</string>
+    <string name="settings_done">OK</string>
 </resources>

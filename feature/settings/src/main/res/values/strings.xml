@@ -25,4 +25,5 @@
     <string name="settings_sign_out_title">Sign out?</string>
     <string name="settings_sign_out_text">You\'ll need to sign in again to use %1$s.</string>
     <string name="settings_cancel">Cancel</string>
+    <string name="settings_done">Done</string>
 </resources>
