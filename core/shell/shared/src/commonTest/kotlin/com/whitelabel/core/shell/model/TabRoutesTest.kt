@@ -39,4 +39,11 @@ class TabRoutesTest {
         assertThat(visible).isEmpty()
         assertThat(flaggedOnly.resolveStartTab(visible)).isNull()
     }
+
+    // A feature its flag switches off is off entirely: no tab, and no link opens it.
+    @Test fun `enabled features follow the same flags, tabless ones too`() {
+        val withDetail = spec.copy(features = spec.features + feature("offers", flagKey = "offers") + feature("auth", isGate = true))
+        assertThat(withDetail.enabledFeatureIds(mapOf("catalog" to false), setOf("profile", "offers")))
+            .containsExactly("a", "profile", "offers", "auth")
+    }
 }

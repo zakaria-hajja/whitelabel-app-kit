@@ -35,10 +35,26 @@ private struct ShellContent: View {
             .preferredColorScheme(colorScheme(state.theme))
             .environment(runtime.navigator)
             .onOpenURL { runtime.open($0) }
-            .onChange(of: signedIn) { runtime.openHeldLink() }
+            .onAppear { runtime.processPendingLink() }
+            .onChange(of: linkTrigger) { old, new in
+                // With a gate, the session switching means another user: start them clean.
+                if runtime.definition.gate != nil, old.signedIn != new.signedIn { runtime.navigator.reset() }
+                runtime.processPendingLink()
+            }
             #if DEBUG
             .overlay(alignment: .topLeading) { ColorSchemeProbe() }
             #endif
+    }
+
+    /** What a pending link waits on: content showing, the session, a new link. */
+    private struct LinkTrigger: Equatable {
+        let showsContent: Bool
+        let signedIn: Bool
+        let links: Int
+    }
+
+    private var linkTrigger: LinkTrigger {
+        LinkTrigger(showsContent: state.showsContent(hasGate: runtime.definition.gate != nil), signedIn: signedIn, links: runtime.linksReceived)
     }
 
     @ViewBuilder private var content: some View {
@@ -46,7 +62,7 @@ private struct ShellContent: View {
         if !state.showsContent(hasGate: hasGate) {
             SplashView()
         } else if hasGate, !signedIn, let gate = runtime.definition.gate?.gateRoot() {
-            gate
+            GateView(root: gate, definition: runtime.definition, navigator: runtime.navigator)
         } else {
             TabsView(definition: runtime.definition, routes: state.visibleTabRoutes, navigator: runtime.navigator)
         }
@@ -57,6 +73,21 @@ private struct ShellContent: View {
         case .light: .light
         case .dark: .dark
         default: nil
+        }
+    }
+}
+
+/** The gate's screens while signed out, on their own stack (a reset link opens over sign-in). */
+private struct GateView: View {
+    let root: AnyView
+    let definition: AppDefinition
+    @Bindable var navigator: Navigator
+
+    var body: some View {
+        NavigationStack(path: $navigator.gatePath) {
+            root.navigationDestination(for: Destination.self) { destination in
+                definition.view(for: destination) ?? AnyView(EmptyView())
+            }
         }
     }
 }
@@ -79,8 +110,9 @@ private struct SplashView: View {
  * create `RootView` more than once; the graph and the shell model must not be.
  */
 @MainActor
+@Observable
 final class AppRuntime {
-    private static var current: AppRuntime?
+    @ObservationIgnored private static var current: AppRuntime?
 
     static var isUnitTestHost: Bool { ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil }
 
@@ -89,6 +121,8 @@ final class AppRuntime {
     let shellViewModel: ShellViewModel
     let shell: SharedModel<ShellState, KotlinUnit>
     let navigator = Navigator()
+    /** Counts incoming links, so the shell re-checks the pending one. */
+    private(set) var linksReceived = 0
 
     private init(definition: AppDefinition, brand: BrandConfig, shellViewModel: ShellViewModel) {
         self.definition = definition
@@ -124,37 +158,32 @@ final class AppRuntime {
 
     private var signedIn: Bool { shell.state.session is SessionStateSignedIn }
 
+    /** An incoming link is kept in the shell model (as on Android) and decided when the shell can. */
     func open(_ url: URL) {
-        switch DeepLinks.route(url, scheme: brand.deepLinkScheme, features: definition.features, signedIn: signedIn) {
-        case let .open(destination, tab):
-            show(destination, in: tab)
-        case .hold:
-            shellViewModel.onDeepLink(link: url.absoluteString)
-        case .ignore:
-            break
-        case let .control(command):
+        if case let .control(command) = DeepLinks.route(url, scheme: brand.deepLinkScheme, features: [], enabled: [], signedIn: false) {
             #if DEBUG
             DebugControls.run(command)
             #else
             _ = command
             #endif
-        }
-    }
-
-    /** After sign-in, opens the link that was waiting for it. */
-    func openHeldLink() {
-        guard signedIn, let link = shellViewModel.pendingDeepLink.value as? String else { return }
-        shellViewModel.onDeepLinkConsumed()
-        if let url = URL(string: link) { open(url) }
-    }
-
-    private func show(_ destination: Destination, in tab: String?) {
-        let visible = shell.state.visibleTabRoutes
-        if visible.contains(destination.route) {
-            navigator.selectedTab = destination.route
             return
         }
-        if let tab, visible.contains(tab) { navigator.selectedTab = tab }
-        navigator.push(destination)
+        shellViewModel.onDeepLink(link: url.absoluteString)
+        linksReceived += 1
+    }
+
+    /** Opens, keeps (until sign-in) or drops the pending link, per the shared policy, once content shows. */
+    func processPendingLink() {
+        guard let link = shellViewModel.pendingDeepLink.value as? String else { return }
+        guard let url = URL(string: link) else { return shellViewModel.onDeepLinkConsumed() }
+        let state = shell.state
+        let decision = DeepLinks.decide(showsContent: state.showsContent(hasGate: definition.gate != nil)) {
+            DeepLinks.route(url, scheme: brand.deepLinkScheme, features: definition.features, enabled: Set(state.enabledFeatureIds), signedIn: signedIn)
+        }
+        guard case let .consume(routing) = decision else { return }
+        shellViewModel.onDeepLinkConsumed()
+        if case let .open(destination, tab, inGate) = routing {
+            navigator.show(destination, tab: tab, inGate: inGate, visibleTabs: state.visibleTabRoutes)
+        }
     }
 }

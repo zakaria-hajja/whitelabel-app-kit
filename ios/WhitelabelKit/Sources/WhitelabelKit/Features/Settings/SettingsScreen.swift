@@ -177,45 +177,6 @@ private struct SharedErrorRow: View {
     }
 }
 
-extension View {
-    /** Shows a shared one-off message at the bottom for a few seconds, then reports it shown (Android's snackbar). */
-    func messageBanner(_ message: UiText?, onShown: @escaping () -> Void) -> some View {
-        modifier(MessageBanner(message: message, onShown: onShown))
-    }
-}
-
-private struct MessageBanner: ViewModifier {
-    let message: UiText?
-    let onShown: () -> Void
-    @State private var text: String?
-    @SwiftUI.Environment(\.appStyle) private var style
-
-    func body(content: Content) -> some View {
-        content
-            .overlay(alignment: .bottom) {
-                if let text {
-                    Text(text)
-                        .font(style.typography.body)
-                        .foregroundStyle(style.colors.onPrimary)
-                        .padding(Spacing.md)
-                        .background(style.colors.onSurface, in: RoundedRectangle(cornerRadius: style.pack.corners.small))
-                        .padding(Spacing.md)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .accessibilityAddTraits(.updatesFrequently)
-                }
-            }
-            .task(id: message.map(ObjectIdentifier.init)) {
-                guard let message else { return }
-                let resolved = await resolve(message)
-                withAnimation { text = resolved }
-                UIAccessibility.post(notification: .announcement, argument: resolved)
-                try? await Task.sleep(nanoseconds: 3_000_000_000)
-                withAnimation { text = nil }
-                onShown()
-            }
-    }
-}
-
 private func previewState(signedIn: Bool, note: Bool = false) -> SettingsState {
     SettingsState(
         theme: .dark, language: note ? "fr" : nil, remoteLanguages: [], signedIn: signedIn,

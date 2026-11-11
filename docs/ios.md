@@ -48,7 +48,8 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
   SwiftUI re-evaluates a `@State` initial value on every rebuild, so a `SharedModel` built there
   would create (and clear) a Kotlin ViewModel each time.
 - **Messages:** `UiTextView(text)` or `await resolve(text)` give a ViewModel's `UiText` in the
-  device language.
+  language the app launched in. `Texts` pins it at launch, because a language picked in the app
+  applies at the next launch and the Swift strings wait until then too.
 - **Swift gotchas:**
   - Write `Swift.Error`: the module exports a Kotlin `Error` type.
   - SKIE turns Kotlin enums into Swift enums. Pass one back with `.toKotlinEnum()` where a Kotlin
@@ -114,11 +115,16 @@ An app's `@main` is a few lines, the Swift twin of Android's `appDefinition { }`
   build-time defaults. Then it shows the gate's screen (signed out, with `Auth()`) or the tabs: a
   native `TabView` with one `NavigationStack` per visible tab. It applies the pack and the theme.
   As the host of unit tests it stays empty.
-- **Links:** `onOpenURL` finds the feature that owns a link (`Feature.destination(forLink:)`). The
-  shared `deepLinkAction` decides whether the link opens, waits for sign-in (kept in the shell
-  model), or is dropped.
-- **`Navigator`** (`@Environment(Navigator.self)`): the selected tab and each tab's stack. A
-  screen calls `push(Destination(route, args:))` to open another screen.
+- **Links:** as on Android, an incoming link is first kept in the shell model, then decided once
+  the shell shows content (tabs decided and, with a gate, the session known). Swift finds the
+  enabled feature that owns it (`Feature.destination(forLink:)`; a feature its flag switched off
+  owns none). The shared `deepLinkAction` decides whether it opens, waits for sign-in or is
+  dropped. A gate's link (reset password) opens on the gate's own stack.
+- **`Navigator`** (`@Environment(Navigator.self)`): the selected tab, each tab's stack and the
+  gate's stack. A screen calls `push(Destination(route, args:))` to open another screen. With a
+  gate, signing in or out resets it, so the next user starts clean.
+- **`messageBanner(state.message) { send(OnMessageShown) }`**: a ViewModel's one-off message at the
+  bottom for 3 s (Android's snackbar). A newer message replaces it.
 
 ### Features, and an app's own screens
 

@@ -47,12 +47,12 @@ final class DeepLinksTests: XCTestCase {
     }
     private let reset = StubFeature("auth", gate: true) { url in url.host == "reset-password" ? Destination("auth/reset") : nil }
 
-    private func route(_ link: String, _ features: [any Feature], signedIn: Bool = false) -> DeepLinkRouting {
-        DeepLinks.route(URL(string: link)!, scheme: "showcase", features: features, signedIn: signedIn)
+    private func route(_ link: String, _ features: [any Feature], enabled: Set<String>? = nil, signedIn: Bool = false) -> DeepLinkRouting {
+        DeepLinks.route(URL(string: link)!, scheme: "showcase", features: features, enabled: enabled ?? Set(features.map(\.spec.id)), signedIn: signedIn)
     }
 
     func testOpensAMainLinkWithoutAGate() {
-        XCTAssertEqual(route("showcase://catalog/42", [item]), .open(Destination("catalog/detail", args: ["id": "42"]), tab: "catalog"))
+        XCTAssertEqual(route("showcase://catalog/42", [item]), .open(Destination("catalog/detail", args: ["id": "42"]), tab: "catalog", inGate: false))
     }
 
     func testHoldsAMainLinkUntilSignIn() {
@@ -63,6 +63,15 @@ final class DeepLinksTests: XCTestCase {
         XCTAssertEqual(route("showcase://reset-password?token=t", [reset, item], signedIn: true), .ignore)
     }
 
+    func testOpensAResetLinkInTheGateWhileSignedOut() {
+        XCTAssertEqual(route("showcase://reset-password?token=t", [reset, item]), .open(Destination("auth/reset"), tab: nil, inGate: true))
+    }
+
+    /** A feature its flag switched off is off entirely: its links are dropped (as on Android, where it registers no routes). */
+    func testIgnoresALinkIntoAFeatureThatIsOff() {
+        XCTAssertEqual(route("showcase://catalog/42", [item], enabled: []), .ignore)
+    }
+
     func testIgnoresAnotherSchemeAndUnknownLinks() {
         XCTAssertEqual(route("other://catalog/42", [item]), .ignore)
         XCTAssertEqual(route("showcase://nowhere", [item]), .ignore)
@@ -70,5 +79,22 @@ final class DeepLinksTests: XCTestCase {
 
     func testFakeControlLinksAreCommands() {
         XCTAssertEqual(route("showcase://_fake/offline", [item]), .control("offline"))
+    }
+}
+
+/** A link is only decided once the shell shows content (tabs decided, session known), as on Android. */
+final class PendingLinkTests: XCTestCase {
+    func testWaitsWhileTheShellIsNotReady() {
+        XCTAssertEqual(DeepLinks.decide(showsContent: false, routing: { .open(Destination("a"), tab: "a", inGate: false) }), .wait)
+    }
+
+    func testKeepsAHeldLink() {
+        XCTAssertEqual(DeepLinks.decide(showsContent: true, routing: { .hold }), .wait)
+    }
+
+    func testConsumesAnOpenedOrIgnoredLink() {
+        let open = DeepLinkRouting.open(Destination("a"), tab: "a", inGate: false)
+        XCTAssertEqual(DeepLinks.decide(showsContent: true, routing: { open }), .consume(open))
+        XCTAssertEqual(DeepLinks.decide(showsContent: true, routing: { .ignore }), .consume(.ignore))
     }
 }

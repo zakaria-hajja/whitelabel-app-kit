@@ -86,6 +86,7 @@ object SharedGraph {
             "The fake backend isn't linked: build the framework with -Pwhitelabel.mockApi=true and call IosMock.enable() first"
         }
         launch = Launch(platform, definition, appModules, useMockApi)
+        Texts.pinLaunchLanguage()
         startKoin {
             modules(
                 listOf(networkModule, dataModule, shellModelModule(definition), platformModule(platform)) +

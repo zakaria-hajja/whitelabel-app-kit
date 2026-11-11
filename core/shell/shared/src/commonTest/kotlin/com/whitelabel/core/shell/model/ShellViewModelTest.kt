@@ -133,6 +133,13 @@ class ShellViewModelTest {
         assertThat(viewModel.current.visibleTabRoutes).containsExactly("a")
     }
 
+    @Test fun `enabled features are decided with the tabs`() = runTest {
+        appConfig.onRefresh = { config(features = mapOf("b" to false)) }
+        val viewModel = viewModel()
+        runCurrent()
+        assertThat(viewModel.current.enabledFeatureIds).containsExactly("a")
+    }
+
     @Test fun `tabs stay fixed when the config changes later`() = runTest {
         val viewModel = viewModel()
         runCurrent()
