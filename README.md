@@ -2,13 +2,14 @@
 
 An internal foundation for building many independent Android apps (Kotlin, Jetpack Compose,
 Material 3, Hilt, Ktor). Shared modules provide the app host, navigation, networking, storage and
-the design system; shared features (auth, home, catalog, profile, settings) arrive in Phase 4.
+the design system, plus ready-to-use features: sign-in, home, catalog, profile and settings (see
+[docs/shared-features.md](docs/shared-features.md)).
 Each app is a thin module under `apps/<name>/` with its own identity, brand, backend URL and
 business features.
 
 Two apps live here today:
-- `apps/showcase`, the reference app
-- `apps/globex`, a second app with its own notes feature
+- `apps/showcase`, the reference app: sign-in, home, catalog, profile and settings
+- `apps/globex`, a second app: sign-in, its own notes feature, and settings
 
 ## Prerequisites
 
@@ -29,6 +30,11 @@ scripts/check.sh                             # unit tests + lint for every modul
 ```
 
 Debug builds talk to `http://10.0.2.2:3000/api/v1/`, the host machine as seen from the emulator.
+
+**Signing in.** Both apps open on sign-in, so start the local backend first
+(`cd ../backend-api && docker compose up -d postgres && npm run db:deploy && npm run db:seed && npm run dev`).
+The seed creates `alice@shared.test` and `bob@shared.test` (password `Password123!`) in both
+tenants: showcase uses `acme`, globex uses `globex`. Or create an account in the app.
 Release builds are unsigned unless the app has a `signing.properties`; see
 [docs/release-signing.md](docs/release-signing.md).
 
