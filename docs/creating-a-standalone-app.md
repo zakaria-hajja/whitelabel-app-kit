@@ -235,3 +235,41 @@ depends on, unchanged) and `:feature:<name>:shared`. An app repo changes little:
   - it lists the app's Koin modules in a `<app>SharedModules(platform)` function. Kotlin code starts
     Koin with it. The Swift-facing entry point and typed ViewModel accessors come with the iOS
     starter (step 5 of the iOS design).
+
+## 12. Adding the iOS app
+
+An app ships on iOS from the same repo: its logic is the shared Kotlin, and its screens come from
+WhitelabelKit (in the foundation) plus the app's own SwiftUI. Showcase is the reference:
+[`apps/showcase/shared`](../apps/showcase/shared/build.gradle.kts) and
+[`ios/Showcase`](../ios/Showcase). See [ios.md](ios.md) for the pieces.
+
+1. **The framework module**, `app/shared` (`:app:shared`), modeled on `:apps:showcase:shared`:
+   - plugins: `whitelabel.kmp.library`, `whitelabel.kmp.resources`, `whitelabel.koin`, SKIE
+     (`libs.plugins.skie`) and `whitelabel.ios.app`;
+   - a static framework with `baseName = "Shared"`. Every app uses that name, because
+     WhitelabelKit imports `Shared`;
+   - it exports `:core:ios`, the foundation's shared modules the app uses, and the app's own
+     `:shared` modules. With `-Pwhitelabel.mockApi=true` it also links `:core:ios:mock`;
+   - `iosApp { androidApp.set(<the app module's dir>); iosConfigDir.set(<iosApp/Config>) }`.
+     `generateIosConfig` writes the app's identity from `app.properties` into
+     `iosApp/Config/{Debug,Release}.generated.xcconfig` (git-ignored).
+2. **The Xcode project**, `iosApp/project.yml`, copied from `ios/Showcase/project.yml`:
+   - `include: [../foundation/ios/WhitelabelKit/WhitelabelKit.yml]`;
+   - set `WL_GRADLE_ROOT` (the repo root), `WL_SHARED_PROJECT` (`:app:shared`) and
+     `WL_SHARED_FRAMEWORKS` (`app/shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)`);
+   - keep `WL_GRADLE_ARGS` (`-Pwhitelabel.mockApi=true` in Debug only), the app's
+     `embedAndSignAppleFrameworkForXcode` phase, `-framework Shared`, the x86_64 exclusion,
+     `Info.plist` with its `WL*` keys and URL scheme, and
+     `../foundation/ios/WhitelabelKit/Resources/WhitelabelKit.xcstrings` in the app target (the
+     kit's labels);
+   - the app's colors and fonts go in its own asset catalog (`Brand*` color sets, fonts in
+     `UIAppFonts`).
+3. **The app:** `@main` builds a `RootView` from an `AppDefinition` with the app's pack and
+   features. The app's own screens are `Feature`s in the app target.
+4. **Run and test:**
+   ```sh
+   ./gradlew :app:shared:generateIosConfig && (cd iosApp && xcodegen) && open iosApp/*.xcodeproj
+   ```
+   Copy `foundation/scripts/check-ios.sh` and point it at `iosApp` and `:app:shared`. Like the
+   foundation, run it from the pre-push hook on macOS. The generated `.xcodeproj` and `build/` stay
+   uncommitted.
