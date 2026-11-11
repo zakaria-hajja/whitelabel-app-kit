@@ -16,6 +16,7 @@ datastore = "1.1.7"
 coreKtx = "1.17.0"
 coreSplashscreen = "1.0.1"
 appcompat = "1.7.1"
+coil = "3.3.0"
 junit5 = "5.13.4"
 junitPlatform = "1.13.4"
 androidJunit5 = "1.13.1.0"
@@ -45,6 +46,10 @@ androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-datastore-core = { module = "androidx.datastore:datastore-core", version.ref = "datastore" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+# Images
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 
 # Compose
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }

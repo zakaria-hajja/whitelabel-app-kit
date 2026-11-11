@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="catalog_tab">Catalog</string>
+    <string name="catalog_title">Catalog</string>
+    <string name="catalog_search">Search</string>
+    <string name="catalog_all">All</string>
+    <string name="catalog_sort">Sort</string>
+    <string name="catalog_sort_newest">Newest first</string>
+    <string name="catalog_sort_oldest">Oldest first</string>
+    <string name="catalog_sort_title_asc">Title A–Z</string>
+    <string name="catalog_sort_title_desc">Title Z–A</string>
+    <string name="catalog_empty_title">No results</string>
+    <string name="catalog_empty_message">Try another search or filter.</string>
+    <string name="catalog_unavailable_title">Catalog unavailable</string>
+    <string name="catalog_unavailable_message">The catalog isn\'t available right now.</string>
+    <string name="catalog_retry">Retry</string>
+    <string name="catalog_item_not_found">This item doesn\'t exist or is no longer available.</string>
+</resources>

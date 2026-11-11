@@ -5,7 +5,6 @@ modules provide the infrastructure and common features. Each app is a thin modul
 `apps/<name>/` holding its configuration, its brand, the list of features it uses, and its own
 business features. The design is in
 [2026-11-10-reusable-app-foundation-design.md](superpowers/specs/2026-11-10-reusable-app-foundation-design.md).
-Items marked **Phase 4** are not built yet.
 
 ## 1. Modules
 
@@ -18,7 +17,7 @@ Items marked **Phase 4** are not built yet.
 | `:core:designsystem` | Built | `AppTheme` built from brand resources, spacing tokens, components (buttons, text field, card, scaffold, loading, empty and error states, dialog), contrast helpers |
 | `:core:datastore` | Built | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. `TokenStore`: the session tokens, encrypted with an AES-256-GCM key in AndroidKeyStore |
 | `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, remote feature flags, the theme and language preferences, analytics wiring, the sign-in gate, and the diagnostics screen (debug builds only, opened from Settings) |
-| `:apps:showcase` | Built | Reference app that will use every shared feature. Today: sign-in, home, profile and settings |
+| `:apps:showcase` | Built | Reference app that will use every shared feature. It uses all of them: sign-in, home, catalog, profile and settings |
 | `:apps:globex`, `:apps:globex:notes` | Built | Second app, proving reuse: sign-in, an app-specific notes feature, and settings |
 | `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Pure Kotlin |
 | `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference |
@@ -28,7 +27,7 @@ Items marked **Phase 4** are not built yet.
 | `:feature:settings` | Built | `settings()`: theme, language, notifications, about, legal links and sign-out. See [shared-features.md](shared-features.md) |
 | `:feature:profile` | Built | `profile()`: view and edit the profile, change the password. See [shared-features.md](shared-features.md) |
 | `:feature:home` | Built | `home()`: a greeting and the app's shortcuts to its tabs. See [shared-features.md](shared-features.md) |
-| `:feature:catalog` | Phase 4 | Ready-to-use shared features against the backend-starter API |
+| `:feature:catalog` | Built | `catalog()`: paginated search with categories and sort, item screen and its deep link. See [shared-features.md](shared-features.md) |
 | `fixtures/standalone-app` | Built | A minimal backendless app wired like an app in its own repo; CI builds and verifies it |
 
 **Apps in their own repo.** An app can also live in a separate repository, with this foundation as a
@@ -53,7 +52,7 @@ flowchart TD
     network[":core:network"]
     branding[":core:branding"]
     common[":core:common"]
-    features[":feature:* (Phase 4)"]:::planned
+    features[":feature:* (auth, home, catalog, profile, settings)"]
 
     showcase --> shell
     globex --> shell
@@ -73,10 +72,11 @@ flowchart TD
     data --> datastore
     domain --> common
     network --> common
-    showcase -.-> features
-    features -.-> shell
+    showcase --> features
+    globex --> features
+    features --> shell
+    features --> domain
 
-    classDef planned stroke-dasharray: 5 5,fill:#eee,color:#555
 ```
 
 Rules, enforced by module boundaries and by review:

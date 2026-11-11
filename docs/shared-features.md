@@ -12,6 +12,7 @@ analytics events it sends. To add a feature to an app, add the module to the app
 | Settings | `settings()` | none | no (account parts appear when signed in) |
 | Profile | `profile()` | `profile` (client-only) | yes |
 | Home | `home()` | none | yes |
+| Catalog | `catalog()` | `catalog` (enforced by the backend) | yes |
 
 ## Authentication (`:feature:authentication`)
 
@@ -121,4 +122,33 @@ startTab(HomeRoute)
 - **Pull to refresh** reloads the user; a failure shows a message and keeps the cached greeting.
 - **Endpoints:** `GET users/me`.
 - **Route:** `HomeRoute` is public, so an app can make it the start tab.
+
+## Catalog (`:feature:catalog`)
+
+A catalog tab: a paginated list with search, category chips and sort, and an item screen.
+
+```kotlin
+catalog(CatalogOptions(categories = listOf("Books", "Music"), pageSize = 20, defaultSort = CatalogSort.NEWEST))
+```
+
+| Option | Default | Effect |
+|---|---|---|
+| `categories` | none | Filter chips, with "All" first. The backend has no categories endpoint, so the app lists them; none means no chips |
+| `pageSize` | `20` | Items per request, 1–100 |
+| `defaultSort` | `NEWEST` | The order the list opens in: `NEWEST`, `OLDEST`, `TITLE_ASC` or `TITLE_DESC` |
+
+- **Needs `auth()`.**
+- **Flag key `catalog`:** the backend enforces it (`FEATURE_DISABLED`); switched off, the tab is
+  hidden, and a deep link into the catalog is ignored.
+- **Search:** typing waits 300 ms before searching, and a newer search always replaces an older
+  one's results, even if the older answer arrives last. At most 100 characters.
+- **Paging:** the next page loads as you near the end of the list; a failed page keeps the list
+  and offers a retry at its end. Pull to refresh reloads from the first page.
+- **Item deep link:** `<app.deepLinkScheme>://catalog/{id}`. Opened while signed out, it waits for
+  sign-in. An unknown id shows "This item doesn't exist".
+- **Images:** loaded with Coil; a missing or failed image shows a placeholder.
+- **Endpoints:** `GET catalog` and `GET catalog/{id}`.
+- **Analytics:** `search` with `{length}` (never the text) once a search settles, and `view_item`
+  with `{item_id}`.
+- **Route:** `CatalogRoute` is public, so an app can name it (for example in a home shortcut).
 
