@@ -36,9 +36,8 @@ struct SettingsScreen: View {
             onOpen: open
         )
         .navigationTitle(KitStrings.text("Settings"))
-        // Flat (Gallery): the bar sits on the page background.
-        .toolbarBackground(style.pack.topBar == .flat ? style.colors.background : style.colors.surface, for: .navigationBar)
-        .toolbarBackground(style.pack.topBar == .flat ? .visible : .automatic, for: .navigationBar)
+        // Gallery: list and bar on the page background. Material: unchanged.
+        .flatPageChrome()
         .sheet(item: $sheet) { sheet in
             switch sheet {
             case .theme:

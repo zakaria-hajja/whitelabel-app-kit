@@ -61,4 +61,12 @@ final class StylePackTests: XCTestCase {
         XCTAssertFalse(fonts.hasCustomDisplay)
         XCTAssertFalse(fonts.hasCustomBody)
     }
+
+    /** Material keeps the system list header and navigation bar; only flat (Gallery) restyles them. */
+    func testOnlyGalleryRestylesHeadersAndBars() {
+        XCTAssertFalse(AppSectionHeader.restyles(.material))
+        XCTAssertTrue(AppSectionHeader.restyles(.gallery))
+        XCTAssertFalse(FlatPageChrome.applies(to: .material))
+        XCTAssertTrue(FlatPageChrome.applies(to: .gallery))
+    }
 }
