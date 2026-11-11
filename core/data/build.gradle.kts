@@ -1,27 +1,26 @@
 plugins {
-    id("whitelabel.android.library")
+    id("whitelabel.kmp.library")
     id("whitelabel.koin")
-    alias(libs.plugins.kotlin.serialization)
 }
 
-android {
-    namespace = "com.whitelabel.core.data"
-}
-
-dependencies {
-    api(project(":core:domain"))
-    implementation(project(":core:network"))
-    implementation(project(":core:datastore"))
-    implementation(project(":core:branding"))
-    implementation(libs.ktor.client.core)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.appcompat)
-
-    testImplementation(libs.ktor.client.mock)
-    testImplementation(libs.turbine)
-    androidTestImplementation(libs.assertk)
-    androidTestImplementation(libs.ktor.client.mock)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    testImplementation(project(":core:testing"))
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":core:domain"))
+            implementation(project(":core:network"))
+            implementation(project(":core:datastore"))
+            implementation(project(":core:branding"))
+            implementation(libs.ktor.client.core)
+        }
+        androidMain.dependencies {
+            implementation(libs.androidx.appcompat)
+            implementation(libs.koin.android)
+        }
+        commonTest.dependencies { implementation(libs.ktor.client.mock) }
+        jvmTest.dependencies {
+            implementation(project(":core:testing"))
+            implementation(libs.ktor.client.mock)
+        }
+        getByName("androidDeviceTest").dependencies { implementation(libs.ktor.client.mock) }
+    }
 }
