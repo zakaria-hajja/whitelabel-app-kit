@@ -109,4 +109,30 @@ class ProfileViewModelTest {
         assertThat(viewModel.state.value.lastName).isEqualTo("Lovelace")
         assertThat(viewModel.state.value.firstNameError).isNull()
     }
+
+    @Test fun `text typed while saving stays and is still unsaved`() = runTest {
+        val pending = CompletableDeferred<Unit>()
+        users.answer = { pending.await(); Result.Success(Unit) }
+        val viewModel = ProfileViewModel(users)
+        viewModel.onAction(ProfileAction.OnLastNameChange("Lovelace"))
+        viewModel.onAction(ProfileAction.OnSave)
+        viewModel.onAction(ProfileAction.OnLastNameChange("Lovelace-King")) // typed during the save
+        pending.complete(Unit)
+        val state = viewModel.state.value
+        assertThat(state.lastName).isEqualTo("Lovelace-King")
+        assertThat(state.savedLastName).isEqualTo("Lovelace")
+        assertThat(state.canSave).isTrue()
+    }
+
+    @Test fun `another user signing in resets the form`() = runTest {
+        val viewModel = ProfileViewModel(users)
+        viewModel.onAction(ProfileAction.OnLastNameChange("Lovelace")) // A's unsaved edit
+        users.user.value = null // A signs out
+        users.user.value = User("u2", "grace@example.com", "Grace", "Hopper") // B signs in
+        val state = viewModel.state.value
+        assertThat(state.email).isEqualTo("grace@example.com")
+        assertThat(state.firstName).isEqualTo("Grace")
+        assertThat(state.lastName).isEqualTo("Hopper")
+        assertThat(state.canSave).isFalse()
+    }
 }

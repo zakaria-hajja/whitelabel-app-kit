@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 
 internal data class ProfileState(
     val loaded: Boolean = false,
+    /** Whose profile the form holds: a different user signing in resets it. */
+    val userId: String? = null,
     val email: String = "",
     val firstName: String = "",
     val lastName: String = "",
@@ -55,9 +57,25 @@ internal class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             users.user.filterNotNull().collect { user ->
                 _state.update {
-                    val saved = it.copy(savedFirstName = user.firstName.orEmpty(), savedLastName = user.lastName.orEmpty(), email = user.email)
-                    // Edits in progress win over a background refresh of the cached user.
-                    if (it.loaded && it.isDirty) saved else saved.copy(loaded = true, firstName = saved.savedFirstName, lastName = saved.savedLastName)
+                    val sameUser = it.userId == null || it.userId == user.id
+                    val saved = it.copy(
+                        userId = user.id,
+                        email = user.email,
+                        savedFirstName = user.firstName.orEmpty(),
+                        savedLastName = user.lastName.orEmpty(),
+                    )
+                    // The same user's edits in progress win over a background refresh; another user's never carry over.
+                    if (sameUser && it.loaded && it.isDirty) {
+                        saved
+                    } else {
+                        saved.copy(
+                            loaded = true,
+                            firstName = saved.savedFirstName,
+                            lastName = saved.savedLastName,
+                            firstNameError = null,
+                            lastNameError = null,
+                        )
+                    }
                 }
             }
         }
@@ -78,15 +96,18 @@ internal class ProfileViewModel @Inject constructor(
         val current = _state.value
         if (!current.canSave) return
         _state.update { it.copy(isSaving = true) }
+        val sentFirst = current.firstName.trim()
+        val sentLast = current.lastName.trim()
         viewModelScope.launch {
-            users.update(firstName = current.firstName.trim().ifEmpty { null }, lastName = current.lastName.trim().ifEmpty { null })
+            users.update(firstName = sentFirst.ifEmpty { null }, lastName = sentLast.ifEmpty { null })
                 .onSuccess {
                     _state.update {
+                        // What was sent is saved; text typed while saving stays, and stays unsaved.
                         it.copy(
-                            firstName = it.firstName.trim(),
-                            lastName = it.lastName.trim(),
-                            savedFirstName = it.firstName.trim(),
-                            savedLastName = it.lastName.trim(),
+                            firstName = if (it.firstName == current.firstName) sentFirst else it.firstName,
+                            lastName = if (it.lastName == current.lastName) sentLast else it.lastName,
+                            savedFirstName = sentFirst,
+                            savedLastName = sentLast,
                             message = UiText.Resource(R.string.profile_saved),
                         )
                     }
