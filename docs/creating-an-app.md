@@ -187,7 +187,28 @@ components and the shell's navigation. None of those modules know it exists.
 Copy `GlobexIdentityTest.kt` and put your values in it. It asserts every `BuildConfig` field for
 both build types, so a wrong URL or ID fails `scripts/check.sh` and CI.
 
-## 8. Build, verify, release
+## 8. End-to-end tests
+
+Put them in `src/androidTest/kotlin/com/whitelabel/apps/<name>/e2e/`. The app plugin already runs
+them in a Hilt test app, against `:core:mockapi`'s in-memory backend, so they need no server.
+`apps/showcase/.../e2e/ShowcaseE2ETest.kt` is the example to copy.
+
+- **Rules:** use `RuleChain.outerRule(ResetAppDataRule()).around(hilt).around(EndAppScopeRule()).around(compose)`,
+  with `createEmptyComposeRule()` and `ActivityScenario.launch(FoundationActivity::class.java)`.
+  Each test then starts signed out, with fresh storage and a fresh backend.
+- **Robots:** the shared screens already have robots in `com.whitelabel.core.testing.android.robots`.
+  `SignInRobot(compose, appName = "<app.name>")` covers sign-in and registration,
+  and `SettingsRobot` covers settings. Write a robot (`e2e/robots/`) only for the app's own screens.
+- **Backend:** `@Inject lateinit var backend: FakeBackend` (call `hilt.inject()` first). Set it up,
+  e.g. `backend.features["catalog"] = false`, before you launch; remote flags are read at start.
+  Its seeded users are `alice@shared.test` and `bob@shared.test`, password `FakeData.PASSWORD`.
+- **App-specific stores:** create a `JsonStore` in `@ApplicationScope` (from `:core:data`), never in a
+  scope of its own. Otherwise its file stays open, and the second test fails with "multiple
+  DataStores active for the same file".
+
+Run them on a running emulator with `./gradlew :apps:<name>:connectedDebugAndroidTest`.
+
+## 9. Build, verify, release
 
 ```bash
 ./gradlew :apps:globex:assembleDebug             # debug APK
@@ -219,5 +240,6 @@ Play Store AAB.
 6. `build.gradle.kts` namespace and dependencies set; the manifest names the App class.
 7. Modules added to `settings.gradle.kts`.
 8. Identity test updated; `./gradlew :apps:<name>:testDebugUnitTest` passes.
-9. `scripts/check.sh` passes.
-10. Both builds assemble and `scripts/verify-apps.sh` passes.
+9. An `e2e/` test signs in and reaches the app's start screen; `connectedDebugAndroidTest` passes.
+10. `scripts/check.sh` passes.
+11. Both builds assemble and `scripts/verify-apps.sh` passes.
