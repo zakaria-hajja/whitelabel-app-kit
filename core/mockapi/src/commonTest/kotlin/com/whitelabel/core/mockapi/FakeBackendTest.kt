@@ -17,11 +17,23 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import assertk.assertions.isGreaterThanOrEqualTo
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 import kotlin.test.Test
 
 class FakeBackendTest {
 
     private val backend = FakeBackend()
+
+    // The UI tests' slow-config case (-fakeConfigDelayMs): the config answer waits, in real time.
+    @Test fun `a config delay holds the config answer that long`() = runTest {
+        backend.configDelayMs = 300
+        val start = TimeSource.Monotonic.markNow()
+        backend.client().getResult<JsonObject>("app/config")
+        val took = start.elapsedNow()
+        assertThat(took).isGreaterThanOrEqualTo(300.milliseconds)
+    }
 
     private suspend fun signIn(tokens: MemoryTokens, password: String = FakeData.PASSWORD): Result<JsonObject, DataError> {
         val body = buildJsonObject { put("email", "alice@shared.test"); put("password", password) }

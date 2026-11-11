@@ -25,6 +25,9 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import kotlin.concurrent.Volatile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
@@ -57,6 +60,9 @@ class FakeBackend internal constructor(private val now: () -> Instant) {
 
     /** When true, every request fails as if the device had no connection. */
     @Volatile var offline: Boolean = false
+
+    /** How long `app/config` waits before answering, in real time (a slow config at launch; Debug `-fakeConfigDelayMs`). */
+    @Volatile var configDelayMs: Long = 0
 
     private val lock = SynchronizedObject()
     private val users = FakeData.users().toMutableList()
@@ -101,6 +107,8 @@ class FakeBackend internal constructor(private val now: () -> Instant) {
         val path = request.url.encodedPath
         synchronized(lock) { sent += "${request.method.value} $path" }
         if (offline) throw IOException("FakeBackend is offline")
+        // Real time even under a test scheduler: the delay stands for a slow network, not for app logic.
+        if (path.removePrefix(API) == "/app/config" && configDelayMs > 0) withContext(Dispatchers.Default) { delay(configDelayMs) }
         val body = request.body.toByteArray().decodeToString().takeIf { it.isNotBlank() }
             ?.let { runCatching { Json.parseToJsonElement(it) as? JsonObject }.getOrNull() } ?: JsonObject(emptyMap())
         val reply = synchronized(lock) { route(method, path.removePrefix(API), request, body) }
