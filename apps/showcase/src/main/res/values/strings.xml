@@ -2,4 +2,5 @@
 <resources>
     <string name="showcase_shortcut_profile">Your profile</string>
     <string name="showcase_shortcut_settings">Settings</string>
+    <string name="showcase_shortcut_catalog">Browse the catalog</string>
 </resources>

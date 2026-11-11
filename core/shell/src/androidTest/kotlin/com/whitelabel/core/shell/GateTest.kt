@@ -53,6 +53,7 @@ class GateTest {
     )
     private val other = FeatureEntry(
         id = "other",
+        flagKey = "other",
         tab = Tab(GateOtherRoute, R.string.test_tab_two, Icons.Default.Star),
         routes = {
             composable<GateOtherRoute>(deepLinks = listOf(navDeepLink { uriPattern = "test://other" })) {
@@ -180,5 +181,29 @@ class GateTest {
         rule.waitForIdle()
         rule.onNodeWithText("Tab two").performClick()
         rule.onNodeWithText("Taps 0").assertExists()
+    }
+
+    @Test
+    fun deepLinkIntoAFlaggedOffFeature_isIgnored() {
+        signedIn = true
+        rule.setContent {
+            nav = rememberNavController()
+            AppTheme {
+                ShellNavHost(
+                    definition = definition,
+                    visibleTabs = definition.tabs.filter { it.route != GateOtherRoute }, // "other" flagged off
+                    deepLinkScheme = "test",
+                    signedIn = signedIn,
+                    deepLink = deepLink,
+                    onDeepLinkConsumed = { consumed++; deepLink = null },
+                    navController = nav,
+                )
+            }
+        }
+        deepLink = "test://other"
+        rule.waitForIdle()
+        rule.onNodeWithText("Other screen").assertDoesNotExist()
+        rule.onNodeWithText("Home screen").assertExists()
+        rule.runOnIdle { assertThat(consumed).isEqualTo(1) }
     }
 }

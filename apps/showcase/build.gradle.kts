@@ -12,4 +12,5 @@ dependencies {
     implementation(project(":feature:settings"))
     implementation(project(":feature:profile"))
     implementation(project(":feature:home"))
+    implementation(project(":feature:catalog"))
 }

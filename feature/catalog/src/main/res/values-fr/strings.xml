@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="catalog_tab">Catalogue</string>
+    <string name="catalog_title">Catalogue</string>
+    <string name="catalog_search">Rechercher</string>
+    <string name="catalog_all">Tout</string>
+    <string name="catalog_sort">Trier</string>
+    <string name="catalog_sort_newest">Plus récents</string>
+    <string name="catalog_sort_oldest">Plus anciens</string>
+    <string name="catalog_sort_title_asc">Titre A–Z</string>
+    <string name="catalog_sort_title_desc">Titre Z–A</string>
+    <string name="catalog_empty_title">Aucun résultat</string>
+    <string name="catalog_empty_message">Essayez une autre recherche ou un autre filtre.</string>
+    <string name="catalog_unavailable_title">Catalogue indisponible</string>
+    <string name="catalog_unavailable_message">Le catalogue n\'est pas disponible pour le moment.</string>
+    <string name="catalog_retry">Réessayer</string>
+    <string name="catalog_item_not_found">Cet élément n\'existe pas ou n\'est plus disponible.</string>
+</resources>

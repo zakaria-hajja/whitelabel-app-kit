@@ -91,6 +91,8 @@ internal fun ShellNavHost(
         )
         return
     }
+    // A feature switched off by its flag registers no routes, so nothing (a deep link included) can open it.
+    val enabled = definition.entries.filter { it.flagKey == null || it.tab == null || it.tab in visibleTabs }
     val uriHandler = LocalUriHandler.current
     val navigator = remember(navController, uriHandler, visibleTabs) {
         object : AppNavigator {
@@ -140,7 +142,7 @@ internal fun ShellNavHost(
                         popEnterTransition = transitions.enter,
                         popExitTransition = transitions.exit,
                     ) {
-                        definition.entries.forEach { entry -> entry.routes(this, scope) }
+                        enabled.forEach { entry -> entry.routes(this, scope) }
                         if (diagnostics) diagnosticsScreen(onBack = navigator::back)
                     }
                 } else {
@@ -156,7 +158,7 @@ internal fun ShellNavHost(
                         navigation<AuthGraph>(startDestination = checkNotNull(gate.gate).startRoute) { gate.routes(this, scope) }
                         if (startTab != null) {
                             navigation<MainGraph>(startDestination = startTab.route) {
-                                definition.entries.filter { it !== gate }.forEach { entry -> entry.routes(this, scope) }
+                                enabled.filter { it !== gate }.forEach { entry -> entry.routes(this, scope) }
                                 if (diagnostics) diagnosticsScreen(onBack = navigator::back)
                             }
                         }

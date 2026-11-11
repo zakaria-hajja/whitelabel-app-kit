@@ -4,8 +4,12 @@ import com.whitelabel.core.shell.AppDefinition
 import com.whitelabel.core.shell.appDefinition
 import com.whitelabel.feature.authentication.auth
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import com.whitelabel.feature.catalog.CatalogOptions
+import com.whitelabel.feature.catalog.CatalogRoute
+import com.whitelabel.feature.catalog.catalog
 import com.whitelabel.feature.home.HomeOptions
 import com.whitelabel.feature.home.HomeRoute
 import com.whitelabel.feature.home.HomeShortcut
@@ -31,11 +35,14 @@ object ShowcaseDefinition {
         home(
             HomeOptions(
                 shortcuts = listOf(
+                    HomeShortcut(R.string.showcase_shortcut_catalog, Icons.AutoMirrored.Filled.List, CatalogRoute),
                     HomeShortcut(R.string.showcase_shortcut_profile, Icons.Default.Person, ProfileRoute),
                     HomeShortcut(R.string.showcase_shortcut_settings, Icons.Default.Settings, SettingsRoute),
                 ),
             ),
         )
+        // The categories of the backend's seed catalog.
+        catalog(CatalogOptions(categories = listOf("Books", "Games", "Music", "Travel")))
         profile()
         settings()
         startTab(HomeRoute)
