@@ -6,6 +6,7 @@ import org.gradle.api.Project
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.register
 import org.jetbrains.compose.ComposeExtension
 import org.jetbrains.compose.ComposePlugin
 import org.jetbrains.compose.resources.ResourcesExtension
@@ -31,6 +32,10 @@ class KmpResourcesConventionPlugin : Plugin<Project> {
                 packageOfResClass = "${kmpNamespace(path)}.resources"
             }
         }
+        val translations = tasks.register<CheckComposeTranslations>("checkComposeTranslations") {
+            resourcesDir.set(layout.projectDirectory.dir("src/commonMain/composeResources"))
+        }
+        tasks.named("check") { dependsOn(translations) }
         dependencies {
             add("commonMainImplementation", libs.library("jetbrains-compose-runtime"))
             add("commonMainApi", libs.library("jetbrains-compose-components-resources"))

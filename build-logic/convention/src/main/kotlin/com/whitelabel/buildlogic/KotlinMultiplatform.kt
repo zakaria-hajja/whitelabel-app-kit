@@ -62,7 +62,10 @@ internal fun Project.configureKotlinMultiplatform() {
     }
 
     tasks.withType<Test>().configureEach { useJUnitPlatform() }
-    if (!iosTestsEnabled(mapOf(SKIP_IOS_TESTS_PROPERTY to providers.gradleProperty(SKIP_IOS_TESTS_PROPERTY).orNull))) {
+    val isMac = System.getProperty("os.name").startsWith("Mac")
+    val skip = providers.gradleProperty(SKIP_IOS_TESTS_PROPERTY).orNull
+    if (!iosTestsEnabled(skip, isMac, hasIosSdk = isMac && skip != "true" && hasIosSimulatorSdk())) {
+        if (skip != "true") logger.warn("$path: no Xcode iOS SDK, so iOS tests are skipped (iOS code still compiles)")
         tasks.withType<KotlinNativeTest>().configureEach { enabled = false }
         tasks.withType<KotlinNativeLink>().configureEach { if (name.contains("Test")) enabled = false }
     }
