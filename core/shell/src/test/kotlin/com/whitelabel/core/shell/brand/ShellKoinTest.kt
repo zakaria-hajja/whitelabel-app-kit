@@ -36,6 +36,7 @@ class ShellKoinTest {
                 extraTypes = listOf(
                     Context::class, SavedStateHandle::class, okio.Path::class, okio.FileSystem::class,
                     String::class, Environment::class, RuntimeDefaults::class, Function1::class,
+                    com.whitelabel.core.shell.model.DefinitionSpec::class,
                 ),
             )
     }

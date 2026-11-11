@@ -1,4 +1,4 @@
-package com.whitelabel.core.shell
+package com.whitelabel.core.shell.model
 
 import assertk.assertFailure
 import assertk.assertThat
@@ -37,8 +37,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.Test
 
 private val brand = BrandConfig(
     tenant = null, appName = "Sample", applicationId = "com.example.sample", versionName = "1.0.0",
@@ -83,21 +83,18 @@ private class FakeUsers : UserRepository {
 @OptIn(ExperimentalCoroutinesApi::class)
 class ShellViewModelTest {
 
-    private val definition = appDefinition {
-        add(entry("a", RouteA))
-        add(entry("b", RouteB, flagKey = "b"))
-    }
+    private val definition = DefinitionSpec(listOf(feature("a", tab = "a"), feature("b", tab = "b", flagKey = "b")), startTabRoute = null)
     private val appConfig = FakeAppConfig()
     private val preferences = FakePreferences()
     private val session = FakeSession()
     private val users = FakeUsers()
     private val savedState = SavedStateHandle()
 
-    @AfterEach fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun TestScope.viewModel(
-        brand: BrandConfig = com.whitelabel.core.shell.brand,
-        definition: AppDefinition = this@ShellViewModelTest.definition,
+        brand: BrandConfig = com.whitelabel.core.shell.model.brand,
+        definition: DefinitionSpec = this@ShellViewModelTest.definition,
     ): ShellViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         return ShellViewModel(definition, brand, appConfig, preferences, session, users, savedState)
@@ -114,7 +111,7 @@ class ShellViewModelTest {
         answer.complete(config(features = mapOf("b" to false)))
         runCurrent()
         assertThat(viewModel.current.ready).isTrue()
-        assertThat(viewModel.current.visibleTabs.map { it.route }).containsExactly(RouteA)
+        assertThat(viewModel.current.visibleTabRoutes).containsExactly("a")
     }
 
     @Test fun `slow config gives up after two seconds with the cached flags`() = runTest {
@@ -125,7 +122,7 @@ class ShellViewModelTest {
         advanceTimeBy(2)
         assertThat(viewModel.current.ready).isTrue()
         // No remote value for "b": the app's defaults.features list it, so it is on.
-        assertThat(viewModel.current.visibleTabs.map { it.route }).containsExactly(RouteA, RouteB)
+        assertThat(viewModel.current.visibleTabRoutes).containsExactly("a", "b")
     }
 
     @Test fun `tabs use the stored config even before observers catch up`() = runTest {
@@ -133,7 +130,7 @@ class ShellViewModelTest {
         appConfig.stored = config(features = mapOf("b" to false)) // cached from an earlier launch, not yet emitted
         val viewModel = viewModel()
         runCurrent()
-        assertThat(viewModel.current.visibleTabs.map { it.route }).containsExactly(RouteA)
+        assertThat(viewModel.current.visibleTabRoutes).containsExactly("a")
     }
 
     @Test fun `tabs stay fixed when the config changes later`() = runTest {
@@ -141,7 +138,7 @@ class ShellViewModelTest {
         runCurrent()
         appConfig.config.value = config(features = mapOf("b" to false))
         runCurrent()
-        assertThat(viewModel.current.visibleTabs.map { it.route }).containsExactly(RouteA, RouteB)
+        assertThat(viewModel.current.visibleTabRoutes).containsExactly("a", "b")
     }
 
     @Test fun `theme falls back to the config default`() = runTest {
@@ -186,10 +183,7 @@ class ShellViewModelTest {
     }
 
     @Test fun `backendless app with a gated feature fails at startup`() = runTest {
-        val gated = appDefinition {
-            add(entry("auth", gate = Gate(RouteC)))
-            add(entry("a", RouteA))
-        }
+        val gated = DefinitionSpec(listOf(feature("auth", isGate = true), feature("a", tab = "a")), startTabRoute = null)
         assertFailure { viewModel(brand = brand.copy(apiBaseUrl = null), definition = gated) }
             .isInstanceOf(IllegalStateException::class)
             .messageContains("auth call the backend")

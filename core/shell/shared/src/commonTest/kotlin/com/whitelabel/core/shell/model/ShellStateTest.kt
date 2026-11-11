@@ -1,10 +1,10 @@
-package com.whitelabel.core.shell
+package com.whitelabel.core.shell.model
 
 import assertk.assertThat
 import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import com.whitelabel.core.domain.SessionState
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 class ShellStateTest {
 

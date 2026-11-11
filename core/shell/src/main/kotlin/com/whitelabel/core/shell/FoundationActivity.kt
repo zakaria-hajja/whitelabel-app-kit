@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.whitelabel.core.analytics.Analytics
+import com.whitelabel.core.shell.model.ShellViewModel
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import com.whitelabel.core.analytics.AnalyticsEvent
@@ -53,7 +54,7 @@ class FoundationActivity : AppCompatActivity() {
                 if (state.showsContent(hasGate)) {
                     ShellNavHost(
                         definition = definition,
-                        visibleTabs = state.visibleTabs,
+                        visibleTabs = definition.tabs.filter { it.routeId in state.visibleTabRoutes },
                         deepLinkScheme = brand.deepLinkScheme,
                         signedIn = state.session == SessionState.SignedIn,
                         deepLink = deepLink,

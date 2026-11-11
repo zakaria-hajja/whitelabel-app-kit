@@ -22,7 +22,7 @@ class GraphTest {
     @get:Rule val fresh = FreshAppRule()
 
     private val viewModels = listOf(
-        "com.whitelabel.core.shell.ShellViewModel",
+        "com.whitelabel.core.shell.model.ShellViewModel",
         "com.whitelabel.core.shell.diagnostics.BrandPreviewViewModel",
         "com.whitelabel.feature.authentication.presentation.login.LoginViewModel",
         "com.whitelabel.feature.authentication.presentation.register.RegisterViewModel",

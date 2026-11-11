@@ -1,4 +1,4 @@
-package com.whitelabel.core.shell
+package com.whitelabel.core.shell.model
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -21,14 +21,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 /** How long a cold start waits for the remote config before using the cached one. */
-internal const val CONFIG_WAIT_MS = 2_000L
+const val CONFIG_WAIT_MS = 2_000L
 
 private const val KEY_DEEP_LINK = "pendingDeepLink"
 
-internal data class ShellState(
+data class ShellState(
     /** The tabs are decided; until then the splash stays on. */
     val ready: Boolean = false,
-    val visibleTabs: List<Tab> = emptyList(),
+    /** The shared route ids of the visible tabs, in order (`<Name>Routes` constants). */
+    val visibleTabRoutes: List<String> = emptyList(),
     val theme: ThemePreference = ThemePreference.SYSTEM,
     val session: SessionState = SessionState.Unknown,
 ) {
@@ -45,8 +46,8 @@ internal data class ShellState(
  * config arrives or [CONFIG_WAIT_MS] passes, so tabs never disappear while the app is in use; a
  * config that arrives later is cached and applies on the next launch.
  */
-internal class ShellViewModel(
-    private val definition: AppDefinition,
+class ShellViewModel(
+    private val definition: DefinitionSpec,
     private val brand: BrandConfig,
     private val appConfig: AppConfigRepository,
     preferences: UserPreferencesRepository,
@@ -66,13 +67,13 @@ internal class ShellViewModel(
         savedState[KEY_DEEP_LINK] = null
     }
 
-    private val tabs = MutableStateFlow<List<Tab>?>(null)
+    private val tabs = MutableStateFlow<List<String>?>(null)
 
     val state: StateFlow<ShellState> = combine(tabs, preferences.theme, appConfig.config, session.state) {
             tabs, theme, config, sessionState ->
         ShellState(
             ready = tabs != null,
-            visibleTabs = tabs.orEmpty(),
+            visibleTabRoutes = tabs.orEmpty(),
             theme = theme ?: config.defaultTheme,
             session = sessionState,
         )
@@ -86,7 +87,7 @@ internal class ShellViewModel(
                 val refresh = launch { appConfig.refresh() }
                 withTimeoutOrNull(CONFIG_WAIT_MS) { refresh.join() }
             }
-            tabs.value = definition.visibleTabs(appConfig.current().features, brand.runtimeDefaults.enabledFeatures)
+            tabs.value = definition.visibleTabRoutes(appConfig.current().features, brand.runtimeDefaults.enabledFeatures)
         }
         viewModelScope.launch {
             if (session.state.first { it != SessionState.Unknown } == SessionState.SignedIn) users.refresh()
