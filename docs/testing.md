@@ -10,10 +10,13 @@
 | App identity | `apps/<name>/src/test/.../<Name>IdentityTest.kt` | `scripts/check.sh`, CI | asserts every `BuildConfig` field for both build types |
 | Built APKs | `scripts/verify-apps.sh` | CI after `assembleDebug assembleRelease` | `aapt2`: package, label, version, no foreign app IDs, distinct icons |
 
-**CI shortcuts.** A PR that changes only docs (`*.md`, `docs/**`, the PR template, `.run/`) skips
-the Gradle steps; `scripts/ci-needs-build.sh` decides, and the commit-message check always runs.
-The Gradle build cache is on (`org.gradle.caching`): CI restores it from `main`, so modules a PR
-doesn't touch aren't rebuilt or retested.
+**CI shortcuts.** CI runs as parallel jobs: `changes` (docs-only detection and the commit-message
+check), then `tests` (contract check, unit tests and lint) beside `build` (apps, release checks,
+standalone fixture). A final `ci` job collects their results and is the one required check. A PR
+that changes only docs (`*.md`, `docs/**`, the PR template, `.run/`) skips `tests` and `build`;
+`scripts/ci-needs-build.sh` decides. The Gradle build cache is on (`org.gradle.caching`): CI
+restores it from `main`, so modules a PR doesn't touch aren't rebuilt or retested. Runs on `main`
+are never cancelled, because a cancelled run doesn't save that cache.
 
 ## Conventions
 
