@@ -24,6 +24,11 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v5
 
+      - name: API contract is the vendored backend tag
+        run: |
+          scripts/test-openapi-scripts.sh
+          scripts/check-openapi.sh
+
       - name: Unit tests and lint
         run: scripts/check.sh
 
