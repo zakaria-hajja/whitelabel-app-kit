@@ -8,8 +8,8 @@ import com.whitelabel.core.analytics.AnalyticsEvents
 import com.whitelabel.core.common.ApiErrorCode
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.Result
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.core.ui.toUiText
+import com.whitelabel.core.presentation.UiText
+import com.whitelabel.core.presentation.toUiText
 import com.whitelabel.feature.catalog.CatalogOptions
 import com.whitelabel.feature.catalog.CatalogSort
 import com.whitelabel.feature.catalog.data.MAX_QUERY_LENGTH
@@ -29,9 +29,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** How long typing has to pause before the search goes out. */
-internal const val SEARCH_DEBOUNCE_MS = 300L
+const val SEARCH_DEBOUNCE_MS = 300L
 
-internal data class CatalogListState(
+data class CatalogListState(
     /** The search field as typed. */
     val text: String = "",
     val category: String? = null,
@@ -52,7 +52,7 @@ internal data class CatalogListState(
     val message: UiText? = null,
 )
 
-internal sealed interface CatalogListAction {
+sealed interface CatalogListAction {
     data class OnQueryChange(val text: String) : CatalogListAction
     data class OnCategorySelect(val category: String?) : CatalogListAction
     data class OnSortSelect(val sort: CatalogSort) : CatalogListAction
@@ -67,7 +67,7 @@ internal sealed interface CatalogListAction {
  * so an older query's results never replace a newer one's.
  */
 @OptIn(FlowPreview::class)
-internal class CatalogListViewModel(
+class CatalogListViewModel(
     private val options: CatalogOptions,
     private val source: CatalogDataSource,
     private val analytics: Analytics,

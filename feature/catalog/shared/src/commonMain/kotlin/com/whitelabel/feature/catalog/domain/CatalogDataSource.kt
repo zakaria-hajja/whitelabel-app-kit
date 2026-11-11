@@ -5,7 +5,7 @@ import com.whitelabel.core.common.Result
 import com.whitelabel.core.network.Page
 import com.whitelabel.feature.catalog.CatalogSort
 
-internal data class CatalogItem(
+data class CatalogItem(
     val id: String,
     val title: String,
     val description: String?,
@@ -14,14 +14,14 @@ internal data class CatalogItem(
 )
 
 /** What the list shows: [text] is the search (blank means none). */
-internal data class CatalogQuery(
+data class CatalogQuery(
     val text: String = "",
     val category: String? = null,
     val sort: CatalogSort,
 )
 
 /** `GET catalog` (paginated) and `GET catalog/{id}`; both need a session. */
-internal interface CatalogDataSource {
+interface CatalogDataSource {
     suspend fun page(query: CatalogQuery, page: Int, pageSize: Int): Result<Page<CatalogItem>, DataError>
 
     suspend fun item(id: String): Result<CatalogItem, DataError>

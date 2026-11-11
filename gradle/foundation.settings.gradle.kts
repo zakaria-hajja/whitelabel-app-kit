@@ -29,6 +29,7 @@ val sharedModules = listOf(
     ":feature:home",
     ":feature:home:shared",
     ":feature:catalog",
+    ":feature:catalog:shared",
     ":core:testing",
     ":core:mockapi",
     ":core:testing-android",

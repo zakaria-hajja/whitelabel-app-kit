@@ -19,7 +19,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 private object SignedIn : SessionTokenStore {
     override suspend fun current() = SessionTokens("access", "refresh")
@@ -42,7 +42,7 @@ class KtorCatalogDataSourceTest {
         ),
     )
 
-    @Test fun `query, category and sort reach the request`() = runTest {
+    @Test fun `query category and sort reach the request`() = runTest {
         val result = source().page(CatalogQuery(text = "jazz", category = "Music", sort = CatalogSort.TITLE_ASC), page = 2, pageSize = 10)
         val url = requests.single().url
         assertThat(url.encodedPath).isEqualTo("/api/v1/catalog")

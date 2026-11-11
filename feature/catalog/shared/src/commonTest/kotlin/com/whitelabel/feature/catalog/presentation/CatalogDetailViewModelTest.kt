@@ -24,9 +24,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 private val ITEM = CatalogItem("i7", "Item 7", "About item 7", "Music", null)
 
@@ -48,9 +48,9 @@ class CatalogDetailViewModelTest {
     private val items = FakeItems()
     private val analytics = DetailAnalytics()
 
-    @BeforeEach fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    @AfterEach fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun viewModel() = CatalogDetailViewModel(items, analytics, SavedStateHandle(mapOf("id" to "i7")))
 

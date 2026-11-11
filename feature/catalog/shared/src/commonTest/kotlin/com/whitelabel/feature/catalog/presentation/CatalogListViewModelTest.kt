@@ -32,8 +32,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.Test
 
 private fun item(n: Int) = CatalogItem("i$n", "Item $n", null, null, null)
 
@@ -61,7 +61,7 @@ class CatalogListViewModelTest {
     private val catalog = FakeCatalog()
     private val analytics = FakeAnalytics()
 
-    @AfterEach fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun TestScope.viewModel(options: CatalogOptions = CatalogOptions(pageSize = 5)): CatalogListViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))

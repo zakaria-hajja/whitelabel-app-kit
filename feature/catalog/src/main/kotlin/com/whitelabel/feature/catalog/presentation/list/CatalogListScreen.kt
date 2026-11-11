@@ -1,5 +1,6 @@
 package com.whitelabel.feature.catalog.presentation.list
 
+import com.whitelabel.core.presentation.asString
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -111,7 +112,7 @@ internal fun CatalogListScreen(
                     )
                     state.isLoadingFirst -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { AppLoadingIndicator() }
                     state.firstPageError != null -> ErrorState(
-                        message = state.firstPageError.asString(),
+                        message = checkNotNull(state.firstPageError).asString(),
                         onRetry = { onAction(CatalogListAction.OnRetry) },
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -157,7 +158,7 @@ private fun ItemList(state: CatalogListState, onAction: (CatalogListAction) -> U
                     AppLoadingIndicator()
                 }
                 state.moreError != null -> Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.moreError.asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    Text(checkNotNull(state.moreError).asString(), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
                     AppTextButton(text = stringResource(R.string.catalog_retry), onClick = { onAction(CatalogListAction.OnRetry) })
                 }
             }

@@ -10,8 +10,8 @@ import com.whitelabel.core.common.ApiErrorCode
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.onFailure
 import com.whitelabel.core.common.onSuccess
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.core.ui.toUiText
+import com.whitelabel.core.presentation.UiText
+import com.whitelabel.core.presentation.toUiText
 import com.whitelabel.feature.catalog.domain.CatalogDataSource
 import com.whitelabel.feature.catalog.domain.CatalogItem
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-internal data class CatalogDetailState(
+data class CatalogDetailState(
     val item: CatalogItem? = null,
     val isLoading: Boolean = true,
     /** The id doesn't exist (or belongs to another tenant): no retry. */
@@ -27,12 +27,12 @@ internal data class CatalogDetailState(
     val error: UiText? = null,
 )
 
-internal sealed interface CatalogDetailAction {
+sealed interface CatalogDetailAction {
     data object OnRetry : CatalogDetailAction
 }
 
 /** One item, opened from the list or from `<scheme>://catalog/{id}`; the id is the route's `id`. */
-internal class CatalogDetailViewModel(
+class CatalogDetailViewModel(
     private val source: CatalogDataSource,
     private val analytics: Analytics,
     savedState: SavedStateHandle,
