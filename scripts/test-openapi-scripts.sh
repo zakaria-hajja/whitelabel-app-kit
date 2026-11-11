@@ -14,7 +14,7 @@ backend="$tmp/backend"
 mkdir -p "$backend/openapi"
 git -C "$backend" init -q
 printf '{"openapi":"3.1.0","info":{"title":"t","version":"1"}}\n' > "$backend/openapi/openapi.json"
-git -C "$backend" add . && git -C "$backend" -c user.email=t@t -c user.name=t commit -qm t1 && git -C "$backend" tag t1
+git -C "$backend" add . && git -C "$backend" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -qm t1 && git -C "$backend" -c tag.gpgSign=false tag t1
 
 # The repo under test: just the two scripts.
 repo="$tmp/repo"
@@ -43,3 +43,14 @@ if (cd "$repo" && scripts/sync-openapi.sh nope "$backend" > /dev/null 2>&1); the
 [ "$before" = "$(cat "$repo/api/SOURCE")" ] || fail "an unknown tag changed api/SOURCE"
 (cd "$repo" && scripts/check-openapi.sh > /dev/null) || fail "an unknown tag broke api/"
 pass "an unknown tag fails and leaves api/ unchanged"
+
+# Run from somewhere else (e.g. an app repo's root, with the foundation as a submodule): the scripts
+# must still write and check the foundation's api/, not the current directory's.
+elsewhere="$tmp/elsewhere"
+mkdir -p "$elsewhere"
+(cd "$elsewhere" && "$repo/scripts/sync-openapi.sh" t1 "$backend" > /dev/null) || fail "sync from another directory"
+[ ! -e "$elsewhere/api" ] || fail "sync wrote api/ into the current directory"
+(cd "$elsewhere" && "$repo/scripts/check-openapi.sh" > /dev/null) || fail "check from another directory"
+(cd "$elsewhere" && "$repo/scripts/sync-openapi.sh" t1 ../backend > /dev/null) || fail "a relative backend dir is resolved from where the script is run"
+pass "both scripts work on their own repo from any directory"
+

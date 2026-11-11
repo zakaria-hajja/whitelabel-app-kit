@@ -1,6 +1,7 @@
 #!/bin/sh
 # Fails if api/openapi.json is not exactly the file scripts/sync-openapi.sh recorded in api/SOURCE.
 set -eu
+cd "$(dirname "$0")/.."
 
 fail() {
   echo "check-openapi: $1" >&2
