@@ -1,6 +1,5 @@
 package com.whitelabel.feature.settings.presentation
 
-import com.whitelabel.core.presentation.asString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,11 +24,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,17 +37,20 @@ import com.whitelabel.core.designsystem.component.AppConfirmDialog
 import com.whitelabel.core.designsystem.component.AppLoadingIndicator
 import com.whitelabel.core.designsystem.component.AppScaffold
 import com.whitelabel.core.designsystem.component.AppSecondaryButton
-import com.whitelabel.core.designsystem.component.AppTextButton
+import com.whitelabel.core.designsystem.component.AppSectionHeader
 import com.whitelabel.core.designsystem.component.ErrorState
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.domain.ThemePreference
+import com.whitelabel.core.presentation.asString
 import com.whitelabel.feature.settings.R
 import com.whitelabel.feature.settings.SettingsChoiceSheet
+import com.whitelabel.feature.settings.SettingsLinkRow
 import com.whitelabel.feature.settings.SettingsOptions
 import com.whitelabel.feature.settings.SettingsValueRow
 import com.whitelabel.feature.settings.domain.NotificationKind
 import com.whitelabel.feature.settings.domain.NotificationSettings
 import java.util.Locale
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 internal fun SettingsRoot(
@@ -118,32 +121,27 @@ internal fun SettingsScreen(
                 }
             }
             Section(stringResource(R.string.settings_about)) {
+                // One muted line: "Munch 0.1.0 · Your data stays on this phone."
+                val nameAndVersion = stringResource(R.string.settings_about_line, state.appName, state.versionName)
                 Text(
-                    text = stringResource(R.string.settings_version, state.versionName),
+                    text = options.aboutNote?.let { "$nameAndVersion · ${stringResource(it)}" } ?: nameAndVersion,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = AppTheme.spacing.md, vertical = AppTheme.spacing.sm),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = AppTheme.style.sizing.screenGutter, vertical = AppTheme.spacing.sm),
                 )
-                options.aboutNote?.let { note ->
-                    Text(
-                        text = stringResource(note),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = AppTheme.spacing.md),
-                    )
-                }
                 state.supportEmail?.let { email ->
-                    LinkRow(stringResource(R.string.settings_contact_support)) { onOpenUrl("mailto:$email") }
+                    SettingsLinkRow(stringResource(R.string.settings_contact_support), onClick = { onOpenUrl("mailto:$email") })
                 }
-                LinkRow(stringResource(R.string.settings_privacy)) { onOpenUrl(state.privacyUrl) }
-                LinkRow(stringResource(R.string.settings_terms)) { onOpenUrl(state.termsUrl) }
-                if (state.showDiagnostics) LinkRow(stringResource(R.string.settings_diagnostics), onOpenDiagnostics)
+                SettingsLinkRow(stringResource(R.string.settings_privacy), onClick = { onOpenUrl(state.privacyUrl) })
+                SettingsLinkRow(stringResource(R.string.settings_terms), onClick = { onOpenUrl(state.termsUrl) })
+                if (state.showDiagnostics) SettingsLinkRow(stringResource(R.string.settings_diagnostics), onClick = onOpenDiagnostics)
             }
             if (state.signedIn) {
                 Section(stringResource(R.string.settings_account)) {
                     AppSecondaryButton(
                         text = stringResource(R.string.settings_sign_out),
                         onClick = { onAction(SettingsAction.OnSignOutClick) },
-                        modifier = Modifier.padding(horizontal = AppTheme.spacing.md),
+                        modifier = Modifier.padding(horizontal = AppTheme.style.sizing.screenGutter),
                     )
                 }
             }
@@ -202,21 +200,30 @@ private fun NotificationsSection(state: SettingsState, onAction: (SettingsAction
     }
 }
 
+/**
+ * A section: its header (per the style pack), its content, a divider. An untitled section whose
+ * content draws nothing (an app's callout with nothing to say) takes no space and draws no divider.
+ */
 @Composable
 private fun Section(title: String?, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xs)) {
-        if (title != null) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = AppTheme.spacing.md, vertical = AppTheme.spacing.sm),
-            )
+    // Measured first; the divider is only composed when the section shows something.
+    SubcomposeLayout { constraints ->
+        val loose = constraints.copy(minHeight = 0)
+        val body = subcompose("body") { Column { if (title != null) AppSectionHeader(title); content() } }.map { it.measure(loose) }
+        val bodyHeight = body.sumOf { it.height }
+        if (bodyHeight == 0) return@SubcomposeLayout layout(0, 0) {}
+        val divider = subcompose("divider") {
+            HorizontalDivider(Modifier.padding(top = AppTheme.spacing.sm).testTag(SETTINGS_DIVIDER))
+        }.map { it.measure(loose) }
+        val all = body + divider
+        layout(all.maxOf { it.width }, bodyHeight + divider.sumOf { it.height }) {
+            var y = 0
+            all.forEach { it.placeRelative(0, y); y += it.height }
         }
-        content()
-        HorizontalDivider(Modifier.padding(top = AppTheme.spacing.sm))
     }
 }
+
+private const val SETTINGS_DIVIDER = "SettingsDivider"
 
 @Composable
 private fun ToggleRow(label: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
@@ -226,16 +233,11 @@ private fun ToggleRow(label: String, checked: Boolean, onToggle: (Boolean) -> Un
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .toggleable(value = checked, onValueChange = onToggle, role = Role.Switch)
-            .padding(horizontal = AppTheme.spacing.md),
+            .padding(horizontal = AppTheme.style.sizing.screenGutter),
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = null)
     }
-}
-
-@Composable
-private fun LinkRow(label: String, onClick: () -> Unit) {
-    AppTextButton(text = label, onClick = onClick, modifier = Modifier.padding(horizontal = AppTheme.spacing.sm))
 }
 
 @Composable
