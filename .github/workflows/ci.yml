@@ -17,34 +17,54 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: What changed (a docs-only PR skips the Gradle steps)
+        id: changes
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          scripts/test-ci-needs-build.sh
+          if [ "$EVENT" = pull_request ]; then build=$(scripts/ci-needs-build.sh "$BASE" "$HEAD"); else build=true; fi
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "Gradle steps needed: $build"
+
       - uses: actions/setup-java@v5
+        if: steps.changes.outputs.build == 'true'
         with:
           distribution: temurin
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@v5
+        if: steps.changes.outputs.build == 'true'
 
       - name: API contract is the vendored backend tag
+        if: steps.changes.outputs.build == 'true'
         run: |
           scripts/test-openapi-scripts.sh
           scripts/check-openapi.sh
 
       - name: Unit tests and lint
+        if: steps.changes.outputs.build == 'true'
         run: scripts/check.sh
 
       - name: Build every app (debug and unsigned release)
+        if: steps.changes.outputs.build == 'true'
         run: ./gradlew assembleDebug assembleRelease
 
       - name: Verify apps (identity, isolation, distinct icons)
+        if: steps.changes.outputs.build == 'true'
         run: scripts/verify-apps.sh
 
       - name: Release stays free of the mock backend, even with the flag on
+        if: steps.changes.outputs.build == 'true'
         # -Pwhitelabel.mockApi=true must only ever reach debug builds; this checks the real wiring.
         run: |
           ./gradlew -Pwhitelabel.mockApi=true assembleRelease
           scripts/verify-apps.sh release
 
       - name: Standalone app fixture (an app repo with the foundation as a submodule)
+        if: steps.changes.outputs.build == 'true'
         # Run from the fixture with app-relative paths, exactly as an app repo's CI does.
         working-directory: fixtures/standalone-app
         run: |
