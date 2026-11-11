@@ -56,4 +56,18 @@ internal fun Project.addTestDependencies(configuration: String = "testImplementa
         add(configuration, libs.library("kotlinx-coroutines-test"))
         add(configuration.replace("Implementation", "RuntimeOnly"), libs.library("junit-platform-launcher"))
     }
+    pointTestsAtTheContract()
+}
+
+/**
+ * Contract tests (`:core:testing`'s `OpenApiSpec`) read the vendored `api/openapi.json`, two levels
+ * above `core/testing`: the repo root here, `foundation/` in an app repo.
+ */
+private fun Project.pointTestsAtTheContract() {
+    val testing = rootProject.findProject(":core:testing") ?: return
+    val spec = testing.projectDir.resolve("../../api/openapi.json").normalize()
+    tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach {
+        systemProperty("whitelabel.openapi", spec.absolutePath)
+        inputs.file(spec).withPathSensitivity(org.gradle.api.tasks.PathSensitivity.RELATIVE).optional()
+    }
 }

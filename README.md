@@ -47,6 +47,7 @@ Release builds are unsigned unless the app has a `signing.properties`; see
   foundation as a submodule
 - [Architecture](docs/architecture.md): modules, dependency rules, how an app is put together
 - [Adding a shared feature](docs/adding-a-shared-feature.md)
+- [API integration](docs/api-integration.md): the backend contract, endpoints, errors and contract tests
 - [Branding](docs/branding.md) · [API environments](docs/api-environments.md) ·
   [Release signing](docs/release-signing.md) · [Testing](docs/testing.md)
 - [Design spec](docs/superpowers/specs/2026-11-10-reusable-app-foundation-design.md) ·

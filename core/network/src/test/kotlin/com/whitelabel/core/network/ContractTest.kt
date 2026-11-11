@@ -1,0 +1,78 @@
+package com.whitelabel.core.network
+
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import com.whitelabel.core.common.ApiErrorCode
+import com.whitelabel.core.common.DataError
+import com.whitelabel.core.common.Result
+import com.whitelabel.core.testing.ContractBackend
+import com.whitelabel.core.testing.OpenApiSpec
+import com.whitelabel.core.testing.exampleValue
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.junit.jupiter.api.Test
+
+class ContractTest {
+
+    private val backend = ContractBackend()
+
+    @Test fun `post api v1 auth refresh matches the contract`() = runTest {
+        val tokens = FakeSessionTokens(SessionTokens("old-access", "old-refresh"))
+        backend.answerOnce("get", "/api/v1/users/me", 401)
+        val result = backend.client(tokens).getResult<JsonObject>("users/me")
+        assertThat(result).isInstanceOf(Result.Success::class)
+        val expected = SessionTokens(
+            OpenApiSpec.exampleValue("/api/v1/auth/refresh", "post", 200, "data.tokens.accessToken"),
+            OpenApiSpec.exampleValue("/api/v1/auth/refresh", "post", 200, "data.tokens.refreshToken"),
+        )
+        assertThat(tokens.tokens).isEqualTo(expected)
+        backend.assertRequestMatches("post", "/api/v1/auth/refresh")
+    }
+
+    @Test fun `every documented error maps to the code it names`() = runTest {
+        // A raw sweep over every operation: requests aren't shaped like the app's, so skip those checks.
+        val sweep = ContractBackend(checkRequests = false)
+        val client = sweep.client(ContractBackend.SignedOut)
+        val checked = OpenApiSpec.operations().flatMap { (path, method) ->
+            OpenApiSpec.documentedStatuses(path, method).filter { status ->
+                // Error envelopes only: GET /health's 503 is documented as a success envelope (db: down).
+                status >= 400 && OpenApiSpec.responseExampleOrNull(path, method, status)?.contains("\"success\":false") == true
+            }.map { status ->
+                sweep.answer(method, path, status)
+                val relative = path.removePrefix("/api/v1/").replace(Regex("\\{[^}]+}"), "x")
+                val result = when (method) {
+                    "get" -> client.getResult<JsonObject>(relative)
+                    "post" -> client.postResult<JsonObject, JsonObject>(relative, JsonObject(emptyMap()))
+                    "patch" -> client.patchResult<JsonObject, JsonObject>(relative, JsonObject(emptyMap()))
+                    "delete" -> client.deleteResult<JsonObject>(relative)
+                    else -> error("unexpected method $method")
+                }
+                val wire = OpenApiSpec.exampleValue(path, method, status, "error.code")
+                val error = (result as Result.Error).error as DataError.Api
+                assertThat(error.code.name, "$method $path $status").isEqualTo(wire)
+                assertThat(error.code == ApiErrorCode.UNKNOWN, "$method $path $status").isEqualTo(false)
+                assertThat(error.httpStatus).isEqualTo(status)
+            }
+        }
+        assertThat(checked.isNotEmpty()).isEqualTo(true)
+    }
+
+    @Test fun `every error code in the contract is known to the app`() {
+        val codes = OpenApiSpec.json["components"]!!.jsonObject["schemas"]!!.jsonObject["ErrorEnvelope"]!!.jsonObject["properties"]!!
+            .jsonObject["error"]!!.jsonObject["properties"]!!.jsonObject["code"]!!.jsonObject["enum"]!!.jsonArray.map { it.jsonPrimitive.content }
+        assertThat(codes.isNotEmpty()).isEqualTo(true)
+        assertThat(codes.filter { ApiErrorCode.fromWire(it) == ApiErrorCode.UNKNOWN }).isEqualTo(emptyList())
+    }
+
+    @Test fun `the smallest valid refresh response still renews the session`() = runTest {
+        val minimal = ContractBackend(minimal = true)
+        val tokens = FakeSessionTokens(SessionTokens("old-access", "old-refresh"))
+        minimal.answerOnce("get", "/api/v1/users/me", 401)
+        assertThat(minimal.client(tokens).getResult<JsonObject>("users/me")).isInstanceOf(Result.Success::class)
+        assertThat(tokens.replaced).isEqualTo(1)
+    }
+}

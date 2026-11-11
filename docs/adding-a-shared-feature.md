@@ -97,6 +97,9 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
   rules.
 - **Data tests:** use `MockEngine` for network data sources and `@TempDir` for `JsonStore`-backed
   stores.
+- **Contract test:** a `ContractTest` that runs the module's data source against `ContractBackend`
+  (`:core:testing`), so it decodes the spec's examples and sends bodies the spec accepts. See
+  [api-integration.md](api-integration.md#contract-tests).
 - **One Compose UI test** for the main path of the screen.
 - **Add the feature to `apps/showcase`,** the reference app that uses every shared feature, and
   check it by hand.

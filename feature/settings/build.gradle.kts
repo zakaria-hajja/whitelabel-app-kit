@@ -24,4 +24,5 @@ dependencies {
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.turbine)
     androidTestImplementation(libs.assertk)
+    testImplementation(project(":core:testing"))
 }

@@ -13,4 +13,5 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.ktor.client.mock)
+    testImplementation(project(":core:testing"))
 }
