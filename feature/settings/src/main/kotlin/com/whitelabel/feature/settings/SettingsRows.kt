@@ -35,12 +35,14 @@ import com.whitelabel.core.designsystem.theme.ValueRowLayout
  */
 @Composable
 fun SettingsValueRow(label: String, value: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val layout = AppTheme.style.valueRows
     val row = modifier
         .fillMaxWidth()
-        .heightIn(min = AppTheme.style.sizing.listRowMinHeight)
+        // Inline keeps the 48 dp rows (as the toggle rows); stacked rows hold two lines.
+        .heightIn(min = if (layout == ValueRowLayout.Stacked) AppTheme.style.sizing.listRowMinHeight else 48.dp)
         .clickable(role = Role.Button, onClick = onClick)
         .padding(horizontal = AppTheme.style.sizing.screenGutter, vertical = AppTheme.spacing.sm)
-    when (AppTheme.style.valueRows) {
+    when (layout) {
         ValueRowLayout.Inline -> Row(verticalAlignment = Alignment.CenterVertically, modifier = row) {
             Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
             Text(

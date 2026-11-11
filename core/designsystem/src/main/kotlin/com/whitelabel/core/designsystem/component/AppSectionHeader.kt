@@ -17,11 +17,14 @@ import com.whitelabel.core.designsystem.theme.SectionHeaderStyle
  */
 @Composable
 fun AppSectionHeader(text: String, modifier: Modifier = Modifier) {
+    val style = AppTheme.style.sectionHeader
+    // Accent keeps the spacing shared screens always had; Caption opens more air above, as designed.
+    val top = if (style == SectionHeaderStyle.Caption) AppTheme.spacing.lg else AppTheme.spacing.sm
     val padded = modifier
         .padding(horizontal = AppTheme.style.sizing.screenGutter)
-        .padding(top = AppTheme.spacing.lg, bottom = AppTheme.spacing.sm)
+        .padding(top = top, bottom = AppTheme.spacing.sm)
         .semantics { heading() }
-    when (AppTheme.style.sectionHeader) {
+    when (style) {
         SectionHeaderStyle.Accent -> Text(
             text = text,
             style = MaterialTheme.typography.titleSmall,

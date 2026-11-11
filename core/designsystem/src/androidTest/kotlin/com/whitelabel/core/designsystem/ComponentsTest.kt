@@ -38,7 +38,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isHeading
+import assertk.assertions.isLessThan
 import com.whitelabel.core.designsystem.component.AppConfirmDialog
 import com.whitelabel.core.designsystem.component.AppScaffold
 import com.whitelabel.core.designsystem.component.AppSectionHeader
@@ -48,6 +50,7 @@ import com.whitelabel.core.designsystem.component.AppTextField
 import com.whitelabel.core.designsystem.component.EmptyState
 import com.whitelabel.core.designsystem.component.ErrorState
 import com.whitelabel.core.designsystem.theme.AppTheme
+import androidx.compose.ui.unit.height
 import org.junit.Rule
 import org.junit.Test
 
@@ -250,5 +253,17 @@ class ComponentsTest {
     @Test fun materialKeepsTheRaisedBar() {
         val (_, surface) = showScaffold(StylePack.Material, dark = false)
         assertThat(topBarColor()).isEqualTo(surface.toArgb())
+    }
+
+    /** Material keeps its section spacing: 8 dp above and below the title, as before packs had a say. */
+    @Test fun accentHeaderKeepsItsSpacing() {
+        rule.setContent {
+            AppTheme(stylePack = StylePack.Material) {
+                androidx.compose.foundation.layout.Box(Modifier.testTag("header")) { AppSectionHeader("Appearance") }
+            }
+        }
+        // The title's line (20 sp) plus 8 dp above and below; the Caption style's 24 dp top would exceed it.
+        val height = rule.onNodeWithTag("header").getUnclippedBoundsInRoot().height
+        assertThat(height.value).isLessThan(42f)
     }
 }

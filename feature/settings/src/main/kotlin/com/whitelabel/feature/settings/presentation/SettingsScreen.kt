@@ -209,7 +209,12 @@ private fun Section(title: String?, content: @Composable () -> Unit) {
     // Measured first; the divider is only composed when the section shows something.
     SubcomposeLayout { constraints ->
         val loose = constraints.copy(minHeight = 0)
-        val body = subcompose("body") { Column { if (title != null) AppSectionHeader(title); content() } }.map { it.measure(loose) }
+        val body = subcompose("body") {
+            Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.xs)) {
+                if (title != null) AppSectionHeader(title)
+                content()
+            }
+        }.map { it.measure(loose) }
         val bodyHeight = body.sumOf { it.height }
         if (bodyHeight == 0) return@SubcomposeLayout layout(0, 0) {}
         val divider = subcompose("divider") {

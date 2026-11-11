@@ -31,6 +31,7 @@ import com.whitelabel.core.designsystem.theme.StylePack
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.height
 import org.junit.Rule
 import org.junit.Test
 
@@ -245,5 +246,11 @@ class SettingsScreenTest {
         rule.onNode(hasText("Privacy policy") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)).assertExists()
         // 20 dp gutter, within pixel rounding.
         assertThat(kotlin.math.abs((bounds("Privacy policy").left - 20.dp).value)).isLessThan(0.5f)
+    }
+
+    /** Material rows keep their 48 dp height, the same as the toggle rows beside them. */
+    @Test fun materialValueRowKeepsItsHeight() {
+        rule.setContent { AppTheme(stylePack = StylePack.Material) { SettingsValueRow("Theme", "System default", onClick = {}) } }
+        assertThat(kotlin.math.abs((rule.onNodeWithText("Theme").getUnclippedBoundsInRoot().height - 48.dp).value)).isLessThan(0.5f)
     }
 }
