@@ -41,6 +41,9 @@ internal fun Project.configureKotlinMultiplatform() {
         jvm()
         jvmToolchain(JDK_VERSION)
         applyDefaultHierarchyTemplate()
+        // kotlin.time.Instant/Clock are the multiplatform time types (kotlinx-datetime builds on them);
+        // still marked experimental in Kotlin 2.2.
+        compilerOptions { optIn.add("kotlin.time.ExperimentalTime") }
     }
 
     dependencies {

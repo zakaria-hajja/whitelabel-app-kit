@@ -15,7 +15,6 @@ import com.whitelabel.core.shell.entry
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.okhttp.OkHttpEngine
-import java.io.File
 import org.junit.jupiter.api.Test
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.qualifier.named
@@ -35,7 +34,7 @@ class ShellKoinTest {
         module { includes(foundationModules(definition, emptyList())) }
             .verify(
                 extraTypes = listOf(
-                    Context::class, SavedStateHandle::class, File::class,
+                    Context::class, SavedStateHandle::class, okio.Path::class, okio.FileSystem::class,
                     String::class, Environment::class, RuntimeDefaults::class, Function1::class,
                 ),
             )

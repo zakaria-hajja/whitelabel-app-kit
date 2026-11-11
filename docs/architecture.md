@@ -13,17 +13,18 @@ business features. The design is in
 | `build-logic` | Built | Convention plugins: `whitelabel.android.application` (app modules), `.android.library`, `.android.library.compose`, `.jvm.library`, `.koin`, and for Kotlin Multiplatform `whitelabel.kmp.library` and `whitelabel.kmp.resources` (see §6). Also the app config loader that validates each `apps/<name>/app.properties` |
 | `:core:common` | Built | `Result<T, E>`, `DataError`, `ApiErrorCode`. Kotlin Multiplatform (Android, iOS) |
 | `:core:presentation` | Built | Shared presentation types for Android and iOS: `UiText` (text or a shared string resource) and `DataError.toUiText()` with the generic error messages. Kotlin Multiplatform with Compose resources |
-| `:core:branding` | Built | `BrandConfig`, the app's typed build-time identity (tenant, name, API URL, environment, runtime defaults). Pure Kotlin |
-| `:core:network` | Built | Ktor client factory, backend envelope unwrapping, error mapping, typed request helpers, the optional `X-Client-Id` tenant header, and the bearer session with single-flight refresh. It reads tokens through `SessionTokenStore`, so it never depends on storage. Pure Kotlin with Koin |
+| `:core:branding` | Built | `BrandConfig`, the app's typed build-time identity (tenant, name, API URL, environment, runtime defaults). Kotlin Multiplatform (Android, iOS) |
+| `:core:network` | Built | Ktor client factory, backend envelope unwrapping, error mapping, typed request helpers, the optional `X-Client-Id` tenant header, and the bearer session with single-flight refresh. It reads tokens through `SessionTokenStore`, so it never depends on storage. Kotlin Multiplatform (Android, iOS); the engine is OkHttp on Android, Darwin on iOS (`defaultHttpEngine()`) |
 | `:core:designsystem` | Built | `AppTheme` built from brand resources and the app's style pack (`StylePack.Material`/`Gallery`: corners, surfaces, sizing, motion, haptics), shared-element helpers, spacing tokens, components (buttons, text field, card, scaffold, loading, empty and error states, dialog), contrast helpers |
-| `:core:datastore` | Built | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. `TokenStore`: the session tokens, encrypted with an AES-256-GCM key in AndroidKeyStore |
+| `:core:datastore` | Built | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. `TokenStore`: the session tokens, encrypted with an AES-256-GCM key in AndroidKeyStore. Kotlin Multiplatform (Android, iOS) on DataStore-okio. The Keystore cipher (`KeystoreTokenCipher`) is Android-only |
 | `:core:reminders` | Built | `Reminders`: local notifications at a date and time that survive reboots, clock and time-zone changes and app updates, with a 12-hour rule for missed ones; the app's channels through `ReminderConfig`; `rememberNotificationPermission()` and `openNotificationSettings()`. See [reminders.md](reminders.md) |
+| `:core:reminders:shared` | Built | The reminder engine, its ports (`AlarmScheduler`, `NotificationPoster`, `ReminderStore`), `Reminder` (on `kotlinx-datetime`) and the stored format. Kotlin Multiplatform (Android, iOS) |
 | `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, remote feature flags, the theme and language preferences, analytics wiring, the sign-in gate, and the diagnostics screen (debug builds only, opened from Settings) |
 | `:apps:showcase` | Built | Reference app that will use every shared feature. It uses all of them: sign-in, home, catalog, profile and settings |
-| `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Pure Kotlin |
-| `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference |
+| `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Kotlin Multiplatform (Android, iOS) |
+| `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference. Kotlin Multiplatform (Android, iOS). `androidDataModule` (AppCompat language, Keystore cipher, store paths) is Android-only |
 | `:core:ui` | Built | Presentation helpers for features: `UiText`, `DataError.toUiText()`, `ObserveAsEvents`. The `UiText` here is Android-only and is replaced by `:core:presentation`'s as features move to KMP |
-| `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Pure Kotlin |
+| `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Kotlin Multiplatform (Android, iOS) |
 | `:feature:authentication` | Built | `auth()`: the whole-app sign-in gate with sign-in, registration and password reset. See [shared-features.md](shared-features.md) |
 | `:feature:settings` | Built | `settings()`: theme, language, notifications, about, legal links and sign-out. See [shared-features.md](shared-features.md) |
 | `:feature:profile` | Built | `profile()`: view and edit the profile, change the password. See [shared-features.md](shared-features.md) |
@@ -163,6 +164,17 @@ progress: [2026-11-11-kmp-migration.md](superpowers/plans/2026-11-11-kmp-migrati
 
   The namespace and package come from the Gradle path (`:core:common` →
   `com.whitelabel.core.common`).
+- **Platform seams.** Shared code reaches the platform only through these. Android implements each
+  in the foundation; on iOS the iOS starter provides them (Swift where an Apple SDK is needed):
+
+  | Seam | Android | iOS |
+  |---|---|---|
+  | `StorePaths` (where stores live) | `filesDir/datastore/<name>.json` | `iosJsonStorePath(name)`: Application Support |
+  | `TokenCipher` | `KeystoreTokenCipher` (AES-GCM, AndroidKeyStore) | CryptoKit + Keychain (iOS starter) |
+  | `LanguageRepository` | `AppCompatLanguageRepository` | iOS starter |
+  | `defaultHttpEngine()` | OkHttp | Darwin |
+  | `AlarmScheduler`, `NotificationPoster` | `:core:reminders` | `UNUserNotificationCenter` (iOS starter) |
+
 - **Source sets:**
   - `commonMain` holds everything that isn't platform code.
   - `androidMain` and `iosMain` hold only adapters behind interfaces.

@@ -1,3 +1,3 @@
 plugins {
-    id("whitelabel.jvm.library")
+    id("whitelabel.kmp.library")
 }

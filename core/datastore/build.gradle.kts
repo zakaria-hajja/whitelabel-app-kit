@@ -1,17 +1,14 @@
 plugins {
-    id("whitelabel.android.library")
-    alias(libs.plugins.kotlin.serialization)
+    id("whitelabel.kmp.library")
 }
 
-android {
-    namespace = "com.whitelabel.core.datastore"
-}
-
-dependencies {
-    api(libs.androidx.datastore.core)
-    api(libs.kotlinx.serialization.json)
-
-    androidTestImplementation(libs.assertk)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.ext.junit)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.androidx.datastore.core.okio)
+            api(libs.okio)
+            api(libs.kotlinx.serialization.json)
+        }
+        commonTest.dependencies { implementation(libs.okio.fakefilesystem) }
+    }
 }

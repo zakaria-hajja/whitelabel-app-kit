@@ -9,6 +9,7 @@ import org.koin.test.verify.verify
 class RemindersKoinTest {
 
     @Test fun `reminders module resolves with only a context`() {
-        remindersModule().verify(extraTypes = listOf(Context::class))
+        // ReminderEngine: the module takes it from the process-wide RemindersRuntime, which verify() can't see.
+        remindersModule().verify(extraTypes = listOf(Context::class, ReminderEngine::class))
     }
 }

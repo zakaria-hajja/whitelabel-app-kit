@@ -24,8 +24,11 @@ These follow the project's Android skills:
 - **Fakes over mocks:** an in-memory fake of the interface (e.g. `FakeNotesStore`).
 - **Coroutines:** `Dispatchers.setMain(UnconfinedTestDispatcher())` for ViewModels, and Turbine for
   `StateFlow`s.
-- **Unit tests stay in memory.** Storage tests (`JsonStore`, `NotesStore`) are the exception: they
-  use a JUnit `@TempDir`.
+- **Unit tests stay in memory.** Storage tests are the exception. In `commonTest` they use okio's
+  `FakeFileSystem` (`JsonStore(path, …, fileSystem)`), and in `jvmTest` a JUnit `@TempDir`.
+- **Which source set:** shared logic in `commonTest`, which runs on the JVM and iOS. Contract tests
+  (they use the JVM-only `:core:testing`), Koin `verify()` and tests built on JVM APIs go in
+  `jvmTest`.
 - **Network tests** use Ktor `MockEngine` via `HttpClientFactory`, so they exercise the real
   headers, envelope and error mapping.
 - **Koin graph:** each Koin module has a `verify()` test (`module.verify(extraTypes = …)`, listing
