@@ -25,14 +25,14 @@ These follow the project's Android skills:
 
 ```sh
 scripts/check.sh                                  # Gradle check for every module + build-logic tests
-./gradlew :apps:globex:notes:testDebugUnitTest    # one module
+./gradlew :feature:catalog:testDebugUnitTest      # one module
 ./gradlew -p build-logic :convention:test         # the app config loader
 
 # Instrumented: start an emulator first
 ~/Library/Android/sdk/emulator/emulator -avd Medium_Phone_API_36.1 -no-window -no-audio -no-boot-anim &
 adb wait-for-device
-./gradlew :core:designsystem:connectedDebugAndroidTest :core:shell:connectedDebugAndroidTest \
-          :apps:globex:notes:connectedDebugAndroidTest
+./gradlew :core:designsystem:connectedDebugAndroidTest :core:shell:connectedDebugAndroidTest
+./gradlew :apps:showcase:connectedDebugAndroidTest   # end to end, against the in-memory backend
 
 ./gradlew assembleDebug assembleRelease && scripts/verify-apps.sh
 ```

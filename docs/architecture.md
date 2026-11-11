@@ -19,7 +19,6 @@ business features. The design is in
 | `:core:reminders` | Built | `Reminders`: local notifications at a date and time that survive reboots, clock and time-zone changes and app updates, with a 12-hour rule for missed ones; the app's channels through `ReminderConfig`; `rememberNotificationPermission()` and `openNotificationSettings()`. See [reminders.md](reminders.md) |
 | `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, remote feature flags, the theme and language preferences, analytics wiring, the sign-in gate, and the diagnostics screen (debug builds only, opened from Settings) |
 | `:apps:showcase` | Built | Reference app that will use every shared feature. It uses all of them: sign-in, home, catalog, profile and settings |
-| `:apps:globex`, `:apps:globex:notes` | Built | Second app, proving reuse: sign-in, an app-specific notes feature, and settings |
 | `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Pure Kotlin |
 | `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference |
 | `:core:ui` | Built | Presentation helpers for features: `UiText`, `DataError.toUiText()`, `ObserveAsEvents` |
@@ -41,8 +40,6 @@ once, for this build and for app repos. See [creating-a-standalone-app.md](creat
 flowchart TD
     subgraph apps["apps/*"]
         showcase[":apps:showcase"]
-        globex[":apps:globex"]
-        notes[":apps:globex:notes"]
     end
     shell[":core:shell"]
     ds[":core:designsystem"]
@@ -56,11 +53,6 @@ flowchart TD
     features[":feature:* (auth, home, catalog, profile, settings)"]
 
     showcase --> shell
-    globex --> shell
-    globex --> notes
-    notes --> shell
-    notes --> ds
-    notes --> datastore
     shell --> branding
     shell --> network
     shell --> ds
@@ -74,7 +66,6 @@ flowchart TD
     domain --> common
     network --> common
     showcase --> features
-    globex --> features
     features --> shell
     features --> domain
 

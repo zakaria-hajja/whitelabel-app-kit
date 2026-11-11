@@ -21,6 +21,4 @@ rootProject.name = "android-starter-kit"
 extra["foundationDir"] = settingsDir
 apply(from = "gradle/foundation.settings.gradle.kts")
 
-include(":apps:globex")
-include(":apps:globex:notes")
 include(":apps:showcase")

@@ -4,7 +4,6 @@ A shared feature is a module that any app can add with one line in its definitio
 `settings()`. It must work for every app, configured only through what the app passes in. App
 identity comes from `BrandConfig`; behaviour comes from the feature's options. A feature only one
 app needs goes under that app instead (`apps/<name>/<feature>`) and follows the same rules.
-`apps/globex/notes` is the worked example.
 
 ## Module layout
 

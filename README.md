@@ -7,9 +7,8 @@ the design system, plus ready-to-use features: sign-in, home, catalog, profile a
 Each app is a thin module under `apps/<name>/` with its own identity, brand, backend URL and
 business features.
 
-Two apps live here today:
-- `apps/showcase`, the reference app: sign-in, home, catalog, profile and settings
-- `apps/globex`, a second app: sign-in, its own notes feature, and settings
+One app lives here today: `apps/showcase`, the reference app (sign-in, home, catalog, profile and
+settings). New apps are added the same way; see [docs/creating-an-app.md](docs/creating-an-app.md).
 
 ## Prerequisites
 
@@ -25,18 +24,17 @@ Two apps live here today:
 git config core.hooksPath .githooks          # once per clone: commit-message and pre-push checks
 scripts/check.sh                             # unit tests + lint for every module, build-logic tests
 ./gradlew :apps:showcase:installDebug        # on a running emulator
-./gradlew :apps:globex:installDebug
 ./gradlew assembleDebug assembleRelease && scripts/verify-apps.sh   # build and verify every app
 ```
 
 Debug builds talk to `http://10.0.2.2:3000/api/v1/`, the host machine as seen from the emulator.
 
-**Signing in.** Both apps open on sign-in, so start the local backend first
+**Signing in.** Showcase opens on sign-in, so start the local backend first
 (`cd ../backend-api && docker compose up -d postgres && npm run db:deploy && npm run db:seed && npm run dev`).
-The seed creates `alice@shared.test` and `bob@shared.test` (password `Password123!`) in both
-tenants: showcase uses `acme`, globex uses `globex`. Or create an account in the app.
+The seed creates `alice@shared.test` and `bob@shared.test` (password `Password123!`) in its
+tenants; showcase uses `acme`. Or create an account in the app.
 
-**Android Studio:** pick the `showcase` or `globex` run configuration (shared in `.run/`).
+**Android Studio:** pick the `showcase` run configuration (shared in `.run/`).
 Release builds are unsigned unless the app has a `signing.properties`; see
 [docs/release-signing.md](docs/release-signing.md).
 
