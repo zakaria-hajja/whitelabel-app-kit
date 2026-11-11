@@ -16,6 +16,7 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import assertk.assertions.isNull
+import java.io.File
 import java.time.LocalDateTime
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -61,6 +62,14 @@ class RemindersDeviceTest {
         return condition()
     }
 
+    /** A restored backup would bring back reminders with no alarms armed, so the store stays on the device. */
+    @Test fun theStoreIsKeptOutOfBackups() = runBlocking {
+        Reminders(runtime.engine).schedule(reminder("t1", LocalDateTime.now().plusHours(1)))
+
+        assertThat(File(context.noBackupFilesDir, "reminders.json").exists()).isEqualTo(true)
+        assertThat(File(context.filesDir, "datastore/reminders.json").exists()).isEqualTo(false)
+    }
+
     @Test fun aReminderFiresAndPosts() = runBlocking {
         Reminders(runtime.engine).schedule(reminder("t1", LocalDateTime.now().plusSeconds(3)))
 
@@ -74,7 +83,7 @@ class RemindersDeviceTest {
 
         ReminderSystemReceiver().onReceive(context, Intent(Intent.ACTION_BOOT_COMPLETED))
 
-        assertThat(posted("Late one")).isNotNull()
+        assertThat(waitFor(5_000) { posted("Late one") != null }).isEqualTo(true)
         assertThat(posted("Old one")).isNull()
         assertThat(runtime.engine.pending()).isEmpty()
     }
@@ -82,8 +91,9 @@ class RemindersDeviceTest {
     @Test fun theTapOpensTheDeepLink() = runBlocking {
         runtime.store.update { listOf(reminder("t1", LocalDateTime.now().minusMinutes(1))) }
         ReminderAlarmReceiver().onReceive(context, Intent().putExtra(ReminderAlarmReceiver.EXTRA_ID, "t1"))
+        // notify() reaches the notification service asynchronously.
+        assertThat(waitFor(5_000) { posted("Spotify is hungry today") != null }).isEqualTo(true)
         val notification = posted("Spotify is hungry today")
-        assertThat(notification).isNotNull()
 
         val filter = IntentFilter(Intent.ACTION_VIEW).apply { addDataScheme("test") }
         val monitor = Instrumentation.ActivityMonitor(filter, null, false)

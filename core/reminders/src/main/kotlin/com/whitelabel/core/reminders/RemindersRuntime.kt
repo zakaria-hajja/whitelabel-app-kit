@@ -2,7 +2,7 @@ package com.whitelabel.core.reminders
 
 import android.content.Context
 import com.whitelabel.core.datastore.JsonStore
-import com.whitelabel.core.datastore.jsonStoreFile
+import java.io.File
 import java.time.LocalDateTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +17,8 @@ import kotlinx.coroutines.flow.map
 internal class RemindersRuntime private constructor(context: Context) {
     val store: ReminderStore = JsonReminderStore(
         JsonStore(
-            file = context.jsonStoreFile("reminders"),
+            // Not backed up: a restored copy would hold reminders whose alarms were never armed on this phone.
+            file = File(context.noBackupFilesDir, "reminders.json"),
             serializer = StoredReminders.serializer(),
             default = StoredReminders(),
             scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
