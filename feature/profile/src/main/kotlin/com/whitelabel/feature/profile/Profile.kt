@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import com.whitelabel.core.shell.AppDefinitionBuilder
 import com.whitelabel.core.shell.FeatureEntry
 import com.whitelabel.core.shell.Tab
+import com.whitelabel.feature.profile.presentation.password.ChangePasswordRoot
 import com.whitelabel.feature.profile.presentation.profile.ProfileRoot
 import kotlinx.serialization.Serializable
 
@@ -15,6 +16,9 @@ data class ProfileOptions(val allowPasswordChange: Boolean = true)
 /** Root of the profile tab; public so an app can name it (start tab, home shortcut). */
 @Serializable
 data object ProfileRoute
+
+@Serializable
+internal data object ChangePasswordRoute
 
 /**
  * Adds the profile tab: the signed-in user's email and names, and a password change. Needs
@@ -28,8 +32,13 @@ fun AppDefinitionBuilder.profile(options: ProfileOptions = ProfileOptions()) {
             flagKey = "profile",
             requiresSignIn = true,
             tab = Tab(ProfileRoute, R.string.profile_tab, Icons.Default.Person),
-            routes = {
-                composable<ProfileRoute> { ProfileRoot(options = options, onChangePassword = {}) }
+            routes = { scope ->
+                composable<ProfileRoute> {
+                    ProfileRoot(options = options, onChangePassword = { scope.navigator.navigate(ChangePasswordRoute) })
+                }
+                if (options.allowPasswordChange) {
+                    composable<ChangePasswordRoute> { ChangePasswordRoot(onBack = scope.navigator::back) }
+                }
             },
         ),
     )

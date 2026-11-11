@@ -9,4 +9,15 @@
     <string name="profile_saved">Profil enregistré.</string>
     <string name="profile_error_name_long">Utilisez au plus %1$d caractères.</string>
     <string name="profile_change_password">Changer le mot de passe</string>
+    <string name="profile_change_password_title">Changer le mot de passe</string>
+    <string name="profile_current_password">Mot de passe actuel</string>
+    <string name="profile_new_password">Nouveau mot de passe</string>
+    <string name="profile_confirm_password">Confirmer le nouveau mot de passe</string>
+    <string name="profile_change_password_submit">Changer le mot de passe</string>
+    <string name="profile_password_changed">Votre mot de passe a été modifié. Vos autres appareils ont été déconnectés.</string>
+    <string name="profile_back">Retour au profil</string>
+    <string name="profile_error_wrong_current_password">Le mot de passe actuel est incorrect.</string>
+    <string name="profile_error_confirm_mismatch">Les mots de passe ne correspondent pas.</string>
+    <string name="profile_error_password_short">Utilisez au moins %1$d caractères.</string>
+    <string name="profile_error_password_long">Utilisez au plus %1$d caractères.</string>
 </resources>
