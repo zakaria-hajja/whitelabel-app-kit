@@ -11,6 +11,7 @@ analytics events it sends. To add a feature to an app, add the module to the app
 | Authentication | `auth()` | none | n/a (it is the gate) |
 | Settings | `settings()` | none | no (account parts appear when signed in) |
 | Profile | `profile()` | `profile` (client-only) | yes |
+| Home | `home()` | none | yes |
 
 ## Authentication (`:feature:authentication`)
 
@@ -93,4 +94,31 @@ profile(ProfileOptions(allowPasswordChange = true))
   your other devices; this one stays signed in.
 - **Endpoints:** `GET`/`PATCH users/me` and `PATCH users/me/password`.
 - **Route:** `ProfileRoute` is public, so an app can name it (for example in a home shortcut).
+
+## Home (`:feature:home`)
+
+A home tab: a greeting for the signed-in user ("Hello, Ada", or "Welcome" without a first name)
+and shortcuts the app chooses to its other tabs.
+
+```kotlin
+home(
+    HomeOptions(
+        shortcuts = listOf(
+            HomeShortcut(R.string.my_app_shortcut_profile, Icons.Default.Person, ProfileRoute),
+        ),
+    ),
+)
+startTab(HomeRoute)
+```
+
+| Option | Default | Effect |
+|---|---|---|
+| `shortcuts` | none | Buttons that open another tab, in order. The label is the app's own string resource; the tab is its root route |
+
+- **Needs `auth()`.**
+- **Shortcuts follow the flags:** a shortcut to a tab that is missing or switched off (for example
+  profile with its flag off) is hidden.
+- **Pull to refresh** reloads the user; a failure shows a message and keeps the cached greeting.
+- **Endpoints:** `GET users/me`.
+- **Route:** `HomeRoute` is public, so an app can make it the start tab.
 
