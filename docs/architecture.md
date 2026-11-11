@@ -26,6 +26,11 @@ Items marked **Phase 4** are not built yet.
 | `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Pure Kotlin |
 | `:feature:authentication` | Built | `auth()`: the whole-app sign-in gate with sign-in, registration and password reset. See [shared-features.md](shared-features.md) |
 | `:feature:home`, `catalog`, `profile`, `settings` | Phase 4 | Ready-to-use shared features against the backend-starter API |
+| `fixtures/standalone-app` | Built | A minimal backendless app wired like an app in its own repo; CI builds and verifies it |
+
+**Apps in their own repo.** An app can also live in a separate repository, with this foundation as a
+git submodule built from source. `gradle/foundation.settings.gradle.kts` lists the shared modules
+once, for this build and for app repos. See [creating-a-standalone-app.md](creating-a-standalone-app.md).
 
 ## 2. Dependencies
 

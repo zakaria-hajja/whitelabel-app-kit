@@ -35,6 +35,8 @@ Release builds are unsigned unless the app has a `signing.properties`; see
 ## Documentation
 
 - [Creating an app](docs/creating-an-app.md): start here for app #N
+- [Creating a standalone app](docs/creating-a-standalone-app.md): an app in its own repo, with this
+  foundation as a submodule
 - [Architecture](docs/architecture.md): modules, dependency rules, how an app is put together
 - [Adding a shared feature](docs/adding-a-shared-feature.md)
 - [Branding](docs/branding.md) · [API environments](docs/api-environments.md) ·

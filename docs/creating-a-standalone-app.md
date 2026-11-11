@@ -1,0 +1,131 @@
+# Creating a standalone app (its own repo)
+
+An app can live in its own repository and still build the foundation's modules from source. The
+foundation is a **git submodule** in `foundation/`, pinned to one commit: that commit is the
+foundation version the app uses. `fixtures/standalone-app/` in this repo is a working example (it
+points at `../..` instead of `foundation/`), and CI builds it on every pull request.
+
+For everything inside the app module (`app.properties`, brand resources, the app definition, an
+app-specific feature), [creating-an-app.md](creating-an-app.md) applies unchanged. This page covers
+what differs.
+
+## 1. Repo layout
+
+```
+myapp/
+  foundation/              git submodule → this repo
+  app/                     the app module (applies whitelabel.android.application)
+    app.properties
+    build.gradle.kts
+    proguard-rules.pro
+    src/main/…
+  feature/…                the app's own feature modules (optional, any names)
+  build.gradle.kts         plugin declarations (copied, see step 3)
+  settings.gradle.kts
+  gradle.properties
+  gradlew, gradle/wrapper/ (copy the foundation's wrapper)
+```
+
+## 2. Add the foundation
+
+```sh
+git init -b main myapp && cd myapp
+git submodule add https://github.com/zakaria-hajja/android-starter.git foundation
+mkdir -p gradle && cp foundation/gradlew . && cp -R foundation/gradle/wrapper gradle/
+cp foundation/gradle.properties .
+```
+
+`local.properties` (with `sdk.dir`) stays uncommitted, as in the foundation.
+
+## 3. Settings and root build file
+
+`settings.gradle.kts`:
+
+```kotlin
+pluginManagement {
+    includeBuild("foundation/build-logic")
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "myapp"
+
+// Every shared module (:core:shell, :core:designsystem, …) under its usual path, plus the
+// foundation's version catalog as `libs`.
+extra["foundationDir"] = settingsDir.resolve("foundation")
+apply(from = "foundation/gradle/foundation.settings.gradle.kts")
+
+include(":app")
+```
+
+`build.gradle.kts`: copy `foundation/build.gradle.kts` as it is. It declares the plugins (without
+applying them) so the convention plugins can apply them by id. A `plugins {}` block can't come
+from an applied script, so this one file is a copy; when the foundation adds a plugin, add it here
+too (the build fails with "Plugin with id … not found" until you do).
+
+**Version catalog:** the app uses the foundation's (`libs`). A library only this app needs is
+declared directly in its module, e.g. `implementation("group:name:1.2.3")`. When a second app
+needs it, move it into the foundation's catalog.
+
+## 4. Apps without a backend
+
+Leave `api.debug.baseUrl`, `api.release.baseUrl` and `api.tenant` out of `app.properties`. Then:
+
+- the shell doesn't fetch the remote app config; runtime config is the app's build-time defaults;
+- diagnostics shows "No backend" and hides the ping;
+- the app refuses to start if its definition includes `auth()` or any feature that calls the API,
+  with a message naming the feature.
+
+## 5. Backups
+
+The shell backs up the app's `JsonStore` files (`filesDir/datastore/`) through Android backup, so
+a reinstall or a new phone restores the user's data when they have Google backup on. The session
+(`session.json`) and the signed-in user (`user.json`) are never backed up: the tokens are encrypted
+with a Keystore key that can't be restored, so a restored phone starts signed out. Store app data
+with `JsonStore` under `jsonStoreFile(name)` to get this for free.
+
+## 6. CI
+
+The app repo gets the same rules and checks as the foundation (Conventional Commits, `.githooks/`,
+a `scripts/check.sh`, the `ci` job). Check out with submodules, then build and verify the APK:
+
+```yaml
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      # setup-java (17) and setup-gradle as in the foundation's ci.yml
+      - run: ./gradlew check assembleDebug assembleRelease
+      - run: |
+          foundation/scripts/verify-apps.sh --apk app/build/outputs/apk/debug/app-debug.apk \
+            --properties app/app.properties --type debug
+```
+
+`verify-apps.sh --apk` checks package, label, version, deep-link scheme and the generated config
+resources against `app.properties`. The checks that compare apps with each other only run inside
+the foundation.
+
+A private foundation repo needs a token with read access for the submodule checkout.
+
+## 7. Working on the foundation from an app
+
+1. Change the foundation inside `foundation/` on a branch of the foundation repo, and land it through
+   the foundation's own PR (with its CI and `scripts/check.sh`).
+2. Once it's pushed (merged, or at least pushed for a work-in-progress app branch), move the
+   pointer in the app repo: `git -C foundation checkout <commit>`, then commit
+   `chore(deps): bump foundation to <short sha>`.
+3. Never commit a pointer to a commit that only exists on your machine: CI and everyone else would
+   fail to check it out.
+
+To update later: `git -C foundation fetch && git -C foundation checkout origin/main`, build, run the
+app's checks, commit the bump.
