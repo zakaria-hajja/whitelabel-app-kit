@@ -100,14 +100,34 @@ with `JsonStore` under `jsonStoreFile(name)` to get this for free.
 ## 6. CI
 
 The app repo gets the same rules and checks as the foundation (Conventional Commits, `.githooks/`,
-a `scripts/check.sh`, the `ci` job). Check out with submodules, then build and verify the APK:
+a `scripts/check.sh`, the `ci` job). Check out the app repo with the job's own token, fetch the
+private foundation with a secret used for that one command, then build and verify the APK. This is
+the setup Munch runs:
 
 ```yaml
-      - uses: actions/checkout@v7
+      # FOUNDATION_READ_TOKEN: a fine-grained token with Contents: read on the foundation repo only.
+      - name: Require FOUNDATION_READ_TOKEN
+        env:
+          T: ${{ secrets.FOUNDATION_READ_TOKEN }}
+        run: |
+          if [ -z "$T" ]; then
+            echo "::error::Secret FOUNDATION_READ_TOKEN is not set. Add a fine-grained token with read access to the foundation repo (repo Settings > Secrets > Actions)."
+            exit 1
+          fi
+      - name: Checkout
+        uses: actions/checkout@v7
         with:
-          submodules: true
+          fetch-depth: 0
+          persist-credentials: false      # nothing later needs the job token
+      - name: Fetch the foundation submodule
+        env:
+          T: ${{ secrets.FOUNDATION_READ_TOKEN }}
+        run: |
+          git -c "http.https://github.com/zakaria-hajja/android-starter.git/.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$T" | base64 -w0)" \
+            submodule update --init foundation
       # setup-java (17) and setup-gradle as in the foundation's ci.yml
-      - run: ./gradlew check assembleDebug assembleRelease
+      - run: scripts/check.sh
+      - run: ./gradlew :app:assembleDebug :app:assembleRelease
       - run: |
           foundation/scripts/verify-apps.sh --apk app/build/outputs/apk/debug/app-debug.apk \
             --properties app/app.properties --type debug
@@ -117,7 +137,9 @@ a `scripts/check.sh`, the `ci` job). Check out with submodules, then build and v
 resources against `app.properties`. The checks that compare apps with each other only run inside
 the foundation.
 
-A private foundation repo needs a token with read access for the submodule checkout.
+The secret is used only on the submodule command, scoped to the foundation's URL, so it never
+lands in the saved git config. A token that can't read the foundation fails that step with
+`403 … Write access to repository not granted` (GitHub's wording for "no access").
 
 ## 7. Working on the foundation from an app
 
