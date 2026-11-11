@@ -79,7 +79,7 @@ settings(SettingsOptions(showNotifications = true, languages = listOf("en", "fr"
 
 An app adds sections above the shared ones with `SettingsSection(title, content)`. A null title draws
 no header, which suits a callout. The content is composed inside the settings screen, so it can use
-`hiltViewModel()` for its own state. Build its rows from the same pieces as the shared rows:
+`koinViewModel()` for its own state (bind its ViewModel in a module the app adds with `modules(...)`). Build its rows from the same pieces as the shared rows:
 
 - `SettingsValueRow(label, value, onClick)`: a setting and its current value on one row;
 - `SettingsChoiceSheet(title, choices, selected, label, onSelect, onDismiss)`: the sheet to pick a value.
@@ -94,7 +94,7 @@ settings(
 )
 
 @Composable
-private fun ReminderTimeRow(viewModel: ReminderSettingsViewModel = hiltViewModel()) {
+private fun ReminderTimeRow(viewModel: ReminderSettingsViewModel = koinViewModel()) {
     val time by viewModel.time.collectAsStateWithLifecycle()
     var open by rememberSaveable { mutableStateOf(false) }
     SettingsValueRow("Reminder time", time.toString(), onClick = { open = true })

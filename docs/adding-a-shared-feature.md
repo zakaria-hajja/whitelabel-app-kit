@@ -9,19 +9,20 @@ app needs goes under that app instead (`apps/<name>/<feature>`) and follows the 
 
 ```
 feature/<name>/                         :feature:<name>
-  build.gradle.kts                      whitelabel.android.library + .compose + .hilt (+ serialization)
+  build.gradle.kts                      whitelabel.android.library + .compose + whitelabel.koin (+ serialization)
   src/main/kotlin/com/whitelabel/feature/<name>/
     <Name>.kt                           public: the DSL function, options, routes others must name
+    <Name>Koin.kt                       public: `val <name>Module`, its ViewModels and data sources
     presentation/                       internal: Root/Screen composables, State, Action, ViewModel
     domain/                             internal: models, repository/data-source interfaces
-    data/                               internal: DTOs, mappers, Ktor/JsonStore implementations, Hilt module
+    data/                               internal: DTOs, mappers, Ktor/JsonStore implementations
   src/main/res/values{,-fr}/strings.xml
   src/test/…                            ViewModel, repository and mapper tests with fakes
   src/androidTest/…                     Compose UI tests of the screen
 ```
 
-List `whitelabel.android.library` before `whitelabel.hilt` in `plugins {}`. The Hilt plugin picks
-its Android or JVM setup when it is applied.
+`whitelabel.koin` adds Koin (`koin-android`, and `koin-androidx-compose` for `koinViewModel()`)
+whatever its place in `plugins {}`.
 
 ## The public API is one function
 
@@ -38,13 +39,17 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
             flagKey = null,                                  // or a key, to allow switching it off remotely
             tab = Tab(SettingsRoute, R.string.settings_tab, Icons.Default.Settings),
             requiresSignIn = false,                          // true if it calls endpoints that need a session
+            modules = listOf(settingsModule),                // loaded when the app starts
             routes = { scope -> screen<SettingsRoute> { SettingsRoot(options, scope.navigator) } },
         ),
     )
 }
 ```
 
-- **Mark everything else `internal`.** Hilt modules and ViewModels may be internal too.
+- **Mark everything else `internal`.** ViewModels may be internal too; only the Koin module is
+  public. Declare ViewModels with `viewModelOf(::XViewModel)` and get them in a Root composable with
+  `koinViewModel()` (`koinViewModel { parametersOf(options) }` for one that takes the feature's
+  options). Add a `<Name>KoinTest` that calls `<name>Module.verify(extraTypes = …)`.
 - **Configuration only through the options and DI:** inject `BrandConfig`, never read
   `BuildConfig`, and never compare application IDs or names.
 - **Navigation:** `routes` receives a `FeatureScope`.

@@ -101,8 +101,8 @@ Local notifications (renewal reminders and the like) need no backend either: see
 
 ## 5. End-to-end tests
 
-They work the same as in the foundation's own apps, because the app plugin wires the Hilt test
-runner, `:core:testing-android` and `:core:mockapi` into `androidTest`. See
+They work the same as in the foundation's own apps, because the app plugin wires
+`:core:testing-android` (with `FreshAppRule`) and `:core:mockapi` into `androidTest`. See
 [creating-an-app.md, section 8](creating-an-app.md#8-end-to-end-tests) for the rules, the shared
 robots and the in-memory backend. A backendless app still gets the clean-start rules. It only
 needs the fake if it calls the API.
