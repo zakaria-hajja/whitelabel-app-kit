@@ -1,5 +1,11 @@
 package com.whitelabel.feature.authentication.presentation
 
+import com.whitelabel.feature.authentication.shared.resources.Res
+import com.whitelabel.feature.authentication.shared.resources.auth_error_email_invalid
+import com.whitelabel.feature.authentication.shared.resources.auth_error_email_taken
+import com.whitelabel.feature.authentication.shared.resources.auth_error_invalid_credentials
+import com.whitelabel.feature.authentication.shared.resources.auth_error_name_long
+import com.whitelabel.feature.authentication.shared.resources.auth_error_password_short
 import androidx.lifecycle.SavedStateHandle
 import assertk.assertThat
 import assertk.assertions.containsExactly
@@ -14,8 +20,7 @@ import com.whitelabel.core.analytics.AnalyticsEvents
 import com.whitelabel.core.common.ApiErrorCode
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.Result
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.feature.authentication.R
+import com.whitelabel.core.presentation.UiText
 import com.whitelabel.feature.authentication.presentation.forgot.ForgotPasswordAction
 import com.whitelabel.feature.authentication.presentation.forgot.ForgotPasswordViewModel
 import com.whitelabel.feature.authentication.presentation.login.LoginAction
@@ -31,9 +36,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthViewModelsTest {
@@ -42,9 +47,9 @@ class AuthViewModelsTest {
     private val analytics = FakeAnalytics()
     private val reset = FakePasswordReset()
 
-    @BeforeEach fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    @AfterEach fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun LoginViewModel.fill(email: String = "ada@example.com", password: String = "secret pass") {
         onAction(LoginAction.OnEmailChange(email))
@@ -68,7 +73,7 @@ class AuthViewModelsTest {
         val viewModel = LoginViewModel(session, analytics, SavedStateHandle())
         viewModel.fill(email = "ada@")
         viewModel.onAction(LoginAction.OnSubmit)
-        assertThat(viewModel.state.value.emailError).isEqualTo(UiText.Resource(R.string.auth_error_email_invalid))
+        assertThat(viewModel.state.value.emailError).isEqualTo(UiText.Resource(Res.string.auth_error_email_invalid))
         assertThat(session.signIns).isEqualTo(0)
     }
 
@@ -77,7 +82,7 @@ class AuthViewModelsTest {
         val viewModel = LoginViewModel(session, analytics, SavedStateHandle())
         viewModel.fill()
         viewModel.onAction(LoginAction.OnSubmit)
-        assertThat(viewModel.state.value.error).isEqualTo(UiText.Resource(R.string.auth_error_invalid_credentials))
+        assertThat(viewModel.state.value.error).isEqualTo(UiText.Resource(Res.string.auth_error_invalid_credentials))
     }
 
     @Test fun `password is not kept in saved state`() = runTest {
@@ -102,7 +107,7 @@ class AuthViewModelsTest {
         viewModel.onAction(RegisterAction.OnEmailChange("ada@example.com"))
         viewModel.onAction(RegisterAction.OnPasswordChange("0123456789"))
         viewModel.onAction(RegisterAction.OnSubmit)
-        assertThat(viewModel.state.value.emailError).isEqualTo(UiText.Resource(R.string.auth_error_email_taken))
+        assertThat(viewModel.state.value.emailError).isEqualTo(UiText.Resource(Res.string.auth_error_email_taken))
         assertThat(viewModel.state.value.error).isNull()
     }
 
@@ -112,8 +117,8 @@ class AuthViewModelsTest {
         viewModel.onAction(RegisterAction.OnPasswordChange("short"))
         viewModel.onAction(RegisterAction.OnFirstNameChange("a".repeat(51)))
         viewModel.onAction(RegisterAction.OnSubmit)
-        assertThat(viewModel.state.value.passwordError).isEqualTo(UiText.Resource(R.string.auth_error_password_short, listOf(10)))
-        assertThat(viewModel.state.value.firstNameError).isEqualTo(UiText.Resource(R.string.auth_error_name_long, listOf(50)))
+        assertThat(viewModel.state.value.passwordError).isEqualTo(UiText.Resource(Res.string.auth_error_password_short, listOf(10)))
+        assertThat(viewModel.state.value.firstNameError).isEqualTo(UiText.Resource(Res.string.auth_error_name_long, listOf(50)))
         assertThat(session.registrations).containsExactly()
     }
 
@@ -153,5 +158,13 @@ class AuthViewModelsTest {
         assertThat(reset.resets).isEqualTo(1)
         assertThat(viewModel.state.value.passwordError).isNull()
         assertThat(viewModel.state.value).isNotNull()
+    }
+
+    /** The reset link's token reaches the request: navigation puts it in SavedStateHandle as "token". */
+    @Test fun `the reset token comes from saved state`() = runTest {
+        val viewModel = ResetPasswordViewModel(reset, SavedStateHandle(mapOf("token" to "t1")))
+        viewModel.onAction(ResetPasswordAction.OnPasswordChange("0123456789"))
+        viewModel.onAction(ResetPasswordAction.OnSubmit)
+        assertThat(reset.lastToken).isEqualTo("t1")
     }
 }

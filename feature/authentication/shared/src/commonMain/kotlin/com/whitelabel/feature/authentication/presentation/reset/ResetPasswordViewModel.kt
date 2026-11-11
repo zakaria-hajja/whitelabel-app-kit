@@ -8,8 +8,8 @@ import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.onFailure
 import com.whitelabel.core.common.onSuccess
 import com.whitelabel.core.domain.PasswordPolicy
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.core.ui.toUiText
+import com.whitelabel.core.presentation.UiText
+import com.whitelabel.core.presentation.toUiText
 import com.whitelabel.feature.authentication.domain.PasswordResetDataSource
 import com.whitelabel.feature.authentication.presentation.toUiText
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-internal data class ResetPasswordState(
+data class ResetPasswordState(
     val password: String = "",
     val passwordError: UiText? = null,
     val error: UiText? = null,
@@ -27,13 +27,13 @@ internal data class ResetPasswordState(
     val done: Boolean = false,
 )
 
-internal sealed interface ResetPasswordAction {
+sealed interface ResetPasswordAction {
     data class OnPasswordChange(val password: String) : ResetPasswordAction
     data object OnSubmit : ResetPasswordAction
 }
 
 /** Opened from the emailed link; the token is the route's `token` argument. */
-internal class ResetPasswordViewModel(
+class ResetPasswordViewModel(
     private val source: PasswordResetDataSource,
     savedState: SavedStateHandle,
 ) : ViewModel() {

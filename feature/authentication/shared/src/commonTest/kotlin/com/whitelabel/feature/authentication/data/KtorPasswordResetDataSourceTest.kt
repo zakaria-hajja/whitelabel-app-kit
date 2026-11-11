@@ -18,7 +18,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 private object SignedIn : SessionTokenStore {
     override suspend fun current() = SessionTokens("access", "refresh")

@@ -48,8 +48,10 @@ class FakePasswordReset : PasswordResetDataSource {
         return answer()
     }
 
+    var lastToken: String? = null
     override suspend fun reset(token: String, newPassword: String): EmptyResult<DataError> {
         resets++
+        lastToken = token
         return answer()
     }
 }

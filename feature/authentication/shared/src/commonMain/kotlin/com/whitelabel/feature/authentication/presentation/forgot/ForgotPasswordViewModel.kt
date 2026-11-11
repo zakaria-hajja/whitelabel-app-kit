@@ -5,8 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.common.onFailure
 import com.whitelabel.core.common.onSuccess
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.core.ui.toUiText
+import com.whitelabel.core.presentation.UiText
+import com.whitelabel.core.presentation.toUiText
 import com.whitelabel.feature.authentication.domain.AuthValidator
 import com.whitelabel.feature.authentication.domain.PasswordResetDataSource
 import com.whitelabel.feature.authentication.presentation.toUiText
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-internal data class ForgotPasswordState(
+data class ForgotPasswordState(
     val email: String = "",
     val emailError: UiText? = null,
     val error: UiText? = null,
@@ -24,14 +24,14 @@ internal data class ForgotPasswordState(
     val sent: Boolean = false,
 )
 
-internal sealed interface ForgotPasswordAction {
+sealed interface ForgotPasswordAction {
     data class OnEmailChange(val email: String) : ForgotPasswordAction
     data object OnSubmit : ForgotPasswordAction
 }
 
 private const val KEY_EMAIL = "email"
 
-internal class ForgotPasswordViewModel(
+class ForgotPasswordViewModel(
     private val source: PasswordResetDataSource,
     private val savedState: SavedStateHandle,
 ) : ViewModel() {

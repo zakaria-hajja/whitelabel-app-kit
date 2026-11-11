@@ -1,5 +1,7 @@
 package com.whitelabel.feature.authentication.presentation.register
 
+import com.whitelabel.feature.authentication.shared.resources.Res
+import com.whitelabel.feature.authentication.shared.resources.auth_error_email_taken
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,8 +16,7 @@ import com.whitelabel.core.domain.NamePolicy
 import com.whitelabel.core.domain.PasswordPolicy
 import com.whitelabel.core.domain.Registration
 import com.whitelabel.core.domain.SessionRepository
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.feature.authentication.R
+import com.whitelabel.core.presentation.UiText
 import com.whitelabel.feature.authentication.domain.AuthValidator
 import com.whitelabel.feature.authentication.presentation.toAuthUiText
 import com.whitelabel.feature.authentication.presentation.toUiText
@@ -24,7 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-internal data class RegisterState(
+data class RegisterState(
     val email: String = "",
     val password: String = "",
     val firstName: String = "",
@@ -39,7 +40,7 @@ internal data class RegisterState(
     val canSubmit: Boolean get() = email.isNotBlank() && password.isNotEmpty() && !isSubmitting
 }
 
-internal sealed interface RegisterAction {
+sealed interface RegisterAction {
     data class OnEmailChange(val email: String) : RegisterAction
     data class OnPasswordChange(val password: String) : RegisterAction
     data class OnFirstNameChange(val name: String) : RegisterAction
@@ -52,7 +53,7 @@ private const val KEY_FIRST = "firstName"
 private const val KEY_LAST = "lastName"
 
 /** Registration signs in too; the shell then shows the app. */
-internal class RegisterViewModel(
+class RegisterViewModel(
     private val session: SessionRepository,
     private val analytics: Analytics,
     private val savedState: SavedStateHandle,
@@ -116,7 +117,7 @@ internal class RegisterViewModel(
 
     private fun RegisterState.withError(error: DataError): RegisterState =
         if (error is DataError.Api && error.code == ApiErrorCode.EMAIL_ALREADY_REGISTERED) {
-            copy(emailError = UiText.Resource(R.string.auth_error_email_taken))
+            copy(emailError = UiText.Resource(Res.string.auth_error_email_taken))
         } else {
             copy(error = error.toAuthUiText())
         }

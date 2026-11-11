@@ -1,10 +1,10 @@
 package com.whitelabel.feature.authentication.domain
 
-internal enum class EmailError { BLANK, INVALID }
+enum class EmailError { BLANK, INVALID }
 
 private val EMAIL = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
 
-internal object AuthValidator {
+object AuthValidator {
     /** Checks the trimmed email; the server has the final word. */
     fun email(raw: String): EmailError? {
         val email = raw.trim()
