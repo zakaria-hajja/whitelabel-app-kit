@@ -3,6 +3,7 @@ package com.whitelabel.core.shell.diagnostics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.branding.BrandConfig
+import com.whitelabel.core.branding.hasBackend
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.onFailure
 import com.whitelabel.core.common.onSuccess
@@ -17,7 +18,10 @@ import javax.inject.Inject
 internal data class BrandPreviewState(
     val brand: BrandConfig,
     val health: HealthUi = HealthUi.Idle,
-)
+) {
+    /** The backend ping only makes sense when the app has a backend. */
+    val showPing: Boolean get() = brand.hasBackend
+}
 
 internal sealed interface HealthUi {
     data object Idle : HealthUi

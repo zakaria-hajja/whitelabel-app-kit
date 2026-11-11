@@ -8,7 +8,7 @@ package com.whitelabel.buildlogic.apps
 fun appConfigFields(config: AppConfig, buildType: String): Map<String, String> = mapOf(
     "TENANT" to config.tenant.orEmpty(),
     "APP_NAME" to config.appName,
-    "API_BASE_URL" to config.apiBaseUrls.getValue(buildType),
+    "API_BASE_URL" to config.apiBaseUrls?.getValue(buildType).orEmpty(),
     "ENVIRONMENT" to environmentFor(buildType),
     "DEEP_LINK_SCHEME" to config.deepLinkScheme,
     "SUPPORT_EMAIL" to config.supportEmail.orEmpty(),

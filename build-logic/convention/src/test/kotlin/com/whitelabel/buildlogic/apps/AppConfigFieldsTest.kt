@@ -66,4 +66,12 @@ class AppConfigFieldsTest {
     fun `resource names are prefixed and lowercased`() {
         assertThat(resourceNameFor("API_BASE_URL")).isEqualTo("foundation_api_base_url")
     }
+
+    @Test
+    fun `api base url is blank without a backend`() {
+        val backendless = config.copy(tenant = null, apiBaseUrls = null)
+
+        assertThat(appConfigFields(backendless, "debug")["API_BASE_URL"]).isEqualTo("")
+        assertThat(appConfigFields(backendless, "release")["API_BASE_URL"]).isEqualTo("")
+    }
 }

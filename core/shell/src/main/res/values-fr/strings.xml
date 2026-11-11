@@ -5,6 +5,7 @@
     <string name="preview_label_slug">Locataire</string>
     <string name="preview_label_environment">Environnement</string>
     <string name="preview_label_base_url">API</string>
+    <string name="preview_no_backend">Pas de backend</string>
     <string name="preview_ping">Tester</string>
     <string name="preview_health_idle">Pas encore vérifié</string>
     <string name="preview_health_checking">Vérification…</string>

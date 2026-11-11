@@ -11,8 +11,8 @@ data class AppConfig(
     val versionCode: Int,
     val versionName: String,
     val deepLinkScheme: String,
-    /** "debug" and "release" to a URL ending in "/". */
-    val apiBaseUrls: Map<String, String>,
+    /** "debug" and "release" to a URL ending in "/"; `null` for an app without a backend. */
+    val apiBaseUrls: Map<String, String>?,
     val supportEmail: String?,
     val privacyPolicyUrl: String,
     val termsUrl: String,

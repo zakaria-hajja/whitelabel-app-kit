@@ -26,7 +26,7 @@ internal fun brandConfigOf(
     versionName = versionName,
     environment = Environment.entries.firstOrNull { it.name == environment }
         ?: error("Unknown environment '$environment'"),
-    apiBaseUrl = apiBaseUrl,
+    apiBaseUrl = apiBaseUrl.ifBlank { null },
     deepLinkScheme = deepLinkScheme,
     runtimeDefaults = RuntimeDefaults(
         supportEmail = supportEmail.ifBlank { null },
@@ -36,24 +36,24 @@ internal fun brandConfigOf(
     ),
 )
 
-/** The shell's own defaults are blank; a blank API URL means the app's config never reached the build. */
-internal fun requireConfigured(apiBaseUrl: String): String {
-    check(apiBaseUrl.isNotBlank()) {
+/** The shell's own defaults are blank; a blank app name means the app's config never reached the build. */
+internal fun requireConfigured(appName: String): String {
+    check(appName.isNotBlank()) {
         "No app configuration found: apply the whitelabel.android.application plugin in the app module " +
             "and define its app.properties"
     }
-    return apiBaseUrl
+    return appName
 }
 
 /** Builds the brand from the `foundation_*` strings the application plugin generates from app.properties. */
 internal fun brandConfigFrom(strings: (Int) -> String, applicationId: String, versionName: String): BrandConfig =
     brandConfigOf(
         tenant = strings(R.string.foundation_tenant),
-        appName = strings(R.string.foundation_app_name),
+        appName = requireConfigured(strings(R.string.foundation_app_name)),
         applicationId = applicationId,
         versionName = versionName,
         environment = strings(R.string.foundation_environment),
-        apiBaseUrl = requireConfigured(strings(R.string.foundation_api_base_url)),
+        apiBaseUrl = strings(R.string.foundation_api_base_url),
         deepLinkScheme = strings(R.string.foundation_deep_link_scheme),
         supportEmail = strings(R.string.foundation_support_email),
         privacyPolicyUrl = strings(R.string.foundation_privacy_policy_url),

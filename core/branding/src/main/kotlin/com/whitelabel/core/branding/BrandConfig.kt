@@ -12,11 +12,14 @@ data class BrandConfig(
     val applicationId: String,
     val versionName: String,
     val environment: Environment,
-    /** Versioned API root, ending in `/`. */
-    val apiBaseUrl: String,
+    /** Versioned API root, ending in `/`; `null` for an app without a backend. */
+    val apiBaseUrl: String?,
     val deepLinkScheme: String,
     val runtimeDefaults: RuntimeDefaults,
 )
+
+/** Whether the app has a backend (its app.properties sets the API base URLs). */
+val BrandConfig.hasBackend: Boolean get() = apiBaseUrl != null
 
 /** Derived from the build type: debug is [DEVELOPMENT], release is [PRODUCTION]. */
 enum class Environment { DEVELOPMENT, PRODUCTION }

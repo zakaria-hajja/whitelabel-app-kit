@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.branding.BrandConfig
+import com.whitelabel.core.branding.hasBackend
 import com.whitelabel.core.domain.AppConfigRepository
 import com.whitelabel.core.domain.SessionRepository
 import com.whitelabel.core.domain.SessionState
@@ -81,9 +82,13 @@ internal class ShellViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, ShellState())
 
     init {
+        definition.backendProblem(brand.hasBackend)?.let(::error)
         viewModelScope.launch {
-            val refresh = launch { appConfig.refresh() }
-            withTimeoutOrNull(CONFIG_WAIT_MS) { refresh.join() }
+            // Without a backend the config is the app's build-time defaults: nothing to wait for.
+            if (brand.hasBackend) {
+                val refresh = launch { appConfig.refresh() }
+                withTimeoutOrNull(CONFIG_WAIT_MS) { refresh.join() }
+            }
             tabs.value = definition.visibleTabs(appConfig.current().features, brand.runtimeDefaults.enabledFeatures)
         }
         viewModelScope.launch {

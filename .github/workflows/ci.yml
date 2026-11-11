@@ -33,6 +33,14 @@ jobs:
       - name: Verify apps (identity, isolation, distinct icons)
         run: scripts/verify-apps.sh
 
+      - name: Standalone app fixture (an app repo with the foundation as a submodule)
+        # Run from the fixture with app-relative paths, exactly as an app repo's CI does.
+        working-directory: fixtures/standalone-app
+        run: |
+          ../../gradlew :app:assembleDebug
+          ../../scripts/verify-apps.sh --apk app/build/outputs/apk/debug/app-debug.apk \
+            --properties app/app.properties --type debug
+
       - name: Commit messages
         if: github.event_name == 'pull_request'
         env:

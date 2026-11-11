@@ -126,7 +126,7 @@ class AppConfigLoaderTest {
 
         val urls = AppConfigLoader.load(appDir).apiBaseUrls
 
-        assertThat(urls["debug"]).isEqualTo("http://10.0.2.2:3000/api/v1/")
+        assertThat(urls!!["debug"]).isEqualTo("http://10.0.2.2:3000/api/v1/")
         assertThat(urls["release"]).isEqualTo("https://api.sample.example/api/v1/")
     }
 
@@ -179,7 +179,7 @@ class AppConfigLoaderTest {
         listOf("http://localhost:3000/api/v1/", "http://10.0.2.2:3000/api/v1/", "https://staging.example.com/api/v1/")
             .forEach { url ->
                 writeApp(mapOf("api.debug.baseUrl" to url))
-                assertThat(AppConfigLoader.load(appDir).apiBaseUrls["debug"]).isEqualTo(url)
+                assertThat(AppConfigLoader.load(appDir).apiBaseUrls!!["debug"]).isEqualTo(url)
             }
     }
 
@@ -340,5 +340,39 @@ class AppConfigLoaderTest {
         assertThat(problems()).containsExactly(
             "apps/sample: missing required asset src/main/res/drawable/ic_launcher_foreground.xml",
         )
+    }
+
+    @Test
+    fun `no api keys means no backend`() {
+        writeApp(mapOf("api.debug.baseUrl" to null, "api.release.baseUrl" to null, "api.tenant" to null))
+
+        assertThat(AppConfigLoader.load(appDir).apiBaseUrls).isNull()
+    }
+
+    @Test
+    fun `only one base url is rejected`() {
+        writeApp(mapOf("api.release.baseUrl" to null))
+
+        assertThat(problems()).contains(
+            "apps/sample/app.properties: api.debug.baseUrl and api.release.baseUrl must be set together",
+        )
+    }
+
+    @Test
+    fun `tenant without a backend is rejected`() {
+        writeApp(mapOf("api.debug.baseUrl" to null, "api.release.baseUrl" to null))
+
+        assertThat(problems()).contains(
+            "apps/sample/app.properties: api.tenant needs api.debug.baseUrl and api.release.baseUrl",
+        )
+    }
+
+    @Test
+    fun `label is used in messages`() {
+        val dir = writeApp(mapOf("app.name" to " "))
+
+        val found = assertThrows(InvalidAppConfigException::class.java) { AppConfigLoader.load(dir, label = "app") }.problems
+
+        assertThat(found.single()).contains("app/app.properties: app.name")
     }
 }

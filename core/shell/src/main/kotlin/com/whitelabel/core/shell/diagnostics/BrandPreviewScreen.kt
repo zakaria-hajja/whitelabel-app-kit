@@ -55,7 +55,9 @@ internal fun BrandPreviewScreen(
                 verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.sm),
             ) {
                 IdentityCard(brand = state.brand)
-                HealthRow(health = state.health, onPing = { onAction(BrandPreviewAction.OnPingClick) })
+                if (state.showPing) {
+                    HealthRow(health = state.health, onPing = { onAction(BrandPreviewAction.OnPingClick) })
+                }
             }
             HorizontalDivider()
             DesignSystemCatalog(modifier = Modifier.weight(1f))
@@ -69,7 +71,7 @@ private fun IdentityCard(brand: BrandConfig) {
         LabeledValue(R.string.preview_label_app_name, brand.appName)
         LabeledValue(R.string.preview_label_slug, brand.tenant.orEmpty())
         LabeledValue(R.string.preview_label_environment, brand.environment.name)
-        LabeledValue(R.string.preview_label_base_url, brand.apiBaseUrl)
+        LabeledValue(R.string.preview_label_base_url, brand.apiBaseUrl ?: stringResource(R.string.preview_no_backend))
     }
 }
 
