@@ -92,7 +92,15 @@ Leave `api.debug.baseUrl`, `api.release.baseUrl` and `api.tenant` out of `app.pr
 Local notifications (renewal reminders and the like) need no backend either: see
 [reminders.md](reminders.md).
 
-## 5. Backups
+## 5. End-to-end tests
+
+They work the same as in the foundation's own apps, because the app plugin wires the Hilt test
+runner, `:core:testing-android` and `:core:mockapi` into `androidTest`. See
+[creating-an-app.md, section 8](creating-an-app.md#8-end-to-end-tests) for the rules, the shared
+robots and the in-memory backend. A backendless app still gets the clean-start rules. It only
+needs the fake if it calls the API.
+
+## 6. Backups
 
 The shell backs up the app's `JsonStore` files (`filesDir/datastore/`) through Android backup, so
 a reinstall or a new phone restores the user's data when they have Google backup on. The session
@@ -100,7 +108,7 @@ a reinstall or a new phone restores the user's data when they have Google backup
 with a Keystore key that can't be restored, so a restored phone starts signed out. Store app data
 with `JsonStore` under `jsonStoreFile(name)` to get this for free.
 
-## 6. CI
+## 7. CI
 
 The app repo gets the same rules and checks as the foundation (Conventional Commits, `.githooks/`,
 a `scripts/check.sh`, the `ci` job). Check out the app repo with the job's own token, fetch the
@@ -144,7 +152,7 @@ The secret is used only on the submodule command, scoped to the foundation's URL
 lands in the saved git config. A token that can't read the foundation fails that step with
 `403 … Write access to repository not granted` (GitHub's wording for "no access").
 
-## 7. Working on the foundation from an app
+## 8. Working on the foundation from an app
 
 1. Change the foundation inside `foundation/` on a branch of the foundation repo, and land it through
    the foundation's own PR (with its CI and `scripts/check.sh`).

@@ -28,6 +28,7 @@ val sharedModules = listOf(
     ":feature:catalog",
     ":core:testing",
     ":core:mockapi",
+    ":core:testing-android",
 )
 
 sharedModules.forEach { path ->

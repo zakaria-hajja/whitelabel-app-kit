@@ -40,7 +40,7 @@ object FakeData {
     /** `Item 1`…`Item 25`, categories in rotation, one day apart (newest is `Item 25`). */
     internal fun items(): List<Item> = (1..ITEM_COUNT).map { n ->
         Item(
-            id = uuid(300 + n),
+            id = itemId(n),
             title = "Item $n",
             description = if (n % 5 == 0) null else "Sample item $n",
             category = CATEGORIES[(n - 1) % CATEGORIES.size],
@@ -48,6 +48,9 @@ object FakeData {
             createdAt = SEEDED_AT.plusSeconds(86_400L * n),
         )
     }
+
+    /** The id of seeded `Item [n]`, e.g. for a deep link in a test. */
+    fun itemId(n: Int): String = uuid(300 + n)
 
     internal fun uuid(n: Int): String = "01950000-0000-7000-8000-%012d".format(n)
 }
