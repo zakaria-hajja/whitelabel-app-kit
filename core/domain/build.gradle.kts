@@ -1,8 +1,12 @@
 plugins {
-    id("whitelabel.jvm.library")
+    id("whitelabel.kmp.library")
 }
 
-dependencies {
-    api(project(":core:common"))
-    api(libs.kotlinx.coroutines.core)
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":core:common"))
+            api(libs.kotlinx.coroutines.core)
+        }
+    }
 }

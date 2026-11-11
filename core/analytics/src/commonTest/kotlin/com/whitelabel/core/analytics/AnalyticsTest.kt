@@ -4,7 +4,7 @@ import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isInstanceOf
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 class AnalyticsTest {
 

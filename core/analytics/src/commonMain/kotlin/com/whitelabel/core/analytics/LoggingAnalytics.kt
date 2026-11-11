@@ -3,7 +3,7 @@ package com.whitelabel.core.analytics
 /** Writes each event as `name {k=v, …}` (params sorted by key) to [log]. */
 class LoggingAnalytics(private val log: (String) -> Unit) : Analytics {
     override fun track(event: AnalyticsEvent) {
-        val params = event.params.toSortedMap().entries.joinToString(", ") { "${it.key}=${it.value}" }
+        val params = event.params.entries.sortedBy { it.key }.joinToString(", ") { "${it.key}=${it.value}" }
         log("${event.name} {$params}")
     }
 }
