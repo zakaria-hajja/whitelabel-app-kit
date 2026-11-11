@@ -52,6 +52,37 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
     interface is expected.
   - A Kotlin exception Swift can catch is declared `@Throws`; any other one aborts the app.
 
+## Design system (`WhitelabelKit/DesignSystem`)
+
+- **Packs:**
+  - `StylePack.material` is standard iOS styling, tinted with the brand.
+  - `StylePack.gallery` is hairlines, small radii, roomy controls and soft motion.
+
+  Their corners, sizing, surfaces, motion (springs as `response` = 2π/√stiffness), haptics and
+  spacing are copied from the Kotlin packs, with comments naming each source. `StylePackTests` pins
+  them, and Kotlin wins.
+- **Brand:**
+  - Colors come from the app's asset catalog: `BrandPrimary`, `BrandOnPrimary`, … mirroring
+    Android's `brand_light_*`/`brand_dark_*`, with light and dark appearances.
+  - Fonts come by PostScript name from Info.plist `WLBrandDisplayFont`/`WLBrandBodyFont`, listed in
+    `UIAppFonts`.
+  - A missing color or font falls back to the system's.
+- **Using them:** apply with `.appStyle(AppStyle(pack:))`; Reduce Motion swaps in the pack's
+  reduced motion. Views read `@Environment(\.appStyle)`.
+- **Components** are native controls styled by the pack:
+  - `PrimaryButtonStyle`/`SecondaryButtonStyle`/`TextButtonStyle`, `AppCard`, `AppTextField`
+    (announces its error);
+  - `AppValueRow`, `AppToggleRow`, `AppChoiceSheet`;
+  - `LoadingView`, `EmptyStateView`, `ErrorStateView`, `.appConfirm(…)`.
+
+  Labels wrap at every Dynamic Type size.
+- **Kit labels:** the kit's own labels live in `Resources/WhitelabelKit.xcstrings` (en, fr), which
+  the app target includes. A static framework's resources don't ship by themselves.
+- **Catalog:** `DesignSystemCatalog` shows every component in both packs, light or dark. Showcase
+  opens it in Debug with `-designCatalog` (`-catalogDark` for dark). Gallery there uses the sample
+  assets in `Resources/Preview`: Munch's colors from `tokens.json`, Instrument Serif and Geist (OFL).
+  Compare it with Munch's `docs/design/design.html` before an app adopts the pack.
+
 ## Platform pieces (Swift)
 
 - **`KeychainTokenCipher`:** AES-GCM via CryptoKit, with the key in the Keychain (after first

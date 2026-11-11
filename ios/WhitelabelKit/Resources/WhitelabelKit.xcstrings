@@ -1,0 +1,9 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Cancel" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } }, "fr" : { "stringUnit" : { "state" : "translated", "value" : "Annuler" } } } },
+    "Loading" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading" } }, "fr" : { "stringUnit" : { "state" : "translated", "value" : "Chargement" } } } },
+    "Try again" : { "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Try again" } }, "fr" : { "stringUnit" : { "state" : "translated", "value" : "Réessayer" } } } }
+  },
+  "version" : "1.0"
+}
