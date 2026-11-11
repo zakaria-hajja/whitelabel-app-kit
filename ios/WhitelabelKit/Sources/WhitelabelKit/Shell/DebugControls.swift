@@ -5,10 +5,15 @@ import Shared
 /**
  * Debug launch arguments and links for UI tests and manual checks, as Android's debug controls:
  * - `-mockApi`: run on the in-memory fake backend;
- * - `-freshInstall`: start as a new install (no stores, no Keychain key, device language);
+ * - `-freshInstall`: start as a new install (no stores, no Keychain key, device language, no fake sessions);
+ * - `-dropTokenKey`: delete the Keychain key only, as after a reinstall or a restored backup;
+ * - `-fakeResetToken t1`: the fake issues reset token `t1`, already issued for alice@shared.test;
  * - `-fakeFeatures catalog=false,profile=true`: the fake's remote flags;
  * - `-fakeConfigDelayMs 5000`: the fake answers the config that late;
  * - `<scheme>://_fake/offline|online|expire-tokens|revoke-sessions`: steer the running fake.
+ *
+ * The fake keeps its sessions in Caches across launches, as a real server would, so a relaunch
+ * stays signed in (accounts registered in a run are not kept).
  */
 struct DebugControls {
     let arguments: [String]
@@ -16,13 +21,20 @@ struct DebugControls {
 
     var useMockApi: Bool { arguments.contains("-mockApi") }
 
-    /** Before the graph starts: what a fresh install would not have. */
+    private static var sessionsFile: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("whitelabel-fake-sessions.json")
+    }
+
+    /** Before the graph starts: what a fresh install (or a lost key) would not have. */
     func beforeStart(bundle: Bundle) {
+        let cipher = KeychainTokenCipher(service: bundle.bundleIdentifier ?? "whitelabel")
+        if arguments.contains("-dropTokenKey") { cipher.deleteKey() }
         guard arguments.contains("-freshInstall") else { return }
+        if let file = Self.sessionsFile { try? FileManager.default.removeItem(at: file) }
         if let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
             try? FileManager.default.removeItem(at: support.appendingPathComponent("datastore"))
         }
-        KeychainTokenCipher(service: bundle.bundleIdentifier ?? "whitelabel").deleteKey()
+        cipher.deleteKey()
         IosLanguageRepository().set(languageTag: nil)
     }
 
@@ -37,6 +49,14 @@ struct DebugControls {
         }
         let delay = defaults.integer(forKey: "fakeConfigDelayMs")
         if delay > 0 { fake.configDelayMs = Int64(delay) }
+        if let token = defaults.string(forKey: "fakeResetToken") {
+            fake.fixedResetToken = token
+            _ = fake.issueResetToken(email: "alice@shared.test")
+        }
+        if let file = Self.sessionsFile {
+            if let saved = try? String(contentsOf: file, encoding: .utf8) { fake.importSessions(json: saved) }
+            fake.onSessionsChanged = { json in try? json.write(to: file, atomically: true, encoding: .utf8) }
+        }
     }
 
     /** A `_fake/<command>` link. */

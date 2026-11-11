@@ -149,19 +149,33 @@ links (opened in Safari) and sign out. `SettingsOptions` mirrors Android's (`sho
 the shared ones. The diagnostics row is Android-only. A language picked in the app applies at the
 next launch, and the screen says so (a shared string).
 
+**Auth** (`Auth(options:)`, the gate): sign-in, registration, forgot password and the reset link
+(`<scheme>://reset-password?token=…`), on the shared ViewModels. `AuthOptions` mirrors Android's
+(`allowRegistration`, `allowPasswordReset`). Its screens push onto the gate's own stack. The
+title's app name comes from the brand (`@Environment(\.appBrand)`).
+
 ### Debug controls (Debug builds)
 
 | Launch argument / link | Effect |
 |---|---|
 | `-mockApi` | run on the in-memory fake backend |
-| `-freshInstall` | start as a new install: no stores, no Keychain key, device language |
+| `-freshInstall` | start as a new install: no stores, no Keychain key, device language, no fake sessions |
+| `-dropTokenKey` | delete only the Keychain key, as after a reinstall or a restored backup: the session reads as signed out |
+| `-fakeResetToken t1` | the fake issues reset token `t1`, already issued for `alice@shared.test` |
 | `-fakeFeatures catalog=false,profile=true` | the fake's remote flags |
 | `-fakeConfigDelayMs 5000` | the fake answers the config that late |
 | `<scheme>://_fake/offline`, `online`, `expire-tokens`, `revoke-sessions` | steer the running fake |
 
+In Debug the fake keeps its sessions in Caches across launches, as a real server would, so a
+relaunch stays signed in. Accounts registered during a run are not kept.
+
 UI tests launch with `-mockApi -freshInstall -AppleLanguages (en)`. iOS reads `AppleLanguages`
 before any app code runs, so `-freshInstall` alone can't undo a language an earlier test picked.
-Robots (`ShowcaseUITests/Robots`) say what the user does, as on Android.
+Robots (`ShowcaseUITests/Robots`) say what the user does, as on Android. Two UI-test traps:
+- open a link with `openLink` (`XCUIDevice.shared.system.open`). `XCUIApplication.open(url)`
+  relaunches the app with the same arguments, `-freshInstall` included;
+- after a successful sign-in, iOS offers to save the password. The sign-in robot answers
+  "Not Now", or the sheet swallows the next tap.
 
 ## Platform pieces (Swift)
 

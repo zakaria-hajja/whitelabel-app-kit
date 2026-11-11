@@ -61,6 +61,20 @@ class FakeBackend internal constructor(private val now: () -> Instant) {
     /** When true, every request fails as if the device had no connection. */
     @Volatile var offline: Boolean = false
 
+    /** When set, the reset token issued for every request (UI tests open a link with it; Debug `-fakeResetToken`). */
+    @Volatile var fixedResetToken: String? = null
+
+    /**
+     * Called with [exportSessions] whenever sessions or tokens change, so the Debug app can keep them
+     * across launches as a real server would (accounts registered in a run are not kept).
+     */
+    @Volatile var onSessionsChanged: ((String) -> Unit)? = null
+        set(value) {
+            lastExport = exportSessions()
+            field = value
+        }
+    private var lastExport: String? = null
+
     /** How long `app/config` waits before answering, in real time (a slow config at launch; Debug `-fakeConfigDelayMs`). */
     @Volatile var configDelayMs: Long = 0
 
@@ -98,6 +112,61 @@ class FakeBackend internal constructor(private val now: () -> Instant) {
         sessions.clear()
     }
 
+    /** The sessions and their tokens, as JSON, to [importSessions] into the next run's backend. */
+    fun exportSessions(): String = synchronized(lock) {
+        buildJsonObject {
+            put("sessions", buildJsonArray {
+                sessions.values.forEach { session ->
+                    add(buildJsonObject {
+                        put("id", session.id)
+                        put("userId", session.userId)
+                        put("createdAt", session.createdAt.toString())
+                        put("lastUsedAt", session.lastUsedAt.toString())
+                        session.userAgent?.let { put("userAgent", it) }
+                    })
+                }
+            })
+            putJsonObject("access") {
+                access.forEach { (token, grant) ->
+                    putJsonObject(token) {
+                        put("userId", grant.userId)
+                        put("sessionId", grant.sessionId)
+                        put("expiresAt", grant.expiresAt.toString())
+                    }
+                }
+            }
+            putJsonObject("refresh") { refresh.forEach { (token, session) -> put(token, session) } }
+        }.toString()
+    }
+
+    /** Restores what [exportSessions] gave (before [onSessionsChanged] is set); anything unreadable leaves no sessions (the app then reads as signed out). */
+    fun importSessions(json: String): Unit = synchronized(lock) {
+        val restored = runCatching {
+            val root = Json.parseToJsonElement(json) as JsonObject
+            val restoredSessions = (root["sessions"] as JsonArray).map { element ->
+                val o = element as JsonObject
+                Session(o.string("id")!!, o.string("userId")!!, Instant.parse(o.string("createdAt")!!), Instant.parse(o.string("lastUsedAt")!!), o.string("userAgent"))
+            }
+            val restoredAccess = (root["access"] as JsonObject).mapValues { (_, value) ->
+                val o = value as JsonObject
+                Access(o.string("userId")!!, o.string("sessionId")!!, Instant.parse(o.string("expiresAt")!!))
+            }
+            val restoredRefresh = (root["refresh"] as JsonObject).mapValues { (_, value) -> (value as JsonPrimitive).content }
+            Triple(restoredSessions, restoredAccess, restoredRefresh)
+        }.getOrNull() ?: return@synchronized
+        sessions.clear(); access.clear(); refresh.clear()
+        restored.first.forEach { sessions[it.id] = it }
+        access.putAll(restored.second)
+        refresh.putAll(restored.third)
+    }
+
+    private fun reportSessions() {
+        val listener = onSessionsChanged ?: return
+        val export = exportSessions()
+        val changed = synchronized(lock) { (export != lastExport).also { lastExport = export } }
+        if (changed) listener(export)
+    }
+
     private data class Access(val userId: String, val sessionId: String, val expiresAt: Instant)
     private data class Session(val id: String, val userId: String, val createdAt: Instant, var lastUsedAt: Instant, val userAgent: String?)
     private class Reply(val status: Int, val body: JsonObject)
@@ -114,6 +183,7 @@ class FakeBackend internal constructor(private val now: () -> Instant) {
         val reply = synchronized(lock) { route(method, path.removePrefix(API), request, body) }
         val text = reply.body.toString()
         synchronized(lock) { log += Exchange(method, path, reply.status, text) }
+        reportSessions()
         return respond(text, HttpStatusCode.fromValue(reply.status), headersOf(HttpHeaders.ContentType, "application/json"))
     }
 
@@ -238,7 +308,7 @@ class FakeBackend internal constructor(private val now: () -> Instant) {
     fun issueResetToken(email: String): String? = synchronized(lock) { issueToken(email.trim().lowercase()) }
 
     private fun issueToken(email: String): String? = users.firstOrNull { it.email == email }?.let { user ->
-        val token = Uuid.random().toString()
+        val token = fixedResetToken ?: Uuid.random().toString()
         resetTokens[token] = user.id
         lastResetToken = token
         token
