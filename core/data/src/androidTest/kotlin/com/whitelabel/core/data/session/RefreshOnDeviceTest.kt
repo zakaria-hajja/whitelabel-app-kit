@@ -17,6 +17,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import java.io.File
+import okio.Path.Companion.toOkioPath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -44,8 +45,8 @@ class RefreshOnDeviceTest {
     }
 
     @Test fun expiredToken_refreshesAndStoresTheNewPair() = runBlocking {
-        val tokenStore = TokenStore(File(dir, "session.json"), KeystoreTokenCipher("refresh_test_key"), scope)
-        val session = LocalSession(tokenStore, UserCache(File(dir, "user.json"), scope))
+        val tokenStore = TokenStore(File(dir, "session.json").toOkioPath(), KeystoreTokenCipher("refresh_test_key"), scope)
+        val session = LocalSession(tokenStore, UserCache(File(dir, "user.json").toOkioPath(), scope))
         tokenStore.write(StoredTokens("old-access", "old-refresh"))
         val json = headersOf(HttpHeaders.ContentType, "application/json")
         val client = HttpClientFactory.create(

@@ -19,6 +19,7 @@ import com.whitelabel.core.testing.ContractBackend
 import com.whitelabel.core.testing.OpenApiSpec
 import com.whitelabel.core.testing.exampleValue
 import java.io.File
+import okio.Path.Companion.toOkioPath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -38,8 +39,8 @@ class ContractTest {
     private val job = Job()
     private val storeScope = CoroutineScope(Dispatchers.IO + job)
     private val backend = ContractBackend()
-    private val tokenStore by lazy { TokenStore(File(dir, "session.json"), PlainCipher, storeScope) }
-    private val userCache by lazy { UserCache(File(dir, "user.json"), storeScope) }
+    private val tokenStore by lazy { TokenStore(File(dir, "session.json").toOkioPath(), PlainCipher, storeScope) }
+    private val userCache by lazy { UserCache(File(dir, "user.json").toOkioPath(), storeScope) }
 
     @AfterEach fun tearDown() = job.cancel()
 
@@ -82,7 +83,7 @@ class ContractTest {
     @Test fun `get api v1 app config matches the contract`() = runTest {
         val brand = BrandConfig(null, "Sample", "com.example", "1.0", Environment.DEVELOPMENT, "https://api.test/api/v1/", "sample",
             RuntimeDefaults(null, "https://p", "https://t", emptySet()))
-        val repository = DefaultAppConfigRepository(backend.client(), brand, AppConfigCache(File(dir, "config.json"), storeScope), backgroundScope)
+        val repository = DefaultAppConfigRepository(backend.client(), brand, AppConfigCache(File(dir, "config.json").toOkioPath(), storeScope), backgroundScope)
         assertThat(repository.refresh()).isEqualTo(Result.Success(Unit))
         assertThat(repository.current().termsUrl).isEqualTo(example("/api/v1/app/config", "get", 200, "data.legal.termsUrl"))
     }
@@ -95,7 +96,7 @@ class ContractTest {
         assertThat(DefaultUserRepository(minimal.client(), userCache).refresh()).isEqualTo(Result.Success(Unit))
         val brand = BrandConfig(null, "Sample", "com.example", "1.0", Environment.DEVELOPMENT, "https://api.test/api/v1/", "sample",
             RuntimeDefaults("help@sample.example", "https://p", "https://t", emptySet()))
-        val config = DefaultAppConfigRepository(minimal.client(), brand, AppConfigCache(File(dir, "config-min.json"), storeScope), backgroundScope)
+        val config = DefaultAppConfigRepository(minimal.client(), brand, AppConfigCache(File(dir, "config-min.json").toOkioPath(), storeScope), backgroundScope)
         assertThat(config.refresh()).isEqualTo(Result.Success(Unit))
         assertThat(config.current().supportEmail).isEqualTo("help@sample.example") // the contract makes support.email optional
     }

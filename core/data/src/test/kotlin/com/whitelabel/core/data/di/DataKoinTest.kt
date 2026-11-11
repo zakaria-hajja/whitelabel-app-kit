@@ -10,6 +10,7 @@ import com.whitelabel.core.datastore.TokenCipher
 import com.whitelabel.core.domain.LanguageRepository
 import io.ktor.client.HttpClient
 import java.io.File
+import okio.Path.Companion.toOkioPath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import org.junit.jupiter.api.Test
@@ -23,14 +24,14 @@ import org.koin.test.verify.verify
 class DataKoinTest {
 
     @Test fun `data modules resolve with the network client and the brand`() {
-        // File: each store's file comes from StorePaths inside its definition, which verify() can't see.
+        // Path: each store's path comes from StorePaths inside its definition, which verify() can't see.
         module { includes(dataModule, androidDataModule) }
-            .verify(extraTypes = listOf(Context::class, HttpClient::class, BrandConfig::class, File::class))
+            .verify(extraTypes = listOf(Context::class, HttpClient::class, BrandConfig::class, okio.Path::class, okio.FileSystem::class))
     }
 
     @Test fun `closing the graph cancels the application scope`(@TempDir dir: File) {
         val platform = module {
-            single { StorePaths { name -> File(dir, "$name.json") } }
+            single { StorePaths { name -> File(dir, "$name.json").toOkioPath() } }
             single<TokenCipher> { PlainCipher }
             single<LanguageRepository> { NoLanguage }
         }

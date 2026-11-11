@@ -13,7 +13,7 @@ import com.whitelabel.core.datastore.KeystoreTokenCipher
 import com.whitelabel.core.datastore.StorePaths
 import com.whitelabel.core.datastore.TokenCipher
 import com.whitelabel.core.datastore.TokenStore
-import com.whitelabel.core.datastore.jsonStoreFile
+import com.whitelabel.core.datastore.jsonStorePath
 import com.whitelabel.core.domain.AppConfigRepository
 import com.whitelabel.core.domain.LanguageRepository
 import com.whitelabel.core.domain.SessionRepository
@@ -39,10 +39,10 @@ val ApplicationScope: Qualifier = named("applicationScope")
  */
 val dataModule = module {
     single<CoroutineScope>(ApplicationScope) { CoroutineScope(SupervisorJob() + Dispatchers.Default) } onClose { it?.cancel() }
-    single { TokenStore(get<StorePaths>().file("session"), get(), get(ApplicationScope)) }
-    single { UserCache(get<StorePaths>().file("user"), get(ApplicationScope)) }
-    single { AppConfigCache(get<StorePaths>().file("app_config"), get(ApplicationScope)) }
-    single<UserPreferencesRepository> { DefaultUserPreferencesRepository(get<StorePaths>().file("preferences"), get(ApplicationScope)) }
+    single { TokenStore(get<StorePaths>().path("session"), get(), get(ApplicationScope)) }
+    single { UserCache(get<StorePaths>().path("user"), get(ApplicationScope)) }
+    single { AppConfigCache(get<StorePaths>().path("app_config"), get(ApplicationScope)) }
+    single<UserPreferencesRepository> { DefaultUserPreferencesRepository(get<StorePaths>().path("preferences"), get(ApplicationScope)) }
     single { LocalSession(get(), get()) }
     single<SessionTokenStore> { StoreSessionTokens(get()) }
     single<SessionRepository> { DefaultSessionRepository(get(), get(), get(ApplicationScope)) }
@@ -52,7 +52,7 @@ val dataModule = module {
 
 /** Android's side of [dataModule]: files under `filesDir/datastore`, the Keystore cipher, the app language. */
 val androidDataModule = module {
-    single { StorePaths { name -> androidContext().jsonStoreFile(name) } }
+    single { StorePaths { name -> androidContext().jsonStorePath(name) } }
     single<TokenCipher> { KeystoreTokenCipher() }
     single<LanguageRepository> { AppCompatLanguageRepository(androidContext()) }
 }

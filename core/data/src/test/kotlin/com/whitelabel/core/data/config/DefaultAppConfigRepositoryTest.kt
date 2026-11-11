@@ -13,6 +13,7 @@ import com.whitelabel.core.domain.AppConfig
 import com.whitelabel.core.domain.ThemePreference
 import io.ktor.client.HttpClient
 import java.io.File
+import okio.Path.Companion.toOkioPath
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +67,7 @@ class DefaultAppConfigRepositoryTest {
         val job = Job()
         val scope = CoroutineScope(Dispatchers.IO + job)
         return try {
-            block(DefaultAppConfigRepository(client, brand, AppConfigCache(File(dir, "app_config.json"), scope), scope))
+            block(DefaultAppConfigRepository(client, brand, AppConfigCache(File(dir, "app_config.json").toOkioPath(), scope), scope))
         } finally {
             job.cancelAndJoin()
         }

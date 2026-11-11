@@ -30,6 +30,7 @@ import io.ktor.client.request.HttpResponseData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import java.io.File
+import okio.Path.Companion.toOkioPath
 import java.io.IOException
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CompletableDeferred
@@ -51,8 +52,8 @@ class DefaultSessionRepositoryTest {
 
     private val storeJob = Job()
     private val storeScope = CoroutineScope(Dispatchers.IO + storeJob)
-    private val tokenStore by lazy { TokenStore(File(dir, "session.json"), PlainCipher, storeScope) }
-    private val userCache by lazy { UserCache(File(dir, "user.json"), storeScope) }
+    private val tokenStore by lazy { TokenStore(File(dir, "session.json").toOkioPath(), PlainCipher, storeScope) }
+    private val userCache by lazy { UserCache(File(dir, "user.json").toOkioPath(), storeScope) }
     // The mock engine answers on IO threads, outside the test scheduler.
     private val requests = CopyOnWriteArrayList<HttpRequestData>()
 

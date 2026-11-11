@@ -9,6 +9,7 @@ import com.whitelabel.core.data.mockClient
 import com.whitelabel.core.data.ok
 import com.whitelabel.core.domain.User
 import java.io.File
+import okio.Path.Companion.toOkioPath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,7 +27,7 @@ class DefaultUserRepositoryTest {
     private suspend fun <R> withCache(block: suspend (UserCache) -> R): R {
         val job = Job()
         return try {
-            block(UserCache(File(dir, "user.json"), CoroutineScope(Dispatchers.IO + job)))
+            block(UserCache(File(dir, "user.json").toOkioPath(), CoroutineScope(Dispatchers.IO + job)))
         } finally {
             job.cancelAndJoin()
         }
