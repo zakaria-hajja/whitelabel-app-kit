@@ -12,9 +12,10 @@ public struct BrandColors {
     public var error, onError: Color
     public var background, onBackground, surface, onSurface, surfaceVariant, onSurfaceVariant, outline: Color
 
-    public init(bundle: Bundle = .main) {
+    /** [prefix] reads a differently named set (the catalog's `GalleryPreview` sample colors). */
+    public init(bundle: Bundle = .main, prefix: String = "") {
         func color(_ name: String, _ fallback: Color) -> Color {
-            UIColor(named: name, in: bundle, compatibleWith: nil).map(Color.init(uiColor:)) ?? fallback
+            UIColor(named: prefix + name, in: bundle, compatibleWith: nil).map(Color.init(uiColor:)) ?? fallback
         }
         primary = color("BrandPrimary", .accentColor)
         onPrimary = color("BrandOnPrimary", .white)
