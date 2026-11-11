@@ -1,5 +1,8 @@
 package com.whitelabel.feature.home.presentation
 
+import com.whitelabel.feature.home.shared.resources.Res
+import com.whitelabel.feature.home.shared.resources.home_greeting
+import com.whitelabel.feature.home.shared.resources.home_greeting_named
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
@@ -9,8 +12,7 @@ import com.whitelabel.core.common.EmptyResult
 import com.whitelabel.core.common.Result
 import com.whitelabel.core.domain.User
 import com.whitelabel.core.domain.UserRepository
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.feature.home.R
+import com.whitelabel.core.presentation.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,9 +20,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 private class FakeUsers(first: String?) : UserRepository {
     override val user = MutableStateFlow<User?>(User("u1", "ada@example.com", first, null))
@@ -33,18 +35,18 @@ private class FakeUsers(first: String?) : UserRepository {
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
 
-    @BeforeEach fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    @AfterEach fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     @Test fun `greets by first name`() = runTest {
         val state = HomeViewModel(FakeUsers("Ada")).state.value
-        assertThat(state.greeting).isEqualTo(UiText.Resource(R.string.home_greeting_named, listOf("Ada")))
+        assertThat(state.greeting).isEqualTo(UiText.Resource(Res.string.home_greeting_named, listOf("Ada")))
     }
 
     @Test fun `blank first name uses the plain greeting`() = runTest {
-        assertThat(HomeViewModel(FakeUsers("   ")).state.value.greeting).isEqualTo(UiText.Resource(R.string.home_greeting))
-        assertThat(HomeViewModel(FakeUsers(null)).state.value.greeting).isEqualTo(UiText.Resource(R.string.home_greeting))
+        assertThat(HomeViewModel(FakeUsers("   ")).state.value.greeting).isEqualTo(UiText.Resource(Res.string.home_greeting))
+        assertThat(HomeViewModel(FakeUsers(null)).state.value.greeting).isEqualTo(UiText.Resource(Res.string.home_greeting))
     }
 
     @Test fun `refresh error shows a message and keeps the cached user`() = runTest {
@@ -55,6 +57,6 @@ class HomeViewModelTest {
         assertThat(users.refreshes).isEqualTo(1)
         assertThat(state.message).isNotNull()
         assertThat(state.isRefreshing).isFalse()
-        assertThat(state.greeting).isEqualTo(UiText.Resource(R.string.home_greeting_named, listOf("Ada")))
+        assertThat(state.greeting).isEqualTo(UiText.Resource(Res.string.home_greeting_named, listOf("Ada")))
     }
 }
