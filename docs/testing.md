@@ -7,6 +7,7 @@
 | Android device (KMP) | `src/androidDeviceTest`: only code that needs a `Context` or the Keystore | locally on an emulator | `kotlin.test` on JUnit 4, AssertK |
 | Build logic | `build-logic/convention/src/test` | `scripts/check.sh`, CI | JUnit 5, AssertK, temp directories |
 | Instrumented (Compose UI, app end-to-end) | `src/androidTest` | locally, on an emulator no other run is using; CI job postponed until after the KMP migration | `createAndroidComposeRule`, AssertK |
+| Swift (WhitelabelKit) | `ios/WhitelabelKit/Tests` | `scripts/check-ios.sh` (macOS; pre-push) | XCTest, hosted by showcase's iOS app |
 | App identity | `apps/<name>/src/test/.../<Name>IdentityTest.kt` | `scripts/check.sh`, CI | asserts every `BuildConfig` field for both build types |
 | Built APKs | `scripts/verify-apps.sh` | CI after `assembleDebug`; release APKs in the release build (below) | `aapt2`: package, label, version, no foreign app IDs, distinct icons |
 
