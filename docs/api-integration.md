@@ -10,9 +10,10 @@ expects from it. The machine-readable contract is `api/openapi.json`.
   `api/SOURCE` records which: `tag`, `commit` and the file's `sha256`. Currently **v1.1.1**.
 - Never edit it by hand. CI runs `scripts/check-openapi.sh`, which fails when the file no longer
   matches `api/SOURCE`.
-- **Moving to a new backend tag:** `scripts/sync-openapi.sh v1.2.0` (reads `../backend-api`, or pass
-  the backend directory as a second argument), then `scripts/check.sh`. The contract tests below fail
-  wherever the app no longer matches; fix those, then open a PR. CI can't see the backend repo, so
+- **Moving to a new backend tag:** `scripts/sync-openapi.sh v1.2.0` (reads `../backend-api`, next to
+  this repo, or pass the backend directory as a second argument; it always updates this repo's `api/`,
+  wherever you run it from), then `scripts/check.sh`. The contract tests below fail wherever the app
+  no longer matches what they check; fix those, then open a PR. CI can't see the backend repo, so
   noticing that a new tag exists is up to us (the backend's release notes list contract additions).
 - The backend promises that `/api/v1` only grows (`../backend-api/docs/contract.md`): new
   endpoints, fields, error codes and flag keys may appear; nothing is removed or retyped within v1.
@@ -76,9 +77,28 @@ Each module that calls the API has a `ContractTest` (JVM). It points the module'
 `ContractBackend` (`:core:testing`), which answers with the spec's own example for that operation,
 and checks:
 
-- the data source decodes the example (and a field or two of it);
-- the request body it sent validates against the spec's request schema;
-- in `:core:network`, every documented error example maps to the code it names.
+- the data source decodes the example (and a field or two of it), and also the **smallest** response
+  the schema allows (`ContractBackend(minimal = true)`: optional fields left out, nullable ones `null`);
+- the request body it sent validates against the spec's request schema
+  (`backend.assertRequestMatches(method, path)`);
+- every request, automatically: query parameters are declared for the operation and fit their schemas;
+  a secured operation carries the bearer; a public write (sign-in, refresh, reset…) does not;
+- in `:core:network`: every code in the contract's error enum is known to the app, and every documented
+  error example maps to the code it names.
 
-An app's own endpoints (`/api/v1/x/<feature>/…`, part of that app's backend contract) follow the same
-pattern: vendor that backend's spec into the app repo and test its data sources the same way.
+Not checked: string formats (`uuid`, `date-time`, `email`, `uri`) are not asserted, and response
+headers such as `Retry-After` are not part of the examples.
+
+**An app's own endpoints** (`/api/v1/x/<feature>/…`) belong to that app's backend contract. To test
+them the same way, vendor that backend's spec into the app repo (e.g. `api/openapi.json` there), and
+point the app module's tests at it, after the convention plugin has pointed them at the foundation's:
+
+```kotlin
+// apps/<name>/<feature>/build.gradle.kts
+tasks.withType<Test>().configureEach {
+    systemProperty("whitelabel.openapi", rootProject.file("api/openapi.json").absolutePath)
+}
+```
+
+`OpenApiSpec` reads one spec per test run, so a module tests against either the foundation's contract
+or its app's, not both.
