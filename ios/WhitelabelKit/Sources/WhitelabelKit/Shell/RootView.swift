@@ -34,6 +34,7 @@ private struct ShellContent: View {
             .appStyle(AppStyle(pack: runtime.definition.style))
             .preferredColorScheme(colorScheme(state.theme))
             .environment(runtime.navigator)
+            .environment(\.appBrand, runtime.brand)
             .onOpenURL { runtime.open($0) }
             .onAppear { runtime.processPendingLink() }
             .onChange(of: linkTrigger) { old, new in
@@ -89,6 +90,8 @@ private struct GateView: View {
                 definition.view(for: destination) ?? AnyView(EmptyView())
             }
         }
+        .onAppear { navigator.isGateShowing = true }
+        .onDisappear { navigator.isGateShowing = false }
     }
 }
 

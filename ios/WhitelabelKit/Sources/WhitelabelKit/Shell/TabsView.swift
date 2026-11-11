@@ -24,6 +24,8 @@ struct TabsView: View {
         }
         .onAppear(perform: selectStartTab)
         .onChange(of: routes) { selectStartTab() }
+        // Signing in or out resets the navigator: pick the start tab again rather than leave none selected.
+        .onChange(of: navigator.selectedTab) { if navigator.selectedTab == nil { selectStartTab() } }
     }
 
     /** The definition's start tab (or the first), unless a visible tab is already selected. */

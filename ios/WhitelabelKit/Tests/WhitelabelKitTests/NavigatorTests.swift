@@ -37,3 +37,18 @@ final class NavigatorTests: XCTestCase {
         XCTAssertTrue(navigator.gatePath.isEmpty)
     }
 }
+
+@MainActor
+final class GateNavigatorTests: XCTestCase {
+    /** While signed out, sign-in's links (register, forgot) go on the gate's stack. */
+    func testPushAndPopUseTheGateStackWhileItShows() {
+        let navigator = Navigator()
+        navigator.selectedTab = "settings"
+        navigator.isGateShowing = true
+        navigator.push(Destination("auth/register"))
+        XCTAssertEqual(navigator.gatePath, [Destination("auth/register")])
+        navigator.pop()
+        XCTAssertTrue(navigator.gatePath.isEmpty)
+        XCTAssertTrue(navigator.paths.isEmpty)
+    }
+}

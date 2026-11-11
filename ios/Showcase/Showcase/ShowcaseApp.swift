@@ -20,6 +20,7 @@ import WhitelabelKit
 
     private var root: some View {
         RootView(definition: AppDefinition(style: .material) {
+            Auth()
             Settings()
         })
     }
