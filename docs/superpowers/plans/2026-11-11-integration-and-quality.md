@@ -57,7 +57,7 @@
   | A | `feat/api-contract` |
   | B | `feat/mock-backend` |
   | C | `feat/e2e` |
-  | D | `ci/instrumented` |
+  | D | `ci/instrumented` (postponed until after the KMP migration) |
 
   Each part ends with the Phase 4 plan's part checkpoint (check, both builds, `verify-apps.sh`, the fixture build, touched modules' connected tests, smoke, docs, PR, CI green, report).
 - **E2E tests** follow the `android-ui-testing` skill: `createAndroidComposeRule`, a Robot per screen, and no `Thread.sleep`; wait with `waitUntil` on semantics.
@@ -349,6 +349,14 @@
 ---
 
 ## Part D: CI (`ci/instrumented`)
+
+> **Postponed (2026-11-11).** The owner postponed this part until the foundation's migration to
+> Kotlin Multiplatform (for iOS) is done, because that changes how shared code and its tests are
+> laid out and adds an iOS simulator job. Until then, device tests run locally at checkpoints:
+> `./gradlew :apps:showcase:connectedDebugAndroidTest` plus each module's
+> `connectedDebugAndroidTest`, on an emulator that no other run is using at the same time.
+> Deferred items to revisit then: the 5 s waits in `ComposeWaits`/`Robot` may be too short on CI
+> emulators.
 
 ### Task 10: Emulator job and final docs
 
