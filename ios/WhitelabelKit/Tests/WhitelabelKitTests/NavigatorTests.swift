@@ -52,3 +52,19 @@ final class GateNavigatorTests: XCTestCase {
         XCTAssertTrue(navigator.paths.isEmpty)
     }
 }
+
+@MainActor
+final class TabShortcutTests: XCTestCase {
+    func testOpensOnlyAVisibleTabAtItsRoot() {
+        let navigator = Navigator()
+        navigator.visibleTabs = ["home", "settings"]
+        navigator.selectedTab = "home"
+        navigator.paths["settings"] = [Destination("settings/x")]
+        XCTAssertFalse(navigator.canOpenTab("catalog"))
+        navigator.openTab("catalog")
+        XCTAssertEqual(navigator.selectedTab, "home")
+        navigator.openTab("settings")
+        XCTAssertEqual(navigator.selectedTab, "settings")
+        XCTAssertEqual(navigator.paths["settings"], [])
+    }
+}

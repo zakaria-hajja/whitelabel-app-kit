@@ -49,6 +49,22 @@
         }
       }
     },
+    "Back to profile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to profile"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retour au profil"
+          }
+        }
+      }
+    },
     "Back to sign in": {
       "localizations": {
         "en": {
@@ -81,6 +97,22 @@
         }
       }
     },
+    "Change password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change password"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changer le mot de passe"
+          }
+        }
+      }
+    },
     "Choose a new password": {
       "localizations": {
         "en": {
@@ -93,6 +125,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choisissez un nouveau mot de passe"
+          }
+        }
+      }
+    },
+    "Confirm new password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm new password"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirmer le nouveau mot de passe"
           }
         }
       }
@@ -141,6 +189,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Créer un compte"
+          }
+        }
+      }
+    },
+    "Current password": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current password"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mot de passe actuel"
           }
         }
       }
@@ -225,6 +289,22 @@
         }
       }
     },
+    "First name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First name"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prénom"
+          }
+        }
+      }
+    },
     "First name (optional)": {
       "localizations": {
         "en": {
@@ -257,6 +337,22 @@
         }
       }
     },
+    "Home": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accueil"
+          }
+        }
+      }
+    },
     "If an account exists for this email, a reset link is on its way. Check your inbox.": {
       "localizations": {
         "en": {
@@ -285,6 +381,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Langue"
+          }
+        }
+      }
+    },
+    "Last name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last name"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nom"
           }
         }
       }
@@ -417,6 +529,22 @@
         }
       }
     },
+    "Profile": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil"
+          }
+        }
+      }
+    },
     "Push notifications": {
       "localizations": {
         "en": {
@@ -465,6 +593,22 @@
         }
       }
     },
+    "Save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer"
+          }
+        }
+      }
+    },
     "Save password": {
       "localizations": {
         "en": {
@@ -509,6 +653,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Réglages"
+          }
+        }
+      }
+    },
+    "Shortcuts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcuts"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raccourcis"
           }
         }
       }
@@ -685,6 +845,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vous devrez vous reconnecter pour utiliser %@."
+          }
+        }
+      }
+    },
+    "Your password has been changed. Other devices were signed out.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your password has been changed. Other devices were signed out."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre mot de passe a été modifié. Vos autres appareils ont été déconnectés."
           }
         }
       }

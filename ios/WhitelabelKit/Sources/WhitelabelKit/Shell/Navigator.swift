@@ -13,6 +13,8 @@ public final class Navigator {
     var gatePath: [Destination] = []
     /** The gate's screens are showing (signed out): push and pop work on its stack. */
     var isGateShowing = false
+    /** The visible tabs, as the shared shell model decided them (set by the tab view). */
+    public internal(set) var visibleTabs: [String] = []
 
     public init() {}
 
@@ -24,6 +26,16 @@ public final class Navigator {
         }
         guard let tab = selectedTab else { return }
         paths[tab, default: []].append(destination)
+    }
+
+    /** Whether [route] is a visible tab: a shortcut to a missing or switched-off tab is hidden. */
+    public func canOpenTab(_ route: String) -> Bool { visibleTabs.contains(route) }
+
+    /** Switches to the tab with root [route], at its root, if it is visible (Android's `toTab`). */
+    public func openTab(_ route: String) {
+        guard canOpenTab(route) else { return }
+        selectedTab = route
+        paths[route] = []
     }
 
     /** Goes back one screen. */
