@@ -5,7 +5,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Text
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -50,7 +55,13 @@ class GateTest {
         id = "other",
         tab = Tab(GateOtherRoute, R.string.test_tab_two, Icons.Default.Star),
         routes = {
-            composable<GateOtherRoute>(deepLinks = listOf(navDeepLink { uriPattern = "test://other" })) { Text("Other screen") }
+            composable<GateOtherRoute>(deepLinks = listOf(navDeepLink { uriPattern = "test://other" })) {
+                var taps by rememberSaveable { mutableIntStateOf(0) }
+                Column {
+                    Text("Other screen")
+                    Text("Taps $taps", Modifier.clickable { taps++ })
+                }
+            }
         },
     )
     private val definition = appDefinition {
@@ -153,5 +164,21 @@ class GateTest {
             val main = nav.graph.findNode<MainGraph>() as androidx.navigation.NavGraph
             assertThat(main.findNode<com.whitelabel.core.shell.diagnostics.DiagnosticsRoute>() != null).isEqualTo(true)
         }
+    }
+
+    @Test
+    fun signOutThenIn_doesNotRestoreAnotherSessionsTabState() {
+        signedIn = true
+        show()
+        rule.onNodeWithText("Tab two").performClick()
+        rule.onNodeWithText("Taps 0").performClick()
+        rule.onNodeWithText("Taps 1").assertExists()
+        rule.onNodeWithText("Tab one").performClick() // tab two's state is saved
+        signedIn = false
+        rule.waitForIdle()
+        signedIn = true
+        rule.waitForIdle()
+        rule.onNodeWithText("Tab two").performClick()
+        rule.onNodeWithText("Taps 0").assertExists()
     }
 }

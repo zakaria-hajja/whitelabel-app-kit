@@ -10,6 +10,7 @@ analytics events it sends. To add a feature to an app, add the module to the app
 |---|---|---|---|
 | Authentication | `auth()` | none | n/a (it is the gate) |
 | Settings | `settings()` | none | no (account parts appear when signed in) |
+| Profile | `profile()` | `profile` (client-only) | yes |
 
 ## Authentication (`:feature:authentication`)
 
@@ -67,4 +68,29 @@ settings(SettingsOptions(showNotifications = true, languages = listOf("en", "fr"
 - **Endpoints:** `GET`/`PATCH settings` and `POST auth/logout`.
 - **Analytics:** `logout`.
 - **Route:** `SettingsRoute` is public, so an app can name it (for example in a home shortcut).
+
+## Profile (`:feature:profile`)
+
+A profile tab for the signed-in user: the email (read only), first and last name, and a password
+change.
+
+```kotlin
+profile(ProfileOptions(allowPasswordChange = true))
+```
+
+| Option | Default | Effect |
+|---|---|---|
+| `allowPasswordChange` | `true` | Shows "Change password" and its screen |
+
+- **Needs `auth()`.** Without it, the app refuses to start and names `auth()`.
+- **Flag key `profile`:** the backend never enforces it; it only hides the tab. A tenant created
+  before the key existed doesn't send it, so list `profile` in the app's `defaults.features` for
+  the tab to show by default.
+- **Names:** at most 50 characters each, checked as you type and trimmed. Clearing a name removes
+  it (the request sends `null`). Save is enabled only when something changed.
+- **Password change:** the current password, plus a new one of 10–128 characters, typed twice.
+  A wrong current password says so and keeps you signed in. On success the backend signs out
+  your other devices; this one stays signed in.
+- **Endpoints:** `GET`/`PATCH users/me` and `PATCH users/me/password`.
+- **Route:** `ProfileRoute` is public, so an app can name it (for example in a home shortcut).
 

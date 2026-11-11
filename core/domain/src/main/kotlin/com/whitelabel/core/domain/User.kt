@@ -19,4 +19,7 @@ interface UserRepository {
 
     /** Fetches the user from the backend and updates the cache. */
     suspend fun refresh(): EmptyResult<DataError>
+
+    /** Saves the names (`null` clears one) and caches the user the backend returns. */
+    suspend fun update(firstName: String?, lastName: String?): EmptyResult<DataError>
 }
