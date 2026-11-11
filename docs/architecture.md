@@ -112,13 +112,15 @@ Koin, one module per layer. Each module is a `val` next to the code it provides:
 
 - **Wiring:** a feature's DSL function passes its module in its `FeatureEntry`, and an app adds its
   own with `modules(...)` in its definition. `FoundationApplication` starts one graph from all of
-  them. Screens get ViewModels with `koinViewModel()`.
+  them, in this order: core layers, shell, features, the app's own modules, contributors. Koin keeps
+  the last binding of a type, so an app can replace a shared binding. Screens get ViewModels with `koinViewModel()`.
 - **Classpath switches:** a module that changes the graph just by being on the classpath (the mock
   backend) implements `ModuleContributor` and lists itself in
   `META-INF/services/com.whitelabel.core.network.ModuleContributor`. The shell loads it with
   `ServiceLoader`, after everything else, so its bindings win.
 - **Checks:** Koin finds a missing binding only at runtime. Each module therefore has a `verify()`
-  test, and showcase's `GraphTest` resolves every ViewModel from the real graph on a device.
+  test, and each app's device test resolves every ViewModel from the real graph with
+  `assertEveryViewModelResolves()`.
 
 ## 5. Networking
 

@@ -56,8 +56,11 @@ class AppDefinition internal constructor(
     /** The app's own Koin bindings, from `modules(...)`. */
     internal val appModules: List<Module> = emptyList(),
 ) {
-    /** Every Koin module the definition brings: the app's own, then each entry's, once each, in order. */
-    internal val koinModules: List<Module> get() = (appModules + entries.flatMap { it.modules }).distinct()
+    /**
+     * Every Koin module the definition brings, once each: each entry's, then the app's own. Koin
+     * keeps the last binding of a type, so an app's binding replaces a feature's.
+     */
+    internal val koinModules: List<Module> get() = (entries.flatMap { it.modules } + appModules).distinct()
 
     internal val tabs: List<Tab> get() = entries.mapNotNull { it.tab }
 

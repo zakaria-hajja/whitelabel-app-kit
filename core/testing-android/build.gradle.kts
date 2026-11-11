@@ -1,5 +1,6 @@
 plugins {
     id("whitelabel.android.library")
+    id("whitelabel.koin")
 }
 
 android {

@@ -171,3 +171,35 @@ lands in the saved git config. A token that can't read the foundation fails that
 
 To update later: `git -C foundation fetch && git -C foundation checkout origin/main`, build, run the
 app's checks, commit the bump.
+
+## 9. Moving to a foundation without Hilt
+
+The foundation replaced Hilt with Koin. An app repo that bumps `foundation/` past that change
+updates the following, in one commit with the bump:
+
+1. **Root build file:** copy `foundation/build.gradle.kts` again. The `hilt` and `ksp` plugin
+   aliases are gone from the catalog, so an old copy no longer resolves. Copy
+   `foundation/gradle.properties` too.
+2. **Module build files:** replace `id("whitelabel.hilt")` with `id("whitelabel.koin")`, and drop
+   `libs.androidx.hilt.navigation.compose`.
+3. **Application class:** drop `@HiltAndroidApp` and override `definition()`:
+   `class MyApp : FoundationApplication() { override fun definition() = myDefinition() }`.
+4. **Definition:** the `@Module @InstallIn object … { @Provides fun definition() }` becomes a plain
+   `fun myDefinition(): AppDefinition = appDefinition { … }`.
+5. **The app's own bindings:** each Hilt module becomes a Koin `module { … }`, added with
+   `modules(...)` in the definition. Features load first and the app's modules after them, so an
+   app binding replaces a shared one of the same type. A `@Provides ReminderConfig` becomes
+   `modules(remindersModule(ReminderConfig(...)))`. Work that must outlive a screen uses
+   `get<CoroutineScope>(ApplicationScope)`.
+6. **ViewModels and screens:** drop `@HiltViewModel` and `@Inject`, declare each with
+   `viewModelOf(::MyViewModel)` in the app's module, and get it with `koinViewModel()`
+   (`org.koin.androidx.compose`).
+7. **Tests:**
+   - Replace `HiltAndroidRule`, `ResetAppDataRule` and `EndAppScopeRule` with
+     `RuleChain.outerRule(FreshAppRule()).around(compose)`.
+   - Replace `@Inject lateinit var backend: FakeBackend` with a getter,
+     `GlobalContext.get().get<FakeBackend>()`.
+   - `FoundationTestRunner` is gone. The app plugin sets AndroidX's runner.
+   - Add a device test calling `GlobalContext.get().assertEveryViewModelResolves()` (from
+     `:core:testing-android`) with a `FreshAppRule`. Koin finds a missing binding only when a screen
+     opens; this test finds it first.

@@ -21,8 +21,8 @@ These follow the project's Android skills:
 - **Network tests** use Ktor `MockEngine` via `HttpClientFactory`, so they exercise the real
   headers, envelope and error mapping.
 - **Koin graph:** each Koin module has a `verify()` test (`module.verify(extraTypes = …)`, listing
-  the types another module or the platform provides). On a device, showcase's `GraphTest` resolves
-  every ViewModel from the real graph.
+  the types another module or the platform provides). On a device, each app's graph test calls
+  `GlobalContext.get().assertEveryViewModelResolves()` (`:core:testing-android`) on the real graph.
 - **Device tests of an app** start with `RuleChain.outerRule(FreshAppRule()).around(compose)`: a
   fresh Koin graph, no stored data, no Keystore key. They read the `FakeBackend` from the graph
   through a getter, since every test gets a new one.

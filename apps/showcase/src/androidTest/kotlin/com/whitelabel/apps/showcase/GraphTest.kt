@@ -3,6 +3,7 @@ package com.whitelabel.apps.showcase
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.whitelabel.core.testing.android.FreshAppRule
+import com.whitelabel.core.testing.android.assertEveryViewModelResolves
 import com.whitelabel.feature.catalog.CatalogOptions
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -12,8 +13,9 @@ import org.koin.core.parameter.parametersOf
 
 /**
  * Every ViewModel of the app resolves from the real graph. Koin finds a missing binding only
- * when a screen opens, so this test opens none and asks for each one.
- * The classes are internal to their modules, so they are named here.
+ * when a screen opens, so this test opens none and asks for each one. The named list also catches
+ * a feature whose entry forgot its `modules` (its ViewModels aren't bound at all); the classes are
+ * internal to their modules, so they are named.
  */
 class GraphTest {
 
@@ -41,6 +43,13 @@ class GraphTest {
             val parameters = if (name.endsWith("CatalogListViewModel")) parametersOf(CatalogOptions()) else parametersOf(SavedStateHandle())
             val viewModel = koin.get<Any>(type, null) { parameters }
             assertTrue(name, viewModel is ViewModel)
+        }
+    }
+
+    /** Every ViewModel bound in the graph, including ones added after this list was written. */
+    @Test fun everyBoundViewModelResolves() {
+        GlobalContext.get().assertEveryViewModelResolves { type ->
+            if (type.simpleName == "CatalogListViewModel") parametersOf(CatalogOptions()) else null
         }
     }
 }

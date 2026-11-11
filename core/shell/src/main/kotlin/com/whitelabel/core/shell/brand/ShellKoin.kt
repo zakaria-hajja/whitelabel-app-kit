@@ -60,8 +60,9 @@ internal fun shellModule(definition: AppDefinition) = module {
 
 /**
  * Every Koin module an Android app starts with: the core layers, the shell, the definition's
- * modules (app and features), then each classpath [contributors]' (the mock backend), so a
- * contributor's binding wins.
+ * modules (features, then the app's own), then each classpath [contributors]' (the mock backend).
+ * Koin keeps the last binding of a type: an app can replace a shared binding, and a contributor's
+ * wins over everything.
  */
 internal fun foundationModules(definition: AppDefinition, contributors: List<ModuleContributor>): List<Module> =
     listOf(networkModule, dataModule, androidDataModule, shellModule(definition)) +

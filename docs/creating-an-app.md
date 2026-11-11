@@ -207,6 +207,10 @@ so they need no server.
   `get<CoroutineScope>(ApplicationScope)` (from `:core:data`), never in a scope of its own. Otherwise its file stays open, and the second test fails with "multiple
   DataStores active for the same file".
 
+- **The graph:** add a test that calls `GlobalContext.get().assertEveryViewModelResolves()` under a
+  `FreshAppRule` (see showcase's `GraphTest`). Koin finds a missing binding only when a screen
+  opens; this finds it without opening any.
+
 Run them on a running emulator with `./gradlew :apps:<name>:connectedDebugAndroidTest`.
 
 ## 9. Build, verify, release
