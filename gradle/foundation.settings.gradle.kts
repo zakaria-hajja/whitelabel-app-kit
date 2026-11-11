@@ -27,6 +27,7 @@ val sharedModules = listOf(
     ":feature:settings",
     ":feature:settings:shared",
     ":feature:profile",
+    ":feature:profile:shared",
     ":feature:home",
     ":feature:home:shared",
     ":feature:catalog",

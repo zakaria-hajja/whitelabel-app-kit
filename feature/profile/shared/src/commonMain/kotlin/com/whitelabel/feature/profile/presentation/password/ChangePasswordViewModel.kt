@@ -1,5 +1,10 @@
 package com.whitelabel.feature.profile.presentation.password
 
+import com.whitelabel.feature.profile.shared.resources.Res
+import com.whitelabel.feature.profile.shared.resources.profile_error_confirm_mismatch
+import com.whitelabel.feature.profile.shared.resources.profile_error_password_long
+import com.whitelabel.feature.profile.shared.resources.profile_error_password_short
+import com.whitelabel.feature.profile.shared.resources.profile_error_wrong_current_password
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.common.ApiErrorCode
@@ -8,16 +13,15 @@ import com.whitelabel.core.common.onFailure
 import com.whitelabel.core.common.onSuccess
 import com.whitelabel.core.domain.PasswordError
 import com.whitelabel.core.domain.PasswordPolicy
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.core.ui.toUiText
-import com.whitelabel.feature.profile.R
+import com.whitelabel.core.presentation.UiText
+import com.whitelabel.core.presentation.toUiText
 import com.whitelabel.feature.profile.domain.PasswordDataSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-internal data class ChangePasswordState(
+data class ChangePasswordState(
     val current: String = "",
     val new: String = "",
     val confirm: String = "",
@@ -32,7 +36,7 @@ internal data class ChangePasswordState(
     val canSubmit: Boolean get() = current.isNotEmpty() && new.isNotEmpty() && confirm.isNotEmpty() && !isSubmitting && !done
 }
 
-internal sealed interface ChangePasswordAction {
+sealed interface ChangePasswordAction {
     data class OnCurrentChange(val password: String) : ChangePasswordAction
     data class OnNewChange(val password: String) : ChangePasswordAction
     data class OnConfirmChange(val password: String) : ChangePasswordAction
@@ -40,7 +44,7 @@ internal sealed interface ChangePasswordAction {
 }
 
 /** Passwords are never trimmed and never saved (no SavedStateHandle). */
-internal class ChangePasswordViewModel(
+class ChangePasswordViewModel(
     private val passwords: PasswordDataSource,
 ) : ViewModel() {
 
@@ -60,7 +64,7 @@ internal class ChangePasswordViewModel(
         val current = _state.value
         if (!current.canSubmit) return
         val newError = PasswordPolicy.check(current.new)?.toUiText()
-        val confirmError = UiText.Resource(R.string.profile_error_confirm_mismatch).takeIf { current.confirm != current.new }
+        val confirmError = UiText.Resource(Res.string.profile_error_confirm_mismatch).takeIf { current.confirm != current.new }
         if (newError != null || confirmError != null) {
             _state.update { it.copy(newError = newError, confirmError = confirmError) }
             return
@@ -71,7 +75,7 @@ internal class ChangePasswordViewModel(
                 .onSuccess { _state.update { ChangePasswordState(done = true) } }
                 .onFailure { error ->
                     if (error is DataError.Api && error.code == ApiErrorCode.INVALID_CREDENTIALS) {
-                        _state.update { it.copy(currentError = UiText.Resource(R.string.profile_error_wrong_current_password)) }
+                        _state.update { it.copy(currentError = UiText.Resource(Res.string.profile_error_wrong_current_password)) }
                     } else {
                         _state.update { it.copy(error = error.toUiText()) }
                     }
@@ -81,7 +85,7 @@ internal class ChangePasswordViewModel(
     }
 
     private fun PasswordError.toUiText(): UiText = when (this) {
-        PasswordError.TOO_SHORT -> UiText.Resource(R.string.profile_error_password_short, listOf(PasswordPolicy.MIN))
-        PasswordError.TOO_LONG -> UiText.Resource(R.string.profile_error_password_long, listOf(PasswordPolicy.MAX))
+        PasswordError.TOO_SHORT -> UiText.Resource(Res.string.profile_error_password_short, listOf(PasswordPolicy.MIN))
+        PasswordError.TOO_LONG -> UiText.Resource(Res.string.profile_error_password_long, listOf(PasswordPolicy.MAX))
     }
 }

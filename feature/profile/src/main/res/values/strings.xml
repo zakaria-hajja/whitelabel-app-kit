@@ -6,8 +6,6 @@
     <string name="profile_first_name">First name</string>
     <string name="profile_last_name">Last name</string>
     <string name="profile_save">Save</string>
-    <string name="profile_saved">Profile saved.</string>
-    <string name="profile_error_name_long">Use at most %1$d characters.</string>
     <string name="profile_change_password">Change password</string>
     <string name="profile_change_password_title">Change password</string>
     <string name="profile_current_password">Current password</string>
@@ -16,8 +14,4 @@
     <string name="profile_change_password_submit">Change password</string>
     <string name="profile_password_changed">Your password has been changed. Other devices were signed out.</string>
     <string name="profile_back">Back to profile</string>
-    <string name="profile_error_wrong_current_password">The current password is wrong.</string>
-    <string name="profile_error_confirm_mismatch">The passwords don\'t match.</string>
-    <string name="profile_error_password_short">Use at least %1$d characters.</string>
-    <string name="profile_error_password_long">Use at most %1$d characters.</string>
 </resources>

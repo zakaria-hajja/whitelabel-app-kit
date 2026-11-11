@@ -1,5 +1,9 @@
 package com.whitelabel.feature.profile.presentation
 
+import com.whitelabel.feature.profile.shared.resources.Res
+import com.whitelabel.feature.profile.shared.resources.profile_error_confirm_mismatch
+import com.whitelabel.feature.profile.shared.resources.profile_error_password_short
+import com.whitelabel.feature.profile.shared.resources.profile_error_wrong_current_password
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
@@ -10,8 +14,7 @@ import com.whitelabel.core.common.ApiErrorCode
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.EmptyResult
 import com.whitelabel.core.common.Result
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.feature.profile.R
+import com.whitelabel.core.presentation.UiText
 import com.whitelabel.feature.profile.domain.PasswordDataSource
 import com.whitelabel.feature.profile.presentation.password.ChangePasswordAction
 import com.whitelabel.feature.profile.presentation.password.ChangePasswordViewModel
@@ -22,9 +25,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 private class FakePasswords : PasswordDataSource {
     val changes = mutableListOf<Pair<String, String>>()
@@ -40,9 +43,9 @@ class ChangePasswordViewModelTest {
 
     private val passwords = FakePasswords()
 
-    @BeforeEach fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    @AfterEach fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     private fun ChangePasswordViewModel.fill(current: String = "old pass", new: String = "0123456789", confirm: String = new) {
         onAction(ChangePasswordAction.OnCurrentChange(current))
@@ -54,7 +57,7 @@ class ChangePasswordViewModelTest {
         val viewModel = ChangePasswordViewModel(passwords)
         viewModel.fill(confirm = "0123456780")
         viewModel.onAction(ChangePasswordAction.OnSubmit)
-        assertThat(viewModel.state.value.confirmError).isEqualTo(UiText.Resource(R.string.profile_error_confirm_mismatch))
+        assertThat(viewModel.state.value.confirmError).isEqualTo(UiText.Resource(Res.string.profile_error_confirm_mismatch))
         assertThat(passwords.changes).containsExactly()
     }
 
@@ -62,7 +65,7 @@ class ChangePasswordViewModelTest {
         val viewModel = ChangePasswordViewModel(passwords)
         viewModel.fill(new = "short")
         viewModel.onAction(ChangePasswordAction.OnSubmit)
-        assertThat(viewModel.state.value.newError).isEqualTo(UiText.Resource(R.string.profile_error_password_short, listOf(10)))
+        assertThat(viewModel.state.value.newError).isEqualTo(UiText.Resource(Res.string.profile_error_password_short, listOf(10)))
         assertThat(passwords.changes).containsExactly()
     }
 
@@ -71,7 +74,7 @@ class ChangePasswordViewModelTest {
         val viewModel = ChangePasswordViewModel(passwords)
         viewModel.fill()
         viewModel.onAction(ChangePasswordAction.OnSubmit)
-        assertThat(viewModel.state.value.currentError).isEqualTo(UiText.Resource(R.string.profile_error_wrong_current_password))
+        assertThat(viewModel.state.value.currentError).isEqualTo(UiText.Resource(Res.string.profile_error_wrong_current_password))
         assertThat(viewModel.state.value.done).isFalse()
     }
 

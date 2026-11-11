@@ -1,21 +1,23 @@
 package com.whitelabel.feature.profile.presentation.profile
 
+import com.whitelabel.feature.profile.shared.resources.Res
+import com.whitelabel.feature.profile.shared.resources.profile_error_name_long
+import com.whitelabel.feature.profile.shared.resources.profile_saved
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.common.onFailure
 import com.whitelabel.core.common.onSuccess
 import com.whitelabel.core.domain.NamePolicy
 import com.whitelabel.core.domain.UserRepository
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.core.ui.toUiText
-import com.whitelabel.feature.profile.R
+import com.whitelabel.core.presentation.UiText
+import com.whitelabel.core.presentation.toUiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-internal data class ProfileState(
+data class ProfileState(
     val loaded: Boolean = false,
     /** Whose profile the form holds: a different user signing in resets it. */
     val userId: String? = null,
@@ -35,7 +37,7 @@ internal data class ProfileState(
     val canSave: Boolean get() = loaded && isDirty && firstNameError == null && lastNameError == null && !isSaving
 }
 
-internal sealed interface ProfileAction {
+sealed interface ProfileAction {
     data class OnFirstNameChange(val name: String) : ProfileAction
     data class OnLastNameChange(val name: String) : ProfileAction
     data object OnSave : ProfileAction
@@ -43,7 +45,7 @@ internal sealed interface ProfileAction {
 }
 
 /** Edits the signed-in user's names. The email is shown, not edited. */
-internal class ProfileViewModel(
+class ProfileViewModel(
     private val users: UserRepository,
 ) : ViewModel() {
 
@@ -105,7 +107,7 @@ internal class ProfileViewModel(
                             lastName = if (it.lastName == current.lastName) sentLast else it.lastName,
                             savedFirstName = sentFirst,
                             savedLastName = sentLast,
-                            message = UiText.Resource(R.string.profile_saved),
+                            message = UiText.Resource(Res.string.profile_saved),
                         )
                     }
                 }
@@ -114,5 +116,5 @@ internal class ProfileViewModel(
         }
     }
 
-    private fun nameTooLong() = UiText.Resource(R.string.profile_error_name_long, listOf(NamePolicy.MAX))
+    private fun nameTooLong() = UiText.Resource(Res.string.profile_error_name_long, listOf(NamePolicy.MAX))
 }

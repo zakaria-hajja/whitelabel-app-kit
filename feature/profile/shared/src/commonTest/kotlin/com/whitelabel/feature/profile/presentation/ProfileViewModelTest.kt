@@ -1,5 +1,8 @@
 package com.whitelabel.feature.profile.presentation
 
+import com.whitelabel.feature.profile.shared.resources.Res
+import com.whitelabel.feature.profile.shared.resources.profile_error_name_long
+import com.whitelabel.feature.profile.shared.resources.profile_saved
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEqualTo
@@ -12,8 +15,7 @@ import com.whitelabel.core.common.EmptyResult
 import com.whitelabel.core.common.Result
 import com.whitelabel.core.domain.User
 import com.whitelabel.core.domain.UserRepository
-import com.whitelabel.core.ui.UiText
-import com.whitelabel.feature.profile.R
+import com.whitelabel.core.presentation.UiText
 import com.whitelabel.feature.profile.presentation.profile.ProfileAction
 import com.whitelabel.feature.profile.presentation.profile.ProfileViewModel
 import kotlinx.coroutines.CompletableDeferred
@@ -24,9 +26,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 private class FakeUsers : UserRepository {
     override val user = MutableStateFlow<User?>(User("u1", "ada@example.com", "Ada", null))
@@ -44,9 +46,9 @@ class ProfileViewModelTest {
 
     private val users = FakeUsers()
 
-    @BeforeEach fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+    @BeforeTest fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
 
-    @AfterEach fun tearDown() = Dispatchers.resetMain()
+    @AfterTest fun tearDown() = Dispatchers.resetMain()
 
     @Test fun `the form starts from the signed-in user`() = runTest {
         val state = ProfileViewModel(users).state.value
@@ -67,7 +69,7 @@ class ProfileViewModelTest {
     @Test fun `name over fifty characters shows the length error`() = runTest {
         val viewModel = ProfileViewModel(users)
         viewModel.onAction(ProfileAction.OnLastNameChange("a".repeat(51)))
-        assertThat(viewModel.state.value.lastNameError).isEqualTo(UiText.Resource(R.string.profile_error_name_long, listOf(50)))
+        assertThat(viewModel.state.value.lastNameError).isEqualTo(UiText.Resource(Res.string.profile_error_name_long, listOf(50)))
         assertThat(viewModel.state.value.canSave).isFalse()
     }
 
@@ -77,7 +79,7 @@ class ProfileViewModelTest {
         viewModel.onAction(ProfileAction.OnLastNameChange("  Lovelace "))
         viewModel.onAction(ProfileAction.OnSave)
         assertThat(users.updates).containsExactly(null to "Lovelace")
-        assertThat(viewModel.state.value.message).isEqualTo(UiText.Resource(R.string.profile_saved))
+        assertThat(viewModel.state.value.message).isEqualTo(UiText.Resource(Res.string.profile_saved))
         assertThat(viewModel.state.value.canSave).isFalse()
     }
 

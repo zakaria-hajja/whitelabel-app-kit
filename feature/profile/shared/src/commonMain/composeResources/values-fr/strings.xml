@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_saved">Profil enregistré.</string>
+    <string name="profile_error_name_long">Utilisez au plus %1$d caractères.</string>
+    <string name="profile_error_wrong_current_password">Le mot de passe actuel est incorrect.</string>
+    <string name="profile_error_confirm_mismatch">Les mots de passe ne correspondent pas.</string>
+    <string name="profile_error_password_short">Utilisez au moins %1$d caractères.</string>
+    <string name="profile_error_password_long">Utilisez au plus %1$d caractères.</string>
+</resources>
