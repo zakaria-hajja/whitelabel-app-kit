@@ -3,7 +3,7 @@ package com.whitelabel.core.common
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isSameInstanceAs
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 class ResultTest {
 

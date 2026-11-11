@@ -12,6 +12,7 @@ val foundationDir: File = (settings.extra.properties["foundationDir"] as File?) 
 val sharedModules = listOf(
     ":core:branding",
     ":core:common",
+    ":core:presentation",
     ":core:network",
     ":core:designsystem",
     ":core:datastore",

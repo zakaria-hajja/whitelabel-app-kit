@@ -37,6 +37,13 @@ cp foundation/gradle.properties .
 
 `local.properties` (with `sdk.dir`) stays uncommitted, as in the foundation.
 
+`gradle.properties` includes `kotlin.native.ignoreDisabledTargets=true`. The foundation's shared
+modules are Kotlin Multiplatform, and this keeps a Linux CI from warning about the iOS targets it
+can't build. When the foundation adds a property, copy the file again.
+
+On a Mac without Xcode, the KMP modules skip their iOS simulator tests with a warning, and iOS code
+still compiles. `-Pwhitelabel.skipIosTests=true` skips them anywhere.
+
 ## 3. Settings and root build file
 
 `settings.gradle.kts`:
