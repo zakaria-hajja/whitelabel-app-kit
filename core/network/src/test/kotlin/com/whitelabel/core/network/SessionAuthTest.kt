@@ -28,8 +28,9 @@ private data class Profile(val name: String)
 private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 private val OLD = SessionTokens("old-access", "old-refresh")
 private val NEW = SessionTokens("new-access", "new-refresh")
+/** `TokensEnvelope` from the contract: the pair is under `data.tokens`. */
 private const val NEW_PAIR =
-    """{"success":true,"data":{"accessToken":"new-access","refreshToken":"new-refresh","tokenType":"Bearer","expiresIn":900},"meta":{"requestId":"r"}}"""
+    """{"success":true,"data":{"tokens":{"accessToken":"new-access","refreshToken":"new-refresh","tokenType":"Bearer","expiresIn":900}},"meta":{"requestId":"r"}}"""
 private const val OK_PROFILE = """{"success":true,"data":{"name":"Ada"},"meta":{"requestId":"r"}}"""
 
 private fun MockRequestHandleScope.error(code: String, status: HttpStatusCode = HttpStatusCode.Unauthorized) =
