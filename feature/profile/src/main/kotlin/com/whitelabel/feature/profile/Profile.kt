@@ -32,6 +32,7 @@ fun AppDefinitionBuilder.profile(options: ProfileOptions = ProfileOptions()) {
             flagKey = "profile",
             requiresSignIn = true,
             tab = Tab(ProfileRoute, R.string.profile_tab, Icons.Default.Person),
+            modules = listOf(profileModule),
             routes = { scope ->
                 screen<ProfileRoute> {
                     ProfileRoot(options = options, onChangePassword = { scope.navigator.navigate(ChangePasswordRoute) })

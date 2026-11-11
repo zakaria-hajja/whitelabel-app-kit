@@ -2,22 +2,56 @@ package com.whitelabel.core.shell
 
 import android.app.Application
 import com.whitelabel.core.analytics.CrashReporter
-import javax.inject.Inject
+import com.whitelabel.core.data.di.ApplicationScope
+import com.whitelabel.core.network.ModuleContributor
+import com.whitelabel.core.shell.brand.foundationModules
+import java.util.ServiceLoader
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 
 /**
- * Base for every app's Application class, which adds `@HiltAndroidApp` (a Hilt requirement).
- * Uncaught exceptions are recorded with the app's [CrashReporter] before the default handler runs.
+ * Base for every app's Application class, which says what the app contains:
+ * `class MyApp : FoundationApplication() { override fun definition() = myDefinition() }`.
+ * Starts the app's Koin graph from that definition (plus any classpath [ModuleContributor], such
+ * as the mock backend). Uncaught exceptions are recorded with the app's [CrashReporter] before
+ * the default handler runs.
  */
-open class FoundationApplication : Application() {
+abstract class FoundationApplication : Application() {
 
-    @Inject lateinit var crashReporter: CrashReporter
+    /** Everything the app contains, built with `appDefinition { … }`. */
+    abstract fun definition(): AppDefinition
 
     override fun onCreate() {
         super.onCreate()
+        startFoundation()
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            runCatching { crashReporter.record(throwable) }
+            runCatching { GlobalContext.get().get<CrashReporter>().record(throwable) }
             previous?.uncaughtException(thread, throwable)
         }
+    }
+
+    /** Starts the app's graph. Called by [onCreate]; tests call it again after [stopFoundation]. */
+    fun startFoundation() {
+        val contributors = ServiceLoader.load(ModuleContributor::class.java, javaClass.classLoader).toList()
+        startKoin {
+            androidContext(this@FoundationApplication)
+            modules(foundationModules(definition(), contributors))
+        }
+    }
+
+    /**
+     * Stops the graph and waits for the work it started (store writes) to end, so a test can delete
+     * the app's files and start a fresh graph. A store file can be open only once at a time.
+     */
+    fun stopFoundation() {
+        val job = GlobalContext.getOrNull()?.getOrNull<CoroutineScope>(ApplicationScope)?.coroutineContext?.job
+        stopKoin()
+        job?.let { runBlocking { it.join() } }
     }
 }

@@ -23,8 +23,8 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         pluginManager.apply(libs.pluginId("android-application"))
         pluginManager.apply(libs.pluginId("kotlin-android"))
         pluginManager.apply(libs.pluginId("android-junit5"))
-        // After the Android plugin, so whitelabel.hilt picks the Android variant.
-        pluginManager.apply("whitelabel.hilt")
+        // After the Kotlin Android plugin, so whitelabel.koin adds the Android artifacts.
+        pluginManager.apply("whitelabel.koin")
 
         val app = AppConfigLoader.load(projectDir, label = rootDir.toPath().relativize(projectDir.toPath()).toString())
 
@@ -36,7 +36,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 versionCode = app.versionCode
                 versionName = app.versionName
                 targetSdk = TARGET_SDK
-                testInstrumentationRunner = "com.whitelabel.core.testing.android.FoundationTestRunner"
+                testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 resValue("string", "app_name", androidStringResource(app.appName))
                 manifestPlaceholders["deepLinkScheme"] = app.deepLinkScheme
             }
@@ -73,11 +73,10 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
         addTestDependencies()
 
-        // End-to-end tests: a Hilt test app talking to the in-memory backend, never a server.
+        // End-to-end tests: the real app (a fresh Koin graph per test) talking to the in-memory
+        // backend, never a server.
         dependencies.add("androidTestImplementation", project(":core:testing-android"))
         dependencies.add("androidTestImplementation", project(":core:mockapi"))
-        dependencies.add("androidTestImplementation", libs.library("hilt-android-testing"))
-        dependencies.add("kspAndroidTest", libs.library("hilt-compiler"))
 
         // -Pwhitelabel.mockApi=true: debug builds talk to :core:mockapi instead of a server.
         mockApiDependency(mapOf(MOCK_API_PROPERTY to providers.gradleProperty(MOCK_API_PROPERTY).orNull))

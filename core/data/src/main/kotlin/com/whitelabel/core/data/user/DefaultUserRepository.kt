@@ -9,13 +9,12 @@ import com.whitelabel.core.domain.UserRepository
 import com.whitelabel.core.network.getResult
 import com.whitelabel.core.network.patchResult
 import io.ktor.client.HttpClient
-import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
-internal class DefaultUserRepository @Inject constructor(
+internal class DefaultUserRepository(
     private val client: HttpClient,
     private val cache: UserCache,
 ) : UserRepository {

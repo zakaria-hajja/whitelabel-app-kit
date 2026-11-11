@@ -211,12 +211,18 @@ class FakeBackend(private val now: () -> Instant = Instant::now) {
         val email = body.string("email").orEmpty().trim().lowercase()
         if (!EMAIL.matches(email)) return validation("email" to "Invalid email address")
         // 202 whether or not the account exists, so the answer reveals nothing.
-        users.firstOrNull { it.email == email }?.let { user ->
-            val token = UUID.randomUUID().toString()
-            resetTokens[token] = user.id
-            lastResetToken = token
-        }
+        issueToken(email)
         return Reply(202, success(JsonObject(emptyMap())))
+    }
+
+    /** What a reset email would carry for [email], or null for an unknown account (tests open the reset link with it). */
+    fun issueResetToken(email: String): String? = synchronized(lock) { issueToken(email.trim().lowercase()) }
+
+    private fun issueToken(email: String): String? = users.firstOrNull { it.email == email }?.let { user ->
+        val token = UUID.randomUUID().toString()
+        resetTokens[token] = user.id
+        lastResetToken = token
+        token
     }
 
     private fun resetPassword(body: JsonObject): Reply {

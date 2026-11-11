@@ -1,7 +1,7 @@
 plugins {
     id("whitelabel.android.library")
     id("whitelabel.android.library.compose")
-    id("whitelabel.hilt")
+    id("whitelabel.koin")
     alias(libs.plugins.kotlin.serialization)
 }
 

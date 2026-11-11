@@ -12,8 +12,6 @@ import com.whitelabel.core.ui.UiText
 import com.whitelabel.core.ui.toUiText
 import com.whitelabel.feature.authentication.domain.PasswordResetDataSource
 import com.whitelabel.feature.authentication.presentation.toUiText
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -35,8 +33,7 @@ internal sealed interface ResetPasswordAction {
 }
 
 /** Opened from the emailed link; the token is the route's `token` argument. */
-@HiltViewModel
-internal class ResetPasswordViewModel @Inject constructor(
+internal class ResetPasswordViewModel(
     private val source: PasswordResetDataSource,
     savedState: SavedStateHandle,
 ) : ViewModel() {

@@ -10,11 +10,11 @@ business features. The design is in
 
 | Module | Status | Responsibility |
 |---|---|---|
-| `build-logic` | Built | Convention plugins: `whitelabel.android.application` (app modules), `.android.library`, `.android.library.compose`, `.jvm.library`, `.hilt`, and for Kotlin Multiplatform `whitelabel.kmp.library` and `whitelabel.kmp.resources` (see §5). Also the app config loader that validates each `apps/<name>/app.properties` |
+| `build-logic` | Built | Convention plugins: `whitelabel.android.application` (app modules), `.android.library`, `.android.library.compose`, `.jvm.library`, `.koin`, and for Kotlin Multiplatform `whitelabel.kmp.library` and `whitelabel.kmp.resources` (see §6). Also the app config loader that validates each `apps/<name>/app.properties` |
 | `:core:common` | Built | `Result<T, E>`, `DataError`, `ApiErrorCode`. Kotlin Multiplatform (Android, iOS) |
 | `:core:presentation` | Built | Shared presentation types for Android and iOS: `UiText` (text or a shared string resource) and `DataError.toUiText()` with the generic error messages. Kotlin Multiplatform with Compose resources |
 | `:core:branding` | Built | `BrandConfig`, the app's typed build-time identity (tenant, name, API URL, environment, runtime defaults). Pure Kotlin |
-| `:core:network` | Built | Ktor client factory, backend envelope unwrapping, error mapping, typed request helpers, the optional `X-Client-Id` tenant header, and the bearer session with single-flight refresh. It reads tokens through `SessionTokenStore`, so it never depends on storage. Pure Kotlin with Hilt |
+| `:core:network` | Built | Ktor client factory, backend envelope unwrapping, error mapping, typed request helpers, the optional `X-Client-Id` tenant header, and the bearer session with single-flight refresh. It reads tokens through `SessionTokenStore`, so it never depends on storage. Pure Kotlin with Koin |
 | `:core:designsystem` | Built | `AppTheme` built from brand resources and the app's style pack (`StylePack.Material`/`Gallery`: corners, surfaces, sizing, motion, haptics), shared-element helpers, spacing tokens, components (buttons, text field, card, scaffold, loading, empty and error states, dialog), contrast helpers |
 | `:core:datastore` | Built | `JsonStore<T>`: a typed document stored as JSON on disk, which survives a corrupt file. `TokenStore`: the session tokens, encrypted with an AES-256-GCM key in AndroidKeyStore |
 | `:core:reminders` | Built | `Reminders`: local notifications at a date and time that survive reboots, clock and time-zone changes and app updates, with a 12-hour rule for missed ones; the app's channels through `ReminderConfig`; `rememberNotificationPermission()` and `openNotificationSettings()`. See [reminders.md](reminders.md) |
@@ -98,7 +98,31 @@ Rules, enforced by module boundaries and by review:
 4. **Brand visuals:** `:core:designsystem` declares default brand resources. The app's
    `src/main/res` overrides them by name, so features never change. See [branding.md](branding.md).
 
-## 4. Networking
+## 4. Dependency injection
+
+Koin, one module per layer. Each module is a `val` next to the code it provides:
+
+| Module | Provides |
+|---|---|
+| `networkModule` | the `HttpClient` |
+| `dataModule` | the repositories, their stores, and the application scope (`ApplicationScope` qualifier, cancelled when the graph stops) |
+| `androidDataModule` | Android's side of the data layer: `StorePaths`, `TokenCipher`, `LanguageRepository` |
+| `shellModule` | `AppDefinition`, `BrandConfig`, `NetworkConfig`, the HTTP engine, analytics, the shell's ViewModels |
+| `<feature>Module` | each feature's ViewModels and data sources |
+
+- **Wiring:** a feature's DSL function passes its module in its `FeatureEntry`, and an app adds its
+  own with `modules(...)` in its definition. `FoundationApplication` starts one graph from all of
+  them, in this order: core layers, shell, features, the app's own modules, contributors. Koin keeps
+  the last binding of a type, so an app can replace a shared binding. Screens get ViewModels with `koinViewModel()`.
+- **Classpath switches:** a module that changes the graph just by being on the classpath (the mock
+  backend) implements `ModuleContributor` and lists itself in
+  `META-INF/services/com.whitelabel.core.network.ModuleContributor`. The shell loads it with
+  `ServiceLoader`, after everything else, so its bindings win.
+- **Checks:** Koin finds a missing binding only at runtime. Each module therefore has a `verify()`
+  test, and each app's device test resolves every ViewModel from the real graph with
+  `assertEveryViewModelResolves()`.
+
+## 5. Networking
 
 - **Client:** Ktor with the OkHttp engine, provided by the shell.
 - **Headers:** every request carries `User-Agent` (`<applicationId>/<version>`) and
@@ -124,7 +148,7 @@ Rules, enforced by module boundaries and by review:
 
 See [api-environments.md](api-environments.md).
 
-## 5. Kotlin Multiplatform
+## 6. Kotlin Multiplatform
 
 The foundation is moving to Kotlin Multiplatform so apps can ship on iOS with the same logic: rules,
 data and ViewModels are shared, and each platform draws its own UI (Jetpack Compose on Android,
@@ -150,7 +174,7 @@ progress: [2026-11-11-kmp-migration.md](superpowers/plans/2026-11-11-kmp-migrati
   - Write apostrophes plainly (`'`): Compose resources don't unescape Android's `\'`.
   - Strings that only screens use stay in each platform's own resources.
 
-## 6. Further reading
+## 7. Further reading
 
 - [creating-an-app.md](creating-an-app.md): build app #N step by step
 - [adding-a-shared-feature.md](adding-a-shared-feature.md): add a reusable feature

@@ -4,7 +4,6 @@ import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.EmptyResult
 import com.whitelabel.core.common.Result
 import com.whitelabel.core.common.asEmptyResult
-import com.whitelabel.core.data.di.ApplicationScope
 import com.whitelabel.core.datastore.StoredTokens
 import com.whitelabel.core.domain.Registration
 import com.whitelabel.core.domain.SessionRepository
@@ -16,7 +15,6 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,10 +23,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-internal class DefaultSessionRepository @Inject constructor(
+internal class DefaultSessionRepository(
     private val client: HttpClient,
     private val session: LocalSession,
-    @ApplicationScope private val scope: CoroutineScope,
+    private val scope: CoroutineScope,
 ) : SessionRepository {
 
     override val state: StateFlow<SessionState> = session.tokens

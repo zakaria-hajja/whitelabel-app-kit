@@ -32,6 +32,7 @@ fun AppDefinitionBuilder.home(options: HomeOptions = HomeOptions()) {
             id = "home",
             requiresSignIn = true,
             tab = Tab(HomeRoute, R.string.home_tab, Icons.Default.Home),
+            modules = listOf(homeModule),
             routes = { scope ->
                 screen<HomeRoute> {
                     HomeRoot(options = options, canOpenTab = scope.navigator::canOpenTab, onOpenTab = scope.navigator::toTab)

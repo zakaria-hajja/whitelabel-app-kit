@@ -18,33 +18,22 @@ import com.whitelabel.feature.profile.ProfileRoute
 import com.whitelabel.feature.profile.profile
 import com.whitelabel.feature.settings.SettingsRoute
 import com.whitelabel.feature.settings.settings
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
 
 /** Everything Showcase contains: the reference app, which uses every shared feature. */
-@Module
-@InstallIn(SingletonComponent::class)
-object ShowcaseDefinition {
-    @Provides
-    @Singleton
-    fun definition(): AppDefinition = appDefinition {
-        auth()
-        home(
-            HomeOptions(
-                shortcuts = listOf(
-                    HomeShortcut(R.string.showcase_shortcut_catalog, Icons.AutoMirrored.Filled.List, CatalogRoute),
-                    HomeShortcut(R.string.showcase_shortcut_profile, Icons.Default.Person, ProfileRoute),
-                    HomeShortcut(R.string.showcase_shortcut_settings, Icons.Default.Settings, SettingsRoute),
-                ),
+fun showcaseDefinition(): AppDefinition = appDefinition {
+    auth()
+    home(
+        HomeOptions(
+            shortcuts = listOf(
+                HomeShortcut(R.string.showcase_shortcut_catalog, Icons.AutoMirrored.Filled.List, CatalogRoute),
+                HomeShortcut(R.string.showcase_shortcut_profile, Icons.Default.Person, ProfileRoute),
+                HomeShortcut(R.string.showcase_shortcut_settings, Icons.Default.Settings, SettingsRoute),
             ),
-        )
-        // The categories of the backend's seed catalog.
-        catalog(CatalogOptions(categories = listOf("Books", "Games", "Music", "Travel")))
-        profile()
-        settings()
-        startTab(HomeRoute)
-    }
+        ),
+    )
+    // The categories of the backend's seed catalog.
+    catalog(CatalogOptions(categories = listOf("Books", "Games", "Music", "Travel")))
+    profile()
+    settings()
+    startTab(HomeRoute)
 }

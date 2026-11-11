@@ -1,7 +1,7 @@
 # Android App Foundation
 
 An internal foundation for building many independent Android apps (Kotlin, Jetpack Compose,
-Material 3, Hilt, Ktor). Shared modules provide the app host, navigation, networking, storage and
+Material 3, Koin, Ktor). Shared modules provide the app host, navigation, networking, storage and
 the design system, plus ready-to-use features: sign-in, home, catalog, profile and settings (see
 [docs/shared-features.md](docs/shared-features.md)).
 Each app is a thin module under `apps/<name>/` with its own identity, brand, backend URL and

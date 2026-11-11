@@ -38,7 +38,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.whitelabel.core.designsystem.component.AppCard
 import com.whitelabel.core.designsystem.component.AppLoadingIndicator
@@ -60,7 +61,7 @@ private const val PREFETCH_DISTANCE = 5
 
 @Composable
 internal fun CatalogListRoot(options: CatalogOptions, onItemClick: (String) -> Unit) {
-    val viewModel = hiltViewModel<CatalogListViewModel, CatalogListViewModel.Factory> { it.create(options) }
+    val viewModel = koinViewModel<CatalogListViewModel> { parametersOf(options) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     CatalogListScreen(state = state, options = options, onAction = viewModel::onAction, onItemClick = onItemClick)
 }

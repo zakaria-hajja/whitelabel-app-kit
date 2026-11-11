@@ -13,8 +13,6 @@ import com.whitelabel.core.ui.UiText
 import com.whitelabel.feature.authentication.domain.AuthValidator
 import com.whitelabel.feature.authentication.presentation.toAuthUiText
 import com.whitelabel.feature.authentication.presentation.toUiText
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -39,8 +37,7 @@ internal sealed interface LoginAction {
 private const val KEY_EMAIL = "email"
 
 /** Signing in flips the session; the shell then shows the app, so no navigation happens here. */
-@HiltViewModel
-internal class LoginViewModel @Inject constructor(
+internal class LoginViewModel(
     private val session: SessionRepository,
     private val analytics: Analytics,
     private val savedState: SavedStateHandle,

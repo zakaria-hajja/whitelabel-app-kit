@@ -18,12 +18,13 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import java.io.File
 import java.time.LocalDateTime
-import java.util.Optional
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.koinApplication
 
 @RunWith(AndroidJUnit4::class)
 class RemindersDeviceTest {
@@ -75,7 +76,7 @@ class RemindersDeviceTest {
     @Test fun creatingRemindersReArmsStoredReminders() = runBlocking {
         runtime.store.update { listOf(reminder("t2", LocalDateTime.now().plusSeconds(3), "After a force stop")) }
 
-        RemindersModule.reminders(context, Optional.empty())
+        koinApplication { androidContext(context); modules(remindersModule()) }.koin.get<Reminders>()
 
         assertThat(waitFor(15_000) { posted("After a force stop") != null }).isEqualTo(true)
     }

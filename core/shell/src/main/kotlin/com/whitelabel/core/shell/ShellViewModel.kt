@@ -11,8 +11,6 @@ import com.whitelabel.core.domain.SessionState
 import com.whitelabel.core.domain.ThemePreference
 import com.whitelabel.core.domain.UserPreferencesRepository
 import com.whitelabel.core.domain.UserRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -47,8 +45,7 @@ internal data class ShellState(
  * config arrives or [CONFIG_WAIT_MS] passes, so tabs never disappear while the app is in use; a
  * config that arrives later is cached and applies on the next launch.
  */
-@HiltViewModel
-internal class ShellViewModel @Inject constructor(
+internal class ShellViewModel(
     private val definition: AppDefinition,
     private val brand: BrandConfig,
     private val appConfig: AppConfigRepository,

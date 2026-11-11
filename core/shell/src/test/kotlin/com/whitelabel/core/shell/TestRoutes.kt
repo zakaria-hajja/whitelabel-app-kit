@@ -17,6 +17,7 @@ fun entry(
     requiresSignIn: Boolean = false,
     gate: Gate? = null,
     requiresBackend: Boolean = false,
+    modules: List<org.koin.core.module.Module> = emptyList(),
 ) = FeatureEntry(
     id = id,
     flagKey = flagKey,
@@ -24,5 +25,6 @@ fun entry(
     requiresSignIn = requiresSignIn,
     gate = gate,
     requiresBackend = requiresBackend,
+    modules = modules,
     routes = {},
 )

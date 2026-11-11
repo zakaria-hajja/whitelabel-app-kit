@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraphBuilder
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
+import org.koin.core.module.Module
 
 /** A bottom-bar destination. [route] is a `@Serializable` route object registered by the entry's graph. */
 data class Tab(
@@ -28,7 +29,8 @@ class FeatureScope internal constructor(
  * One feature in an app. [routes] registers the feature's navigation graph; [tab], when set, puts
  * it in the bottom bar; [flagKey], when set, lets the runtime feature flags switch it off.
  * [requiresSignIn] makes the definition fail to build without a [gate] entry (`auth()`), because
- * the feature calls endpoints that need a session.
+ * the feature calls endpoints that need a session. [modules] are the feature's Koin bindings (its
+ * ViewModels and data sources), loaded when the app starts.
  */
 class FeatureEntry(
     val id: String,
@@ -38,6 +40,7 @@ class FeatureEntry(
     val gate: Gate? = null,
     /** The feature calls the backend, so the app needs `api.*` base URLs. Implied by [requiresSignIn] and [gate]. */
     val requiresBackend: Boolean = false,
+    val modules: List<Module> = emptyList(),
     val routes: NavGraphBuilder.(FeatureScope) -> Unit,
 )
 
@@ -50,7 +53,15 @@ class AppDefinition internal constructor(
     internal val crashReporter: CrashReporter?,
     /** The look and motion the shell applies; [StylePack.Material] unless the app calls `style()`. */
     internal val stylePack: StylePack = StylePack.Material,
+    /** The app's own Koin bindings, from `modules(...)`. */
+    internal val appModules: List<Module> = emptyList(),
 ) {
+    /**
+     * Every Koin module the definition brings, once each: each entry's, then the app's own. Koin
+     * keeps the last binding of a type, so an app's binding replaces a feature's.
+     */
+    internal val koinModules: List<Module> get() = (entries.flatMap { it.modules } + appModules).distinct()
+
     internal val tabs: List<Tab> get() = entries.mapNotNull { it.tab }
 
     /** The entry that gates the app (`auth()`), if any. */
@@ -63,6 +74,7 @@ class AppDefinitionBuilder internal constructor() {
     private var analytics: Analytics? = null
     private var crashReporter: CrashReporter? = null
     private var stylePack: StylePack = StylePack.Material
+    private val appModules = mutableListOf<Module>()
 
     fun add(entry: FeatureEntry) {
         entries += entry
@@ -80,6 +92,11 @@ class AppDefinitionBuilder internal constructor() {
     /** Sends analytics to [analytics] instead of logcat. */
     fun analytics(analytics: Analytics) {
         this.analytics = analytics
+    }
+
+    /** Adds the app's own Koin bindings (its repositories, `remindersModule(config)`, …). */
+    fun modules(vararg modules: Module) {
+        appModules += modules
     }
 
     /** Records unexpected failures with [reporter] instead of logcat. */
@@ -101,7 +118,7 @@ class AppDefinitionBuilder internal constructor() {
         require(needSignIn.isEmpty() || gates.isNotEmpty()) {
             "${needSignIn.joinToString { it.id }} need sign-in: add auth() to the app definition"
         }
-        return AppDefinition(entries.toList(), startTabRoute, analytics, crashReporter, stylePack)
+        return AppDefinition(entries.toList(), startTabRoute, analytics, crashReporter, stylePack, appModules.toList())
     }
 }
 

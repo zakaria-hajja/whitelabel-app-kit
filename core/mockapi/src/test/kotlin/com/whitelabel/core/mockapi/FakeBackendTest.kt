@@ -109,4 +109,14 @@ class FakeBackendTest {
         assertThat(client.postPublicResult<JsonObject, JsonObject>("auth/reset-password", reset))
             .isEqualTo(Result.Error(DataError.Api(ApiErrorCode.INVALID_RESET_TOKEN, 400)))
     }
+
+    @Test fun `issueResetToken gives a token for a known account that resets the password`() = runTest {
+        val token = backend.issueResetToken("alice@shared.test")!!
+        val reset = buildJsonObject { put("token", token); put("newPassword", "Another-pass-1") }
+        assertThat(backend.client().postPublicResult<JsonObject, JsonObject>("auth/reset-password", reset)).isInstanceOf(Result.Success::class)
+    }
+
+    @Test fun `issueResetToken gives nothing for an unknown account`() {
+        assertThat(backend.issueResetToken("nobody@shared.test")).isEqualTo(null)
+    }
 }

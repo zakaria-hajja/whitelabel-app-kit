@@ -1,6 +1,6 @@
 plugins {
     id("whitelabel.android.library")
-    id("whitelabel.hilt")
+    id("whitelabel.koin")
     alias(libs.plugins.kotlin.serialization)
 }
 

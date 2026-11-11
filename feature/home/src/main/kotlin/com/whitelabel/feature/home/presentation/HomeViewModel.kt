@@ -7,8 +7,6 @@ import com.whitelabel.core.domain.UserRepository
 import com.whitelabel.core.ui.UiText
 import com.whitelabel.core.ui.toUiText
 import com.whitelabel.feature.home.R
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -27,8 +25,7 @@ internal sealed interface HomeAction {
 }
 
 /** Greets the cached user; pull to refresh updates them from the backend. */
-@HiltViewModel
-internal class HomeViewModel @Inject constructor(
+internal class HomeViewModel(
     private val users: UserRepository,
 ) : ViewModel() {
 

@@ -13,8 +13,6 @@ dependencies {
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.compose.gradlePlugin)
     compileOnly(libs.compose.multiplatform.gradlePlugin)
-    compileOnly(libs.ksp.gradlePlugin)
-    compileOnly(libs.hilt.gradlePlugin)
     compileOnly(libs.android.junit5.gradlePlugin)
 
     testImplementation(libs.junit.jupiter)
@@ -52,9 +50,9 @@ gradlePlugin {
             id = "whitelabel.kmp.resources"
             implementationClass = "com.whitelabel.buildlogic.KmpResourcesConventionPlugin"
         }
-        register("hilt") {
-            id = "whitelabel.hilt"
-            implementationClass = "com.whitelabel.buildlogic.HiltConventionPlugin"
+        register("koin") {
+            id = "whitelabel.koin"
+            implementationClass = "com.whitelabel.buildlogic.KoinConventionPlugin"
         }
     }
 }

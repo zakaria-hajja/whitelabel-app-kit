@@ -21,7 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.whitelabel.core.designsystem.component.AppLoadingIndicator
 import com.whitelabel.core.designsystem.component.AppPrimaryButton
@@ -36,7 +36,7 @@ import com.whitelabel.feature.profile.R
 internal fun ProfileRoot(
     options: ProfileOptions,
     onChangePassword: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel(),
+    viewModel: ProfileViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     ProfileScreen(state = state, options = options, onAction = viewModel::onAction, onChangePassword = onChangePassword)

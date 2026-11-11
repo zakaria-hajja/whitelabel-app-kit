@@ -8,16 +8,14 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import com.whitelabel.core.domain.LanguageRepository
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
 
 /**
  * Per-app language. Android 13+ has it built in (`LocaleManager`, persisted by the system, also
  * shown in the system's app-language settings). Below that, AppCompat applies it to the shell's
  * `AppCompatActivity` and stores it (`autoStoreLocales` in the shell's manifest). Call on the main thread.
  */
-internal class AppCompatLanguageRepository @Inject constructor(
-    @ApplicationContext private val context: Context,
+internal class AppCompatLanguageRepository(
+    private val context: Context,
 ) : LanguageRepository {
 
     override fun current(): String? {

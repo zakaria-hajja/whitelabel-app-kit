@@ -99,26 +99,25 @@ contrast rule. Android Studio's *Image Asset* tool can produce the icon files; e
 ## 4. The two Kotlin files
 
 ```kotlin
-// GlobexApp.kt: Hilt needs the Application class in the app module.
-@HiltAndroidApp
-class GlobexApp : FoundationApplication()
+// GlobexApp.kt: the Application class (named in the manifest) says what the app contains.
+class GlobexApp : FoundationApplication() {
+    override fun definition() = globexDefinition()
+}
 ```
 
 ```kotlin
 // GlobexDefinition.kt: everything the app contains, in one readable list.
-@Module
-@InstallIn(SingletonComponent::class)
-object GlobexDefinition {
-    @Provides
-    @Singleton
-    fun definition(): AppDefinition = appDefinition {
-        auth()                  // shared: sign-in gates the whole app
-        notes()                 // app-specific feature (step 6)
-        settings()              // shared: theme, language, notifications, about, sign out
-        startTab(NotesRoute)    // optional; defaults to the first tab
-    }
+fun globexDefinition(): AppDefinition = appDefinition {
+    auth()                  // shared: sign-in gates the whole app
+    notes()                 // app-specific feature (step 6)
+    settings()              // shared: theme, language, notifications, about, sign out
+    modules(globexModule)   // optional: the app's own Koin bindings (its repositories, …)
+    startTab(NotesRoute)    // optional; defaults to the first tab
 }
 ```
+
+`FoundationApplication` starts the app's Koin graph from this definition: the shared layers, each
+feature's module, then the app's own `modules(...)`.
 
 - **Features:** each one you add is a single call, and the order is the order of the bottom-bar
   tabs.
@@ -190,21 +189,27 @@ both build types, so a wrong URL or ID fails `scripts/check.sh` and CI.
 ## 8. End-to-end tests
 
 Put them in `src/androidTest/kotlin/com/whitelabel/apps/<name>/e2e/`. The app plugin already runs
-them in a Hilt test app, against `:core:mockapi`'s in-memory backend, so they need no server.
+them in the real app, with a fresh Koin graph per test, against `:core:mockapi`'s in-memory backend,
+so they need no server.
 `apps/showcase/.../e2e/ShowcaseE2ETest.kt` is the example to copy.
 
-- **Rules:** use `RuleChain.outerRule(ResetAppDataRule()).around(hilt).around(EndAppScopeRule()).around(compose)`,
+- **Rules:** use `RuleChain.outerRule(FreshAppRule()).around(compose)`,
   with `createEmptyComposeRule()` and `ActivityScenario.launch(FoundationActivity::class.java)`.
   Each test then starts signed out, with fresh storage and a fresh backend.
 - **Robots:** the shared screens already have robots in `com.whitelabel.core.testing.android.robots`.
   `SignInRobot(compose, appName = "<app.name>")` covers sign-in and registration,
   and `SettingsRobot` covers settings. Write a robot (`e2e/robots/`) only for the app's own screens.
-- **Backend:** `@Inject lateinit var backend: FakeBackend` (call `hilt.inject()` first). Set it up,
+- **Backend:** `private val backend: FakeBackend get() = GlobalContext.get().get()`, a getter, since
+  each test gets a new one. Set it up,
   e.g. `backend.features["catalog"] = false`, before you launch; remote flags are read at start.
   Its seeded users are `alice@shared.test` and `bob@shared.test`, password `FakeData.PASSWORD`.
-- **App-specific stores:** create a `JsonStore` in `@ApplicationScope` (from `:core:data`), never in a
-  scope of its own. Otherwise its file stays open, and the second test fails with "multiple
+- **App-specific stores:** create a `JsonStore` in the application scope,
+  `get<CoroutineScope>(ApplicationScope)` (from `:core:data`), never in a scope of its own. Otherwise its file stays open, and the second test fails with "multiple
   DataStores active for the same file".
+
+- **The graph:** add a test that calls `GlobalContext.get().assertEveryViewModelResolves()` under a
+  `FreshAppRule` (see showcase's `GraphTest`). Koin finds a missing binding only when a screen
+  opens; this finds it without opening any.
 
 Run them on a running emulator with `./gradlew :apps:<name>:connectedDebugAndroidTest`.
 

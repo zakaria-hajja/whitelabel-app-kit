@@ -13,21 +13,22 @@ dependencies {
 }
 ```
 
-Declare the app's notification channels with a Hilt `ReminderConfig`. It's optional: without one,
-every reminder goes to a single channel named "Reminders".
+Add `remindersModule(config)` to the app definition, with the app's notification channels. The
+config is optional: without one, every reminder goes to a single channel named "Reminders".
 
 ```kotlin
-@Module
-@InstallIn(SingletonComponent::class)
-object MunchRemindersModule {
-    @Provides
-    fun reminderConfig() = ReminderConfig(
-        channels = listOf(ReminderChannel(id = "renewals", name = R.string.channel_renewals)),
+appDefinition {
+    // …
+    modules(
+        remindersModule(
+            ReminderConfig(channels = listOf(ReminderChannel(id = "renewals", name = R.string.channel_renewals))),
+        ),
     )
 }
 ```
 
-The module creates the channels the first time `Reminders` is injected. A reminder whose `channel`
+Get `Reminders` from Koin (`get()` in a module, a constructor parameter of a ViewModel). The module
+creates the channels the first time `Reminders` is created. A reminder whose `channel`
 isn't declared goes to the default "Reminders" channel; Android would otherwise drop it silently.
 
 The small icon is `R.drawable.brand_notification_icon`, a white bell. Override it by adding a
