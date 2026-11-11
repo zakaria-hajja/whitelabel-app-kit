@@ -23,13 +23,19 @@ business features. The design is in
 | `:apps:showcase` | Built | Reference app that will use every shared feature. It uses all of them: sign-in, home, catalog, profile and settings |
 | `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Kotlin Multiplatform (Android, iOS) |
 | `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference. Kotlin Multiplatform (Android, iOS). `androidDataModule` (AppCompat language, Keystore cipher, store paths) is Android-only |
-| `:core:ui` | Built | Presentation helpers for features: `UiText`, `DataError.toUiText()`, `ObserveAsEvents`. The `UiText` here is Android-only and is replaced by `:core:presentation`'s as features move to KMP |
+| `:core:ui` | Built | Android presentation helpers for features: `ObserveAsEvents`. (`UiText` lives in `:core:presentation`) |
 | `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Kotlin Multiplatform (Android, iOS) |
-| `:feature:authentication` | Built | `auth()`: the whole-app sign-in gate with sign-in, registration and password reset. See [shared-features.md](shared-features.md) |
-| `:feature:settings` | Built | `settings()`: theme, language, notifications, about, legal links and sign-out. See [shared-features.md](shared-features.md) |
-| `:feature:profile` | Built | `profile()`: view and edit the profile, change the password. See [shared-features.md](shared-features.md) |
-| `:feature:home` | Built | `home()`: a greeting and the app's shortcuts to its tabs. See [shared-features.md](shared-features.md) |
-| `:feature:catalog` | Built | `catalog()`: paginated search with categories and sort, item screen and its deep link. See [shared-features.md](shared-features.md) |
+| `:feature:authentication` | Built | `auth()`: the whole-app sign-in gate with sign-in, registration and password reset. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
+| `:feature:authentication:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
+| `:feature:settings` | Built | `settings()`: theme, language, notifications, about, legal links and sign-out. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
+| `:feature:settings:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
+| `:feature:profile` | Built | `profile()`: view and edit the profile, change the password. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
+| `:feature:profile:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
+| `:feature:home` | Built | `home()`: a greeting and the app's shortcuts to its tabs. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
+| `:feature:home:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
+| `:feature:catalog` | Built | `catalog()`: paginated search with categories and sort, item screen and its deep link. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
+| `:feature:catalog:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
+| `:apps:showcase:shared` | Built | Showcase's shared code as one iOS framework (`ShowcaseShared`), and `showcaseSharedModules(platform)`, the Koin modules the iOS app starts with |
 | `fixtures/standalone-app` | Built | A minimal backendless app wired like an app in its own repo; CI builds and verifies it |
 
 **Apps in their own repo.** An app can also live in a separate repository, with this foundation as a
@@ -180,6 +186,12 @@ progress: [2026-11-11-kmp-migration.md](superpowers/plans/2026-11-11-kmp-migrati
   - `androidMain` and `iosMain` hold only adapters behind interfaces.
   - Tests live in `commonTest` (all targets), `jvmTest`, `androidDeviceTest` (code that needs a
     `Context`) and `iosTest`.
+- **Features are two modules.** `:feature:<name>` is a plain Android library: screens, the
+  `AppDefinitionBuilder.<name>()` function, screen-only strings, device tests.
+  `:feature:<name>:shared` holds everything else and is what iOS uses. The Android module depends
+  on it with `api`, so apps keep depending on `:feature:<name>` only.
+- **An app's iOS framework** is a KMP module (`:apps:<name>:shared`) that exports the shared
+  modules Swift calls and lists their Koin modules (see `showcaseSharedModules`).
 - **`whitelabel.kmp.resources`** adds Compose Multiplatform resources. Strings shared code shows go
   in `src/commonMain/composeResources/values{,-fr}/strings.xml`, and the generated `Res` lives in
   `<namespace>.resources`.

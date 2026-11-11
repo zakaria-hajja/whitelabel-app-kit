@@ -7,22 +7,41 @@ app needs goes under that app instead (`apps/<name>/<feature>`) and follows the 
 
 ## Module layout
 
+A shared feature is two modules: the Android UI, and a Kotlin Multiplatform module that Android and
+iOS share. Keep logic out of the UI module: what it computes, validates or formats, iOS would have
+to write again.
+
 ```
-feature/<name>/                         :feature:<name>
-  build.gradle.kts                      whitelabel.android.library + .compose + whitelabel.koin (+ serialization)
+feature/<name>/                         :feature:<name> (Android UI)
+  build.gradle.kts                      whitelabel.android.library + .compose + whitelabel.koin (+ serialization);
+                                        api(project(":feature:<name>:shared")), core:presentation
   src/main/kotlin/com/whitelabel/feature/<name>/
-    <Name>.kt                           public: the DSL function, options, routes others must name
-    <Name>Koin.kt                       public: `val <name>Module`, its ViewModels and data sources
-    presentation/                       internal: Root/Screen composables, State, Action, ViewModel
-    domain/                             internal: models, repository/data-source interfaces
-    data/                               internal: DTOs, mappers, Ktor/JsonStore implementations
-  src/main/res/values{,-fr}/strings.xml
-  src/test/…                            ViewModel, repository and mapper tests with fakes
+    <Name>.kt                           public: the DSL function, routes others must name, Android-only options
+    presentation/                       internal: Root/Screen composables
+  src/main/res/values{,-fr}/strings.xml strings only screens show
   src/androidTest/…                     Compose UI tests of the screen
+
+feature/<name>/shared/                  :feature:<name>:shared (Kotlin Multiplatform)
+  build.gradle.kts                      whitelabel.kmp.library + whitelabel.kmp.resources + whitelabel.koin
+  src/commonMain/kotlin/com/whitelabel/feature/<name>/
+    <Name>Koin.kt                       public: `val <name>Module`, its ViewModels and data sources
+    <Name>Options.kt                    public: options the ViewModels read
+    presentation/                       public: ViewModels, State, Action, Event, UI models
+    domain/                             public: models, data-source interfaces
+    data/                               internal: DTOs, mappers, Ktor implementations
+  src/commonMain/composeResources/values{,-fr}/strings.xml   messages the ViewModels show (UiText)
+  src/commonTest/…                      ViewModel, validator and data-source tests (JVM and iOS)
+  src/jvmTest/…                         contract tests (`:core:testing`) and the Koin `verify()` test
 ```
 
-`whitelabel.koin` adds Koin (`koin-android`, and `koin-androidx-compose` for `koinViewModel()`)
-whatever its place in `plugins {}`.
+- **Package names** are the same in both modules (`com.whitelabel.feature.<name>.presentation`).
+- **Strings:** a message a ViewModel shows is a `UiText.Resource(Res.string.x)` (from
+  `com.whitelabel.feature.<name>.shared.resources`). Screens show it with `asString()`. Write
+  apostrophes plainly. `checkComposeTranslations` (part of `check`) fails on a missing French string.
+- **Public API:** what Swift will call is public (ViewModels and their types). Data sources and DTOs
+  stay `internal`. Don't rely on default arguments in constructors Swift will call.
+- **Screens:** a public property of the shared module can't be smart-cast in the UI module; use a
+  local `val` or `checkNotNull`.
 
 ## The public API is one function
 
@@ -46,8 +65,8 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
 }
 ```
 
-- **Mark everything else `internal`.** ViewModels may be internal too; only the Koin module is
-  public. Declare ViewModels with `viewModelOf(::XViewModel)` and get them in a Root composable with
+- **Mark the UI module's code `internal`.** The shared module's ViewModels and their types are
+  public, since iOS calls them. Declare ViewModels with `viewModelOf(::XViewModel)` and get them in a Root composable with
   `koinViewModel()` (`koinViewModel { parametersOf(options) }` for one that takes the feature's
   options). Add a `<Name>KoinTest` that calls `<name>Module.verify(extraTypes = …)`.
 - **Configuration only through the options and DI:** inject `BrandConfig`, never read

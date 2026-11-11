@@ -170,6 +170,10 @@ KMP modules.
 
 ## 4. Order of work
 
+> **Progress (2026-11-11):** step 0 done (#18). Steps 1–4 done as the plan's Parts A–D:
+> #23 (KMP build), #25 (Hilt → Koin), #26 (core modules), and `chore/kmp-features` (feature
+> ViewModels, showcase's iOS framework). Next: step 5, the iOS starter, with its own plan.
+
 Each step lands as its own PRs in the right repo, with Android green after every merge.
 
 0. **Foundation: remove `globex`** (owner's choice, to save migration and iOS work). Delete
