@@ -6,6 +6,7 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isNotEmpty
 import assertk.assertions.messageContains
 import assertk.assertions.single
+import assertk.assertions.isInstanceOf
 import assertk.assertions.contains
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
@@ -67,5 +68,13 @@ class MinimalResponseTest {
                 .flatMap { status -> OpenApiSpec.responseErrors(path, method, status, OpenApiSpec.minimalResponse(path, method, status)).map { "$method $path: $it" } }
         }
         assertThat(problems).isEmpty()
+    }
+}
+
+class SpecLocationTest {
+    @Test fun `a configured path that doesn't exist fails naming it`() {
+        assertFailure { specFileFrom("/nowhere/openapi.json", "/") }
+            .isInstanceOf(AssertionError::class)
+            .messageContains("/nowhere/openapi.json")
     }
 }

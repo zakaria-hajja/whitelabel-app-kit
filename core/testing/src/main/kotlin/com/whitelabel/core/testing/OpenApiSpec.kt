@@ -152,17 +152,29 @@ object OpenApiSpec {
         return schemas.getSchema(document).validate(mapper.readTree(body)).map { it.message }
     }
 
-    private fun specFile(): File {
-        System.getProperty("whitelabel.openapi")?.let { return File(it) }
-        var dir: File? = File(System.getProperty("user.dir")).absoluteFile
-        while (dir != null) {
-            val candidate = File(dir, "api/openapi.json")
-            if (candidate.isFile) return candidate
-            dir = dir.parentFile
-        }
-        throw AssertionError("api/openapi.json not found: set the whitelabel.openapi system property")
-    }
+    private fun specFile(): File = specFileFrom(System.getProperty("whitelabel.openapi"), System.getProperty("user.dir"))
 
     private const val JSON = "application/json"
     private val METHODS = setOf("get", "post", "put", "patch", "delete")
 }
+
+/**
+ * The contract file: [configured] when set (it must exist), else the nearest `api/openapi.json` above
+ * [workingDir]. Failures are [AssertionError]s: inside a fake engine an I/O error would be mapped to
+ * "no internet" and hide the real problem.
+ */
+internal fun specFileFrom(configured: String?, workingDir: String): File {
+    if (configured != null) {
+        val file = File(configured)
+        if (!file.isFile) throw AssertionError("whitelabel.openapi points at $configured, which doesn't exist")
+        return file
+    }
+    var dir: File? = File(workingDir).absoluteFile
+    while (dir != null) {
+        val candidate = File(dir, "api/openapi.json")
+        if (candidate.isFile) return candidate
+        dir = dir.parentFile
+    }
+    throw AssertionError("api/openapi.json not found above $workingDir: set the whitelabel.openapi system property")
+}
+
