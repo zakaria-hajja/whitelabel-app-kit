@@ -1,6 +1,12 @@
 package com.whitelabel.feature.settings
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,19 +28,66 @@ class SettingsScreenTest {
 
     private val actions = mutableListOf<SettingsAction>()
 
-    private fun show(state: SettingsState) {
-        rule.setContent {
-            AppTheme {
-                SettingsScreen(state, SettingsOptions(), onAction = { actions += it }, onOpenUrl = {}, onOpenDiagnostics = {})
-            }
+    private fun show(state: SettingsState, options: SettingsOptions = SettingsOptions()) {
+        rule.setContent { Screen(state, options) }
+    }
+
+    @androidx.compose.runtime.Composable
+    private fun Screen(state: SettingsState, options: SettingsOptions) {
+        AppTheme {
+            SettingsScreen(state, options, onAction = { actions += it }, onOpenUrl = {}, onOpenDiagnostics = {})
         }
     }
 
     @Test
     fun selectDarkTheme_sendsThemeAction() {
         show(SettingsState(appName = "Sample"))
+        rule.onNodeWithText("Theme").performClick()
         rule.onNodeWithText("Dark").performClick()
         rule.runOnIdle { assertThat(actions).containsExactly(SettingsAction.OnThemeSelect(ThemePreference.DARK)) }
+        rule.onNodeWithText("Done").assertExists()
+    }
+
+    @Test
+    fun themeRow_showsCurrentValue() {
+        show(SettingsState(appName = "Sample", theme = ThemePreference.DARK))
+        rule.onNodeWithText("Dark").assertExists()
+        rule.onNodeWithText("Light").assertDoesNotExist()
+    }
+
+    @Test
+    fun done_closesTheSheet() {
+        show(SettingsState(appName = "Sample"))
+        rule.onNodeWithText("Theme").performClick()
+        rule.onNodeWithText("Done").performClick()
+        rule.onNodeWithText("Light").assertDoesNotExist()
+    }
+
+    @Test
+    fun languageRow_opensLanguageChoices() {
+        show(SettingsState(appName = "Sample", remoteLanguages = emptyList()), SettingsOptions(languages = listOf("en", "fr")))
+        rule.onNodeWithText("Français").assertDoesNotExist()
+        rule.onNodeWithText("Language").performClick()
+        rule.onNodeWithText("Français").performClick()
+        rule.runOnIdle { assertThat(actions).containsExactly(SettingsAction.OnLanguageSelect("fr")) }
+    }
+
+    @Test
+    fun valueRow_isOneButton() {
+        show(SettingsState(appName = "Sample"))
+        rule.onNodeWithText("Theme")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(hasText("System default"))
+    }
+
+    @Test
+    fun openSheet_survivesRecreation() {
+        val tester = StateRestorationTester(rule)
+        tester.setContent { Screen(SettingsState(appName = "Sample"), SettingsOptions()) }
+        rule.onNodeWithText("Light").assertDoesNotExist()
+        rule.onNodeWithText("Theme").performClick()
+        tester.emulateSavedInstanceStateRestore()
+        rule.onNodeWithText("Light").assertExists()
     }
 
     @Test

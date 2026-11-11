@@ -8,20 +8,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -41,7 +41,9 @@ import com.whitelabel.core.designsystem.component.ErrorState
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.domain.ThemePreference
 import com.whitelabel.feature.settings.R
+import com.whitelabel.feature.settings.SettingsChoiceSheet
 import com.whitelabel.feature.settings.SettingsOptions
+import com.whitelabel.feature.settings.SettingsValueRow
 import com.whitelabel.feature.settings.domain.NotificationKind
 import com.whitelabel.feature.settings.domain.NotificationSettings
 import java.util.Locale
@@ -81,6 +83,9 @@ internal fun SettingsScreen(
             onAction(SettingsAction.OnMessageShown)
         }
     }
+    // Which choice sheet is open; saved so it survives rotation.
+    var openSheet by rememberSaveable { mutableStateOf<String?>(null) }
+    val languages = offeredLanguages(options.languages, state.remoteLanguages)
     AppScaffold(title = stringResource(R.string.settings_title), snackbarHostState = snackbarHostState) { innerPadding ->
         Column(
             modifier = Modifier
@@ -89,28 +94,18 @@ internal fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(vertical = AppTheme.spacing.sm),
         ) {
-            Section(stringResource(R.string.settings_theme)) {
-                Column(Modifier.selectableGroup()) {
-                    ThemePreference.entries.forEach { theme ->
-                        ChoiceRow(label = theme.label(), selected = state.theme == theme) {
-                            onAction(SettingsAction.OnThemeSelect(theme))
-                        }
-                    }
-                }
-            }
-            val languages = offeredLanguages(options.languages, state.remoteLanguages)
-            if (languages.isNotEmpty()) {
-                Section(stringResource(R.string.settings_language)) {
-                    Column(Modifier.selectableGroup()) {
-                        ChoiceRow(stringResource(R.string.settings_language_system), selected = state.language == null) {
-                            onAction(SettingsAction.OnLanguageSelect(null))
-                        }
-                        languages.forEach { tag ->
-                            ChoiceRow(languageName(tag), selected = state.language == tag) {
-                                onAction(SettingsAction.OnLanguageSelect(tag))
-                            }
-                        }
-                    }
+            Section(stringResource(R.string.settings_appearance)) {
+                SettingsValueRow(
+                    label = stringResource(R.string.settings_theme),
+                    value = state.theme.label(),
+                    onClick = { openSheet = SHEET_THEME },
+                )
+                if (languages.isNotEmpty()) {
+                    SettingsValueRow(
+                        label = stringResource(R.string.settings_language),
+                        value = state.language?.let { languageName(it) } ?: stringResource(R.string.settings_language_system),
+                        onClick = { openSheet = SHEET_LANGUAGE },
+                    )
                 }
             }
             if (options.showNotifications && state.signedIn) {
@@ -141,6 +136,24 @@ internal fun SettingsScreen(
                 }
             }
         }
+    }
+    when (openSheet) {
+        SHEET_THEME -> SettingsChoiceSheet(
+            title = stringResource(R.string.settings_theme),
+            choices = ThemePreference.entries,
+            selected = state.theme,
+            label = { it.label() },
+            onSelect = { onAction(SettingsAction.OnThemeSelect(it)) },
+            onDismiss = { openSheet = null },
+        )
+        SHEET_LANGUAGE -> SettingsChoiceSheet(
+            title = stringResource(R.string.settings_language),
+            choices = listOf<String?>(null) + languages,
+            selected = state.language,
+            label = { tag -> tag?.let { languageName(it) } ?: stringResource(R.string.settings_language_system) },
+            onSelect = { onAction(SettingsAction.OnLanguageSelect(it)) },
+            onDismiss = { openSheet = null },
+        )
     }
     if (state.confirmSignOut) {
         AppConfirmDialog(
@@ -192,21 +205,6 @@ private fun Section(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun ChoiceRow(label: String, selected: Boolean, onSelect: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton)
-            .padding(horizontal = AppTheme.spacing.md),
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = AppTheme.spacing.md))
-    }
-}
-
-@Composable
 private fun ToggleRow(label: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -241,6 +239,9 @@ private fun languageName(tag: String): String {
     val locale = Locale.forLanguageTag(tag)
     return locale.getDisplayName(locale).replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
 }
+
+private const val SHEET_THEME = "theme"
+private const val SHEET_LANGUAGE = "language"
 
 private val previewState = SettingsState(
     theme = ThemePreference.DARK,
