@@ -77,6 +77,7 @@ private class FakeUsers : UserRepository {
     var refreshes = 0
     override val user: Flow<User?> = MutableStateFlow(null)
     override suspend fun refresh(): EmptyResult<DataError> { refreshes++; return Result.Success(Unit) }
+    override suspend fun update(firstName: String?, lastName: String?): EmptyResult<DataError> = Result.Success(Unit)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

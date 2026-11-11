@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_tab">Profile</string>
+    <string name="profile_title">Profile</string>
+    <string name="profile_email">Email</string>
+    <string name="profile_first_name">First name</string>
+    <string name="profile_last_name">Last name</string>
+    <string name="profile_save">Save</string>
+    <string name="profile_saved">Profile saved.</string>
+    <string name="profile_error_name_long">Use at most %1$d characters.</string>
+    <string name="profile_change_password">Change password</string>
+</resources>

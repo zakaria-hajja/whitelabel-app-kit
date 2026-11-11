@@ -22,6 +22,7 @@ val sharedModules = listOf(
     ":core:data",
     ":feature:authentication",
     ":feature:settings",
+    ":feature:profile",
 )
 
 sharedModules.forEach { path ->

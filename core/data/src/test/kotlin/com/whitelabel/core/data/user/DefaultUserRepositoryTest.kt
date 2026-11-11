@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.whitelabel.core.common.Result
 import com.whitelabel.core.data.USER_JSON
+import com.whitelabel.core.data.bodyText
 import com.whitelabel.core.data.mockClient
 import com.whitelabel.core.data.ok
 import com.whitelabel.core.domain.User
@@ -43,5 +44,22 @@ class DefaultUserRepositoryTest {
         withCache { cache -> DefaultUserRepository(mockClient { ok(USER_JSON) }, cache).refresh() }
         val user = withCache { cache -> DefaultUserRepository(mockClient { error("offline") }, cache).user.first() }
         assertThat(user).isEqualTo(User("u1", "ada@example.com", "Ada", null))
+    }
+
+    @Test fun `clearing a name sends an explicit null`() = runTest {
+        var body: String? = null
+        withCache { cache ->
+            DefaultUserRepository(mockClient { request -> body = request.bodyText; ok(USER_JSON) }, cache).update(firstName = null, lastName = "Doe")
+        }
+        assertThat(body).isEqualTo("""{"firstName":null,"lastName":"Doe"}""")
+    }
+
+    @Test fun `update caches the returned user`() = runTest {
+        withCache { cache ->
+            val updated = USER_JSON.replace("\"Ada\"", "\"Grace\"")
+            val repository = DefaultUserRepository(mockClient { ok(updated) }, cache)
+            assertThat(repository.update(firstName = "Grace", lastName = null)).isEqualTo(Result.Success(Unit))
+            assertThat(repository.user.first()?.firstName).isEqualTo("Grace")
+        }
     }
 }
