@@ -46,7 +46,7 @@ class ContractTest {
     private fun example(path: String, method: String, status: Int, pointer: String) = OpenApiSpec.exampleValue(path, method, status, pointer)
 
     @Test fun `post api v1 auth login matches the contract`() = runTest {
-        val sessions = DefaultSessionRepository(backend.client(ContractBackend.SignedOut), LocalSession(tokenStore, userCache), backgroundScope)
+        val sessions = DefaultSessionRepository(backend.client(), LocalSession(tokenStore, userCache), backgroundScope)
         assertThat(sessions.signIn("ada@example.com", "secret pass")).isEqualTo(Result.Success(Unit))
         assertThat(userCache.user.first()?.email).isEqualTo(example("/api/v1/auth/login", "post", 200, "data.user.email"))
         assertThat(tokenStore.tokens.first()?.refreshToken).isEqualTo(example("/api/v1/auth/login", "post", 200, "data.tokens.refreshToken"))
@@ -54,7 +54,7 @@ class ContractTest {
     }
 
     @Test fun `post api v1 auth register matches the contract`() = runTest {
-        val sessions = DefaultSessionRepository(backend.client(ContractBackend.SignedOut), LocalSession(tokenStore, userCache), backgroundScope)
+        val sessions = DefaultSessionRepository(backend.client(), LocalSession(tokenStore, userCache), backgroundScope)
         assertThat(sessions.register(Registration("ada@example.com", "0123456789", "Ada", null))).isEqualTo(Result.Success(Unit))
         assertThat(userCache.user.first()?.id).isEqualTo(example("/api/v1/auth/register", "post", 201, "data.user.id"))
         backend.assertRequestMatches("post", "/api/v1/auth/register")
@@ -62,7 +62,7 @@ class ContractTest {
 
     @Test fun `post api v1 auth logout matches the contract`() = runTest {
         tokenStore.write(StoredTokens("a", "r"))
-        val sessions = DefaultSessionRepository(backend.client(ContractBackend.SignedOut), LocalSession(tokenStore, userCache), backgroundScope)
+        val sessions = DefaultSessionRepository(backend.client(), LocalSession(tokenStore, userCache), backgroundScope)
         sessions.signOut()
         testScheduler.advanceUntilIdle()
         kotlinx.coroutines.withContext(Dispatchers.Default) {

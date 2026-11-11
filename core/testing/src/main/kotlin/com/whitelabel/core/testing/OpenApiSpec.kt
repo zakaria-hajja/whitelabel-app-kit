@@ -40,6 +40,30 @@ object OpenApiSpec {
                 .matches(actualPath)
         }
 
+    /** Whether the operation needs a bearer token (its `security` is non-empty). */
+    fun requiresBearer(path: String, method: String): Boolean =
+        operation(path, method).path("security").let { it.isArray && it.size() > 0 }
+
+    /** Why these query parameters don't match the operation's declared ones; empty when they do. */
+    fun queryParameterErrors(path: String, method: String, query: Map<String, List<String>>): List<String> {
+        val declared = operation(path, method).path("parameters").elements().asSequence()
+            .filter { it.path("in").asText() == "query" }
+            .associateBy { it.path("name").asText() }
+        return query.flatMap { (name, values) ->
+            val parameter = declared[name] ?: return@flatMap listOf("query parameter '$name' is not in the contract for $method $path")
+            val schema = parameter.path("schema")
+            values.flatMap { value -> validate(schema, mapper.writeValueAsString(typed(schema, value)), "$method $path query '$name'").map { "query '$name'=$value: $it" } }
+        }
+    }
+
+    /** A query string value as the JSON type its schema declares, so `page=2` checks as an integer. */
+    private fun typed(schema: JsonNode, value: String): JsonNode = when (schema.path("type").asText()) {
+        "integer" -> value.toLongOrNull()?.let { mapper.nodeFactory.numberNode(it) } ?: mapper.nodeFactory.textNode(value)
+        "number" -> value.toDoubleOrNull()?.let { mapper.nodeFactory.numberNode(it) } ?: mapper.nodeFactory.textNode(value)
+        "boolean" -> value.toBooleanStrictOrNull()?.let { mapper.nodeFactory.booleanNode(it) } ?: mapper.nodeFactory.textNode(value)
+        else -> mapper.nodeFactory.textNode(value)
+    }
+
     /** The response statuses documented for an operation. */
     fun documentedStatuses(path: String, method: String): List<Int> =
         operation(path, method).path("responses").properties().mapNotNull { it.key.toIntOrNull() }

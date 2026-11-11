@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 
 class ContractTest {
     private val backend = ContractBackend()
-    private val source = KtorPasswordResetDataSource(backend.client(ContractBackend.SignedOut))
+    private val source = KtorPasswordResetDataSource(backend.client())
 
     @Test fun `post api v1 auth forgot-password matches the contract`() = runTest {
         assertThat(source.requestReset("ada@example.com")).isEqualTo(Result.Success(Unit))

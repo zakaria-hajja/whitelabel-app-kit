@@ -11,6 +11,9 @@ import com.whitelabel.core.testing.OpenApiSpec
 import com.whitelabel.core.testing.exampleValue
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 
 class ContractTest {
@@ -31,13 +34,15 @@ class ContractTest {
     }
 
     @Test fun `every documented error maps to the code it names`() = runTest {
-        val client = backend.client(ContractBackend.SignedOut)
+        // A raw sweep over every operation: requests aren't shaped like the app's, so skip those checks.
+        val sweep = ContractBackend(checkRequests = false)
+        val client = sweep.client(ContractBackend.SignedOut)
         val checked = OpenApiSpec.operations().flatMap { (path, method) ->
             OpenApiSpec.documentedStatuses(path, method).filter { status ->
                 // Error envelopes only: GET /health's 503 is documented as a success envelope (db: down).
                 status >= 400 && OpenApiSpec.responseExampleOrNull(path, method, status)?.contains("\"success\":false") == true
             }.map { status ->
-                backend.answer(method, path, status)
+                sweep.answer(method, path, status)
                 val relative = path.removePrefix("/api/v1/").replace(Regex("\\{[^}]+}"), "x")
                 val result = when (method) {
                     "get" -> client.getResult<JsonObject>(relative)
@@ -54,5 +59,12 @@ class ContractTest {
             }
         }
         assertThat(checked.isNotEmpty()).isEqualTo(true)
+    }
+
+    @Test fun `every error code in the contract is known to the app`() {
+        val codes = OpenApiSpec.json["components"]!!.jsonObject["schemas"]!!.jsonObject["ErrorEnvelope"]!!.jsonObject["properties"]!!
+            .jsonObject["error"]!!.jsonObject["properties"]!!.jsonObject["code"]!!.jsonObject["enum"]!!.jsonArray.map { it.jsonPrimitive.content }
+        assertThat(codes.isNotEmpty()).isEqualTo(true)
+        assertThat(codes.filter { ApiErrorCode.fromWire(it) == ApiErrorCode.UNKNOWN }).isEqualTo(emptyList())
     }
 }

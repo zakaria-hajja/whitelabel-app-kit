@@ -9,4 +9,6 @@ dependencies {
     api(project(":core:network"))
     api(libs.ktor.client.core)
     api(libs.ktor.client.mock)
+
+    testImplementation(project(":core:common"))
 }

@@ -22,7 +22,10 @@ data class RecordedRequest(val method: String, val specPath: String, val body: S
  * what the app sent so its body can be checked against the request schema. Answers are 2xx unless
  * [answer] picks another documented status for an operation.
  */
-class ContractBackend {
+class ContractBackend(
+    /** Check each request's query parameters and bearer against the contract (off only for raw error-mapping sweeps). */
+    private val checkRequests: Boolean = true,
+) {
     val requests = mutableListOf<RecordedRequest>()
     private val statuses = mutableMapOf<Pair<String, String>, Int>()
     private val onceStatuses = mutableMapOf<Pair<String, String>, ArrayDeque<Int>>()
@@ -57,6 +60,7 @@ class ContractBackend {
             val method = request.method.value.lowercase()
             val specPath = OpenApiSpec.templateFor(request.url.encodedPath)
                 ?: throw AssertionError("${request.url.encodedPath} is not in the contract")
+            if (checkRequests) checkRequest(request, method, specPath)
             requests += RecordedRequest(method, specPath, (request.body as? TextContent)?.text ?: (request.body as? OutgoingContent.ByteArrayContent)?.bytes()?.decodeToString())
             val status = onceStatuses[method to specPath]?.removeFirstOrNull()
                 ?: statuses[method to specPath]
@@ -67,6 +71,21 @@ class ContractBackend {
                 headersOf(HttpHeaders.ContentType, "application/json"),
             )
         }
+
+    /**
+     * Query parameters must be declared for the operation and fit their schemas. A secured operation
+     * must carry the bearer; a public write (sign-in, refresh, reset…) must not, as the app marks them
+     * `publicRequest()`. Failures throw an [AssertionError], which the client's error mapping doesn't catch.
+     */
+    private fun checkRequest(request: HttpRequestData, method: String, specPath: String) {
+        val problems = OpenApiSpec.queryParameterErrors(specPath, method, request.url.parameters.entries().associate { it.key to it.value }).toMutableList()
+        val bearer = request.headers[HttpHeaders.Authorization]?.startsWith("Bearer ") == true
+        if (OpenApiSpec.requiresBearer(specPath, method) && !bearer) problems += "$method $specPath needs the bearer but was sent without it"
+        if (!OpenApiSpec.requiresBearer(specPath, method) && method != "get" && bearer) {
+            problems += "$method $specPath is public but was sent with the bearer (missing publicRequest()?)"
+        }
+        if (problems.isNotEmpty()) throw AssertionError(problems.joinToString("; "))
+    }
 
     /** Signed out: no bearer, so no refresh logic runs. */
     object SignedOut : SessionTokenStore {
