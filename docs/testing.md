@@ -8,15 +8,22 @@
 | Build logic | `build-logic/convention/src/test` | `scripts/check.sh`, CI | JUnit 5, AssertK, temp directories |
 | Instrumented (Compose UI, app end-to-end) | `src/androidTest` | locally, on an emulator no other run is using; CI job postponed until after the KMP migration | `createAndroidComposeRule`, AssertK |
 | App identity | `apps/<name>/src/test/.../<Name>IdentityTest.kt` | `scripts/check.sh`, CI | asserts every `BuildConfig` field for both build types |
-| Built APKs | `scripts/verify-apps.sh` | CI after `assembleDebug assembleRelease` | `aapt2`: package, label, version, no foreign app IDs, distinct icons |
+| Built APKs | `scripts/verify-apps.sh` | CI after `assembleDebug`; release APKs in the release build (below) | `aapt2`: package, label, version, no foreign app IDs, distinct icons |
 
 **CI shortcuts.** CI runs as parallel jobs: `changes` (docs-only detection and the commit-message
-check), then `tests` (contract check, unit tests and lint) beside `build` (apps, release checks,
-standalone fixture). A final `ci` job collects their results and is the one required check. A PR
+check), then `tests` (contract check, unit tests and lint) beside `build` (debug apps and their
+checks, standalone fixture). A final `ci` job collects their results and is the one required check. A PR
 that changes only docs (`*.md`, `docs/**`, the PR template, `.run/`) skips `tests` and `build`;
 `scripts/ci-needs-build.sh` decides. The Gradle build cache is on (`org.gradle.caching`): CI
 restores it from `main`, so modules a PR doesn't touch aren't rebuilt or retested. Runs on `main`
 are never cancelled, because a cancelled run doesn't save that cache.
+
+**Release build on demand.** Release builds (R8) and their checks (`verify-apps.sh release`, and no
+mock backend even with `-Pwhitelabel.mockApi=true`) run in `.github/workflows/release.yml`. They
+run on every push to `main`, and on a pull request only once it has the `release-build` label.
+Adding the label starts the run, and later pushes to that PR rerun it. Add the label when a PR
+touches R8/ProGuard rules, dependencies, `build-logic`, the mock-backend wiring or anything
+release-only. The release check isn't required, so read its result before merging a labelled PR.
 
 ## Conventions
 

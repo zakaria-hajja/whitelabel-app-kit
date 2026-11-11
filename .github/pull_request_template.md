@@ -9,6 +9,7 @@
 ## How tested
 
 <!-- Commands run (scripts/check.sh, connected tests, scripts/verify-apps.sh), suites added, manual checks per app. -->
+<!-- Touches R8/ProGuard, dependencies, build-logic or release-only code? Add the `release-build` label. -->
 
 ## Risks & follow-ups
 

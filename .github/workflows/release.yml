@@ -1,0 +1,47 @@
+name: Release build
+
+# The release builds (R8) and their checks. Pull requests skip them unless they carry the
+# `release-build` label; adding the label starts this run. Every push to main runs them.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [main]
+
+# `wanted` is false for a PR without the label and for adding any other label, so those runs
+# land in their own group and never cancel a real release run.
+concurrency:
+  group: >-
+    release-${{ github.ref }}-${{ github.event_name == 'push'
+    || (github.event.action == 'labeled' && github.event.label.name == 'release-build')
+    || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'release-build')) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  release:
+    if: >-
+      github.event_name == 'push'
+      || (github.event.action == 'labeled' && github.event.label.name == 'release-build')
+      || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'release-build'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Build every app (unsigned release)
+        run: ./gradlew assembleRelease
+
+      - name: Verify release apps (identity, isolation, distinct icons, no mock backend)
+        run: scripts/verify-apps.sh release
+
+      - name: Release stays free of the mock backend, even with the flag on
+        # -Pwhitelabel.mockApi=true must only ever reach debug builds; this checks the real wiring.
+        run: |
+          ./gradlew -Pwhitelabel.mockApi=true assembleRelease
+          scripts/verify-apps.sh release
