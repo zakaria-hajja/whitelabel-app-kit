@@ -14,6 +14,8 @@ class KoinConventionPlugin : Plugin<Project> {
         pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
             dependencies {
                 add("commonMainImplementation", libs.library("koin-core"))
+                // viewModel { } / viewModelOf(::X) in shared modules.
+                add("commonMainImplementation", libs.library("koin-core-viewmodel"))
                 add("jvmTestImplementation", libs.library("koin-test"))
             }
         }

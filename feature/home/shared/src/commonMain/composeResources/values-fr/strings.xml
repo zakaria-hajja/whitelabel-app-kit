@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_greeting">Bienvenue</string>
+    <string name="home_greeting_named">Bonjour, %1$s</string>
+</resources>

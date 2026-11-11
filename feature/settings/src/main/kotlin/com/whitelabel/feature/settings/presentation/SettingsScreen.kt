@@ -1,5 +1,6 @@
 package com.whitelabel.feature.settings.presentation
 
+import com.whitelabel.core.presentation.asString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -194,7 +195,7 @@ private fun NotificationsSection(state: SettingsState, onAction: (SettingsAction
             }
         }
         state.notificationsError != null -> ErrorState(
-            message = state.notificationsError.asString(),
+            message = checkNotNull(state.notificationsError).asString(),
             onRetry = { onAction(SettingsAction.OnRetryNotifications) },
         )
         else -> AppLoadingIndicator(Modifier.padding(AppTheme.spacing.md))

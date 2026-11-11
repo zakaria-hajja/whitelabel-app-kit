@@ -49,7 +49,7 @@ class CatalogListScreenTest {
 
     @Test
     fun footerError_retryLoadsMore() {
-        show(CatalogListState(items = List(3) { CatalogItem("i$it", "Item $it", null, null, null) }, page = 1, moreError = com.whitelabel.core.ui.UiText.Dynamic("Offline")))
+        show(CatalogListState(items = List(3) { CatalogItem("i$it", "Item $it", null, null, null) }, page = 1, moreError = com.whitelabel.core.presentation.UiText.Dynamic("Offline")))
         rule.onNodeWithText("Retry").performScrollTo().performClick()
         rule.runOnIdle { assertThat(actions).contains(CatalogListAction.OnRetry) }
     }

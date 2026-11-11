@@ -22,3 +22,4 @@ extra["foundationDir"] = settingsDir
 apply(from = "gradle/foundation.settings.gradle.kts")
 
 include(":apps:showcase")
+include(":apps:showcase:shared")

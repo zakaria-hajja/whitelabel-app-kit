@@ -31,8 +31,11 @@ class KmpResourcesConventionPlugin : Plugin<Project> {
                 packageOfResClass = "${kmpNamespace(path)}.resources"
             }
         }
+        // A module with no strings of its own (e.g. an app's iOS framework module) has no directory:
+        // an @InputDirectory that is set must exist, so it's only set when there is one.
+        val resources = layout.projectDirectory.dir("src/commonMain/composeResources")
         val translations = tasks.register<CheckComposeTranslations>("checkComposeTranslations") {
-            resourcesDir.set(layout.projectDirectory.dir("src/commonMain/composeResources"))
+            if (resources.asFile.isDirectory) resourcesDir.set(resources)
         }
         tasks.named("check") { dependsOn(translations) }
         dependencies {

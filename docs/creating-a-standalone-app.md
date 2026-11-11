@@ -214,3 +214,24 @@ the reminder engine) are now Kotlin Multiplatform. An Android app repo changes l
 - **`JsonStore`** takes an okio `Path` (`context.jsonStorePath(name)`). The `File` forms
   (`JsonStore(file, …)` and `context.jsonStoreFile(name)`) still work on Android.
 - **`StorePaths`** returns a `Path` (`path(name)`) instead of a `File` (`file(name)`).
+
+## 11. Moving to a foundation with shared features, and an iOS framework
+
+The shared features are now two modules each: `:feature:<name>` (Android UI, the one an app
+depends on, unchanged) and `:feature:<name>:shared`. An app repo changes little:
+
+- **Messages a ViewModel shows:**
+  - Use `com.whitelabel.core.presentation.UiText`. `core.ui.UiText` is gone.
+  - In a composable, call `asString()`; outside one, call the suspend `asStringAsync()`.
+  - A `UiText.Resource` takes a Compose resource (`Res.string.x`), not an `R.string` id.
+- **The app's own features** follow the same split when they should run on iOS: a `:<app>:<feature>`
+  Android UI module and a `:<app>:<feature>:shared` KMP module (see
+  [adding-a-shared-feature.md](adding-a-shared-feature.md)).
+- **For iOS,** add a KMP module like `:apps:showcase:shared`, with `whitelabel.kmp.resources`
+  applied:
+  - it exports the shared modules Swift calls into one static framework;
+  - it packages every shared module's strings. The Xcode build phase runs
+    `embedAndSignAppleFrameworkForXcode` (which syncs them), or else they are missing at runtime;
+  - it lists the app's Koin modules in a `<app>SharedModules(platform)` function. Kotlin code starts
+    Koin with it. The Swift-facing entry point and typed ViewModel accessors come with the iOS
+    starter (step 5 of the iOS design).

@@ -1,5 +1,6 @@
 package com.whitelabel.feature.authentication.presentation.forgot
 
+import com.whitelabel.core.presentation.asString
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme

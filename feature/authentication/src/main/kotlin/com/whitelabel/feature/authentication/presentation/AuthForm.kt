@@ -1,5 +1,6 @@
 package com.whitelabel.feature.authentication.presentation
 
+import com.whitelabel.core.presentation.asString
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -14,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.whitelabel.core.designsystem.component.AppScaffold
 import com.whitelabel.core.designsystem.theme.AppTheme
-import com.whitelabel.core.ui.UiText
+import com.whitelabel.core.presentation.UiText
 
 /** The scrolling, keyboard-aware column every auth screen uses. */
 @Composable

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="auth_error_email_blank">Enter your email.</string>
+    <string name="auth_error_email_invalid">Enter a valid email address.</string>
+    <string name="auth_error_email_taken">An account already exists for this email.</string>
+    <string name="auth_error_password_short">Use at least %1$d characters.</string>
+    <string name="auth_error_password_long">Use at most %1$d characters.</string>
+    <string name="auth_error_name_long">Use at most %1$d characters.</string>
+    <string name="auth_error_invalid_credentials">Wrong email or password.</string>
+</resources>
