@@ -1,7 +1,9 @@
 package com.whitelabel.core.reminders
 
-import java.time.Duration
-import java.time.LocalDateTime
+import kotlin.time.Duration.Companion.hours
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
@@ -68,7 +70,7 @@ class ReminderEngine(
     /** The alarm for [id] went off: show it if it's still pending and due, then forget it. */
     suspend fun onAlarm(id: String) = locked {
         val reminder = current().find { it.id == id } ?: return@locked
-        if (reminder.at.isAfter(now())) {
+        if (reminder.at > now()) {
             alarms.set(reminder.id, reminder.at) // woke early (e.g. the clock moved): wait for the real time
         } else {
             fire(reminder)
@@ -80,7 +82,7 @@ class ReminderEngine(
         val time = now()
         current().forEach { reminder ->
             // One failure (e.g. the system's alarm limit) must not leave the rest unarmed.
-            runCatching { if (reminder.at.isAfter(time)) alarms.set(reminder.id, reminder.at) else fire(reminder) }
+            runCatching { if (reminder.at > time) alarms.set(reminder.id, reminder.at) else fire(reminder) }
                 .onFailure { if (it is CancellationException) throw it }
         }
     }
@@ -97,7 +99,7 @@ class ReminderEngine(
 
     /** Stores and arms a future reminder; a past one is removed and posted if it's recent enough. */
     private suspend fun place(reminder: Reminder) {
-        if (reminder.at.isAfter(now())) {
+        if (reminder.at > now()) {
             store.update { list -> (list.filterNot { it.id == reminder.id } + reminder).sortedWith(ORDER) }
             alarms.set(reminder.id, reminder.at)
         } else {
@@ -108,8 +110,9 @@ class ReminderEngine(
     /** Removes [reminder] first (so it is never shown twice), then posts it unless it's too late. */
     private suspend fun fire(reminder: Reminder) {
         store.update { list -> list.filterNot { it.id == reminder.id } }
-        val late = Duration.between(reminder.at, now())
-        if (late < Duration.ofHours(LATE_LIMIT_HOURS)) poster.post(reminder)
+        // Like java.time's Duration.between on local times: wall-clock difference, no time zone.
+        val late = now().toInstant(TimeZone.UTC) - reminder.at.toInstant(TimeZone.UTC)
+        if (late < LATE_LIMIT_HOURS.hours) poster.post(reminder)
     }
 
     private companion object {

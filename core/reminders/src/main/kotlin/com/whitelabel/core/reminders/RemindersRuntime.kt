@@ -1,15 +1,17 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 package com.whitelabel.core.reminders
 
 import android.content.Context
-import com.whitelabel.core.datastore.JsonStore
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
-import java.time.LocalDateTime
+import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import okio.Path.Companion.toOkioPath
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -19,21 +21,14 @@ import kotlinx.coroutines.launch
 internal class RemindersRuntime private constructor(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    val store: ReminderStore = JsonReminderStore(
-        JsonStore(
-            // Not backed up: a restored copy would hold reminders whose alarms were never armed on this phone.
-            file = File(context.noBackupFilesDir, "reminders.json"),
-            serializer = StoredReminders.serializer(),
-            default = StoredReminders(),
-            scope = scope,
-        ),
-    )
+    // Not backed up: a restored copy would hold reminders whose alarms were never armed on this phone.
+    val store: ReminderStore = ReminderStore(File(context.noBackupFilesDir, "reminders.json").toOkioPath(), scope)
 
     val engine = ReminderEngine(
         store = store,
         alarms = AndroidAlarmScheduler(context),
         poster = AndroidNotificationPoster(context) { ReminderConfigProvider.config },
-        now = LocalDateTime::now,
+        now = { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) },
     )
 
     /**
@@ -53,16 +48,5 @@ internal class RemindersRuntime private constructor(context: Context) {
             instance ?: synchronized(this) {
                 instance ?: RemindersRuntime(context.applicationContext).also { instance = it }
             }
-    }
-}
-
-private class JsonReminderStore(private val json: JsonStore<StoredReminders>) : ReminderStore {
-    override val reminders: Flow<List<Reminder>> =
-        json.data.map { doc -> doc.reminders.mapNotNull { it.toReminderOrNull() } }
-
-    override suspend fun update(transform: (List<Reminder>) -> List<Reminder>) {
-        json.update { doc ->
-            doc.copy(reminders = transform(doc.reminders.mapNotNull { it.toReminderOrNull() }).map { it.toStored() })
-        }
     }
 }

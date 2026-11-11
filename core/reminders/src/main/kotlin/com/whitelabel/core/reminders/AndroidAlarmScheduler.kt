@@ -5,15 +5,16 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import java.time.LocalDateTime
 import java.time.ZoneId
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toJavaLocalDateTime
 
 /** Inexact alarms that still fire in Doze. No exact-alarm permission: Play keeps that for alarm and calendar apps. */
 internal class AndroidAlarmScheduler(private val context: Context) : AlarmScheduler {
     private val alarms = context.getSystemService(AlarmManager::class.java)
 
     override fun set(id: String, at: LocalDateTime) {
-        val millis = at.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val millis = at.toJavaLocalDateTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, millis, pendingIntent(id, PendingIntent.FLAG_UPDATE_CURRENT)!!)
     }
 

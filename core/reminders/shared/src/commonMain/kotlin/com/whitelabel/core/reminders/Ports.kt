@@ -1,6 +1,6 @@
 package com.whitelabel.core.reminders
 
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 import kotlinx.coroutines.flow.Flow
 
 /** Arms and disarms the system alarm that wakes the app for a reminder. */

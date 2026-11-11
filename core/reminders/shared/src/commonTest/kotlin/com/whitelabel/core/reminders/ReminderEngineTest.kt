@@ -4,18 +4,18 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 class ReminderEngineTest {
 
-    private val now = LocalDateTime.of(2027, 3, 10, 8, 0)
+    private val now = LocalDateTime(2027, 3, 10, 8, 0)
     private val store = MemoryStore()
     private val alarms = FakeAlarms()
     private val poster = FakePoster()
@@ -24,7 +24,7 @@ class ReminderEngineTest {
     private fun reminder(id: String, at: LocalDateTime) =
         Reminder(id = id, at = at, channel = "c", title = "t $id", text = "x", deepLink = null)
 
-    private fun at(hour: Int) = LocalDateTime.of(2027, 3, 10, hour, 0)
+    private fun at(hour: Int) = LocalDateTime(2027, 3, 10, hour, 0)
 
     @Test fun `schedule stores and arms`() = runTest {
         engine.schedule(reminder("a", at(9)))
@@ -121,9 +121,9 @@ class ReminderEngineTest {
         assertThat(alarms.log).containsExactly("set a ${at(9)}")
     }
 
-    @Test fun `onSystemChange re-arms future reminders, fires recent ones, drops old ones`() = runTest {
-        val recent = LocalDateTime.of(2027, 3, 9, 20, 1)
-        val old = LocalDateTime.of(2027, 3, 9, 19, 59)
+    @Test fun `onSystemChange re-arms future reminders fires recent ones and drops old ones`() = runTest {
+        val recent = LocalDateTime(2027, 3, 9, 20, 1)
+        val old = LocalDateTime(2027, 3, 9, 19, 59)
         store.seed(reminder("future", at(9)), reminder("recent", recent), reminder("old", old))
 
         engine.onSystemChange()
@@ -134,8 +134,8 @@ class ReminderEngineTest {
     }
 
     @Test fun `scheduling a past time follows the same late rule`() = runTest {
-        engine.schedule(reminder("recent", LocalDateTime.of(2027, 3, 9, 20, 1)))
-        engine.schedule(reminder("old", LocalDateTime.of(2027, 3, 9, 19, 59)))
+        engine.schedule(reminder("recent", LocalDateTime(2027, 3, 9, 20, 1)))
+        engine.schedule(reminder("old", LocalDateTime(2027, 3, 9, 19, 59)))
 
         assertThat(poster.posted.map { it.id }).containsExactly("recent")
         assertThat(engine.pending()).isEmpty()
@@ -168,7 +168,7 @@ class ReminderEngineTest {
 
     @Test fun `setAll with a past time follows the same late rule`() = runTest {
         engine.setAll(
-            listOf(reminder("m:recent", LocalDateTime.of(2027, 3, 9, 20, 1)), reminder("m:old", LocalDateTime.of(2027, 3, 9, 19, 59))),
+            listOf(reminder("m:recent", LocalDateTime(2027, 3, 9, 20, 1)), reminder("m:old", LocalDateTime(2027, 3, 9, 19, 59))),
             idPrefix = "m:",
         )
 

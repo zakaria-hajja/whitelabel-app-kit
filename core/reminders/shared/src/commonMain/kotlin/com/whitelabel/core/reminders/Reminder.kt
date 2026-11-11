@@ -1,6 +1,6 @@
 package com.whitelabel.core.reminders
 
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 
 /**
  * A local notification the app wants shown at [at].

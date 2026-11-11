@@ -5,7 +5,7 @@ package com.whitelabel.core.reminders
  * updates; a reminder missed while the phone was off is shown once if it's less than 12 hours late.
  * Get it from Koin: add `remindersModule(config)` to the app definition with `modules(...)`. Scheduling never asks for the notification permission: see [rememberNotificationPermission].
  */
-class Reminders internal constructor(private val engine: ReminderEngine) {
+class Reminders(private val engine: ReminderEngine) {
     /** Schedules [reminder], replacing one with the same id. */
     suspend fun schedule(reminder: Reminder) = engine.schedule(reminder)
 

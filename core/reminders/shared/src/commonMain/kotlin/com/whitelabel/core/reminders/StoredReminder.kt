@@ -1,6 +1,6 @@
 package com.whitelabel.core.reminders
 
-import java.time.LocalDateTime
+import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
 /** The persisted form of the pending reminders. Fields have defaults so older files still read. */

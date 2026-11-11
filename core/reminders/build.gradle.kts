@@ -10,6 +10,7 @@ android {
 }
 
 dependencies {
+    api(project(":core:reminders:shared"))
     implementation(project(":core:datastore"))
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)

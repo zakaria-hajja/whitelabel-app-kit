@@ -18,6 +18,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import java.io.File
 import java.time.LocalDateTime
+import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -49,7 +50,7 @@ class RemindersDeviceTest {
     }
 
     private fun reminder(id: String, at: LocalDateTime, title: String = "Spotify is hungry today") =
-        Reminder(id = id, at = at, channel = "renewals", title = title, text = "€10.99 today", deepLink = "test://reminder/$id")
+        Reminder(id = id, at = at.toKotlinLocalDateTime(), channel = "renewals", title = title, text = "€10.99 today", deepLink = "test://reminder/$id")
 
     private fun posted(title: String): Notification? =
         notifications.activeNotifications.map { it.notification }
