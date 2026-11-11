@@ -20,6 +20,7 @@ dependencies {
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.turbine)
     androidTestImplementation(libs.assertk)
+    androidTestImplementation(libs.ktor.client.mock)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
 }
