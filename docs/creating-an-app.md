@@ -5,8 +5,8 @@ This repo is a foundation for many independent Android apps. A new app is a smal
 features it uses. The shared modules (`core/*`, and later `feature/*`) provide the rest: the launcher
 activity, splash, theme, navigation, networking, storage and the design system.
 
-The worked example is `apps/globex`. It is Globex's own app: sign-in, a local notes feature and
-the shared settings. Creating it touched only `apps/globex/**` and `settings.gradle.kts`.
+The examples create an app named `globex`: sign-in, a local notes feature and the shared
+settings. Creating an app touches only `apps/<name>/**` and `settings.gradle.kts`.
 
 ## 0. Before you start
 
@@ -179,12 +179,12 @@ another app.
 - **The pattern to copy:** see [adding-a-shared-feature.md](adding-a-shared-feature.md). An
   app-specific feature follows the same rules.
 
-Globex's notes feature uses the shared JSON store from `:core:datastore`, the design-system
+A feature like Globex's notes uses the shared JSON store from `:core:datastore`, the design-system
 components and the shell's navigation. None of those modules know it exists.
 
 ## 7. Identity test
 
-Copy `GlobexIdentityTest.kt` and put your values in it. It asserts every `BuildConfig` field for
+Put your values in `GlobexIdentityTest.kt` (step 1 copied it from `ShowcaseIdentityTest.kt` and renamed it). It asserts every `BuildConfig` field for
 both build types, so a wrong URL or ID fails `scripts/check.sh` and CI.
 
 ## 8. End-to-end tests

@@ -39,7 +39,7 @@ says where its backend is.
 
 The backend emails `<linkBaseUrl>?token=…`, where `linkBaseUrl` is the tenant's
 `passwordReset.linkBaseUrl`. For the link to open the app's reset screen, set it to
-`<app.deepLinkScheme>://reset-password`, for example `globex://reset-password`. Use
+`<app.deepLinkScheme>://reset-password`, for example `showcase://reset-password`. Use
 `npm run tenant -- set-config` in shared mode, or the deployment's config JSON in dedicated mode
 (see the backend's `docs/deployment-*.md`). The app accepts the link only while signed out.
 
@@ -51,7 +51,7 @@ docker compose up -d postgres && npm run db:deploy && npm run db:seed   # tenant
 npm run dev                                                             # http://localhost:3000
 ```
 
-Showcase (tenant `acme`) and globex (tenant `globex`) both point their debug builds at
+Showcase (tenant `acme`) points its debug build at
 `http://10.0.2.2:3000/api/v1/`. In debug builds, Settings › About › Diagnostics has a **Ping** that calls `GET health` and shows
 whether the backend and its database are up.
 

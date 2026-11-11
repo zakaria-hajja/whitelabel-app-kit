@@ -32,18 +32,18 @@ surface_variant on_surface_variant outline`
 - **Defaults:** any role you don't override keeps the Material 3 baseline value from
   `core/designsystem/src/main/res/values/brand.xml`.
 - **Override more than primary:** components such as the bottom-bar indicator use
-  `secondary_container`. An app that only overrides the primary family, as showcase and globex do
+  `secondary_container`. An app that only overrides the primary family, as showcase does
   today, shows the baseline lavender there. Override at least the primary, secondary and tertiary
   families for a fully branded look.
 - **Contrast:** every `on_*` color must reach WCAG AA (4.5:1) against its base color, in both light
-  and dark. Write the ratios in a comment in your `brand.xml`, as `apps/globex` does.
+  and dark. Write the ratios in a comment in your `brand.xml`.
   `contrastRatio()` in `:core:designsystem` computes them.
 - **Dynamic color is off,** so the brand always applies.
 
 ## Shapes
 
 `dimen/brand_corner_small`, `brand_corner_medium` and `brand_corner_large`. The defaults are 8, 12
-and 16dp; globex uses 0, 2 and 4dp for a square look. A style pack that sets `corners` (Gallery
+and 16dp; 0, 2 and 4dp give a square look. A style pack that sets `corners` (Gallery
 does) replaces these; see below.
 
 ## Style packs (look and motion)
