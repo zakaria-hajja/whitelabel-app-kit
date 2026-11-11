@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Compose draws everything; the window theme only needs no action bar. -->
-    <style name="Theme.Foundation" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Compose draws everything. The window theme needs no action bar, and is an AppCompat theme
+         because FoundationActivity is an AppCompatActivity (per-app language below Android 13). -->
+    <style name="Theme.Foundation" parent="Theme.AppCompat.DayNight.NoActionBar" />
 
     <!-- Launch theme. The colors and icon come from the app's res/. -->
     <style name="Theme.Foundation.Starting" parent="Theme.SplashScreen">

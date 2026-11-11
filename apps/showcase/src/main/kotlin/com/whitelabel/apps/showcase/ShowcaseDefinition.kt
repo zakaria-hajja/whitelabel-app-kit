@@ -2,8 +2,8 @@ package com.whitelabel.apps.showcase
 
 import com.whitelabel.core.shell.AppDefinition
 import com.whitelabel.core.shell.appDefinition
-import com.whitelabel.core.shell.diagnostics.diagnostics
 import com.whitelabel.feature.authentication.auth
+import com.whitelabel.feature.settings.settings
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,6 +18,6 @@ object ShowcaseDefinition {
     @Singleton
     fun definition(): AppDefinition = appDefinition {
         auth()
-        diagnostics()
+        settings()
     }
 }

@@ -30,6 +30,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.core.net.toUri
 import kotlinx.serialization.Serializable
 import com.whitelabel.core.designsystem.component.EmptyState
+import com.whitelabel.core.shell.diagnostics.DiagnosticsRoute
+import com.whitelabel.core.shell.diagnostics.diagnosticsScreen
 
 internal const val BOTTOM_BAR_TAG = "ShellBottomBar"
 
@@ -51,6 +53,9 @@ internal data object MainGraph
  * [deepLink] is an incoming link the activity took out of its intent (so Navigation never opens it
  * on its own). It is opened, held until sign-in, or dropped per [deepLinkAction], and reported
  * through [onDeepLinkConsumed] once it is no longer pending.
+ *
+ * [diagnostics] registers the diagnostics screen ([DiagnosticsRoute]) with the app's tabs, for
+ * DEVELOPMENT builds.
  */
 @Composable
 internal fun ShellNavHost(
@@ -62,6 +67,7 @@ internal fun ShellNavHost(
     deepLink: String? = null,
     onDeepLinkConsumed: () -> Unit = {},
     navController: NavHostController = rememberNavController(),
+    diagnostics: Boolean = false,
     onScreenView: (String) -> Unit = {},
 ) {
     val gate = definition.gateEntry
@@ -110,6 +116,7 @@ internal fun ShellNavHost(
         if (gate == null) {
             NavHost(navController = navController, startDestination = checkNotNull(startTab).route, modifier = hostModifier) {
                 definition.entries.forEach { entry -> entry.routes(this, scope) }
+                if (diagnostics) diagnosticsScreen(onBack = navigator::back)
             }
         } else {
             NavHost(
@@ -121,6 +128,7 @@ internal fun ShellNavHost(
                 if (startTab != null) {
                     navigation<MainGraph>(startDestination = startTab.route) {
                         definition.entries.filter { it !== gate }.forEach { entry -> entry.routes(this, scope) }
+                        if (diagnostics) diagnosticsScreen(onBack = navigator::back)
                     }
                 }
             }

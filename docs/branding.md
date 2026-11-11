@@ -61,6 +61,6 @@ uses `brand_splash_background` and `brand_splash_icon`.
 
 ## Previewing
 
-The shared `diagnostics()` screen shows the app's identity and the full design-system catalog in
-the app's brand. To check dark mode, switch the emulator's theme with
+In debug builds, Settings › About › Diagnostics shows the app's identity and the full design-system
+catalog in the app's brand. To check dark mode, switch the emulator's theme with
 `adb shell cmd uimode night yes`.

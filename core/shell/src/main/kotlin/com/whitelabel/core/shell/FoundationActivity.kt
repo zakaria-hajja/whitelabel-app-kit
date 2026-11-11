@@ -2,7 +2,7 @@ package com.whitelabel.core.shell
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -14,6 +14,7 @@ import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.AnalyticsEvents
 import com.whitelabel.core.branding.BrandConfig
+import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.domain.SessionState
 import com.whitelabel.core.domain.ThemePreference
@@ -22,10 +23,11 @@ import javax.inject.Inject
 
 /**
  * The launcher activity of every app: splash until the shell is ready, the theme the user chose
- * (or the config's default), and the app's definition in [ShellNavHost].
+ * (or the config's default), and the app's definition in [ShellNavHost]. An `AppCompatActivity`
+ * so the per-app language also applies below Android 13.
  */
 @AndroidEntryPoint
-class FoundationActivity : ComponentActivity() {
+class FoundationActivity : AppCompatActivity() {
 
     @Inject lateinit var definition: AppDefinition
     @Inject lateinit var brand: BrandConfig
@@ -58,6 +60,7 @@ class FoundationActivity : ComponentActivity() {
                         signedIn = state.session == SessionState.SignedIn,
                         deepLink = deepLink,
                         onDeepLinkConsumed = viewModel::onDeepLinkConsumed,
+                        diagnostics = brand.environment == Environment.DEVELOPMENT,
                         onScreenView = { screen ->
                             analytics.track(AnalyticsEvent(AnalyticsEvents.SCREEN_VIEW, mapOf("screen" to screen)))
                         },

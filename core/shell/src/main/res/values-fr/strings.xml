@@ -16,7 +16,6 @@
     <string name="preview_error_unexpected_response">Réponse inattendue du serveur</string>
     <string name="preview_error_server">Le serveur a renvoyé une erreur</string>
     <string name="preview_error_unknown">Une erreur est survenue</string>
-    <string name="shell_diagnostics_tab">Diagnostic</string>
     <string name="shell_no_features_title">Rien à afficher</string>
     <string name="shell_no_features_message">Aucune fonctionnalité de cette app n’est activée pour le moment.</string>
 </resources>

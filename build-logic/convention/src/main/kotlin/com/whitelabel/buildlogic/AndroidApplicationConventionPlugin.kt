@@ -50,6 +50,13 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             } ?: logger.info("${project.path}: no signing.properties, release will be unsigned")
             buildFeatures.buildConfig = true
             lint.targetSdk = TARGET_SDK
+            // Android 13+ lists the app's languages in system settings; the list is generated from the
+            // translated resources. AGP also needs the default resources' language (English), and
+            // reads it only from a source res dir, not a generated one: so it is a checked-in file,
+            // which clean and the configuration cache can't lose.
+            androidResources.generateLocaleConfig = true
+            // It sits next to the shell, which every app includes, so app repos find it too.
+            sourceSets.getByName("main").res.srcDir(project(":core:shell").projectDir.resolve("default-locale-res"))
 
             buildTypes {
                 getByName("debug") {

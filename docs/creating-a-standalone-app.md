@@ -83,7 +83,9 @@ needs it, move it into the foundation's catalog.
 Leave `api.debug.baseUrl`, `api.release.baseUrl` and `api.tenant` out of `app.properties`. Then:
 
 - the shell doesn't fetch the remote app config; runtime config is the app's build-time defaults;
-- diagnostics shows "No backend" and hides the ping;
+- diagnostics (Settings › About, debug builds) shows "No backend" and hides the ping;
+- `settings()` works without a backend: theme and language are local, and the account and
+  notification parts stay hidden because nobody signs in;
 - the app refuses to start if its definition includes `auth()` or any feature that calls the API,
   with a message naming the feature.
 

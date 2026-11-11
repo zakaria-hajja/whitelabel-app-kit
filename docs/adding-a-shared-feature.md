@@ -30,7 +30,7 @@ its Android or JVM setup when it is applied.
 // <Name>.kt
 @Serializable data object SettingsRoute                     // public only if an app must name it
 
-data class SettingsOptions(val showNotifications: Boolean = true)
+data class SettingsOptions(val showNotifications: Boolean = true, val languages: List<String> = listOf("en", "fr"))
 
 fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) {
     add(
@@ -89,7 +89,7 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
   stores.
 - **One Compose UI test** for the main path of the screen.
 - **Add the feature to `apps/showcase`,** the reference app that uses every shared feature, and
-  check it in `diagnostics` or by hand.
+  check it by hand.
 
 ## Checklist
 

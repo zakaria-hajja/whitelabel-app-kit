@@ -34,5 +34,14 @@
                 <data android:scheme="${deepLinkScheme}" />
             </intent-filter>
         </activity>
+        <!-- Below Android 13, AppCompat stores the per-app language itself. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
     </application>
 </manifest>
