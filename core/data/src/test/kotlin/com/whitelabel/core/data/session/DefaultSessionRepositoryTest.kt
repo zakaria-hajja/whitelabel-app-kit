@@ -147,7 +147,7 @@ class DefaultSessionRepositoryTest {
         val client = mockClient(StoreSessionTokens(local)) { request ->
             if (request.url.encodedPath.endsWith("auth/refresh")) {
                 local.clear() // the user signs out while the refresh is in flight
-                ok(TOKENS_JSON.replace("a1", "a2").replace("r1", "r2"))
+                ok("""{"tokens":${TOKENS_JSON.replace("a1", "a2").replace("r1", "r2")}}""")
             } else if (request.headers[HttpHeaders.Authorization] == "Bearer a2") {
                 ok(USER_JSON)
             } else {

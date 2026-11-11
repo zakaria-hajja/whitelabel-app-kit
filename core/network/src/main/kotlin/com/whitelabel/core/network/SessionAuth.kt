@@ -35,6 +35,10 @@ private data class RefreshRequest(val refreshToken: String)
 @Serializable
 private data class TokenPairDto(val accessToken: String, val refreshToken: String)
 
+/** `POST auth/refresh` answers with the pair under `data.tokens` (`TokensEnvelope`). */
+@Serializable
+private data class RefreshResponse(val tokens: TokenPairDto)
+
 /**
  * Bearer authentication following the backend's "Android client guidance" (docs/api.md), which
  * branches on error codes rather than the bare 401 status (`INVALID_CREDENTIALS` is a 401 too):
@@ -99,7 +103,7 @@ private suspend fun HttpClient.renewedTokens(sent: SessionTokens, tokens: Sessio
         return Renewal.Failed(null)
     }
     if (!response.status.isSuccess()) return Renewal.Failed(response.call)
-    val pair = networkJson.decodeFromString(ApiEnvelope.serializer(TokenPairDto.serializer()), response.bodyAsText()).data
+    val pair = networkJson.decodeFromString(ApiEnvelope.serializer(RefreshResponse.serializer()), response.bodyAsText()).data?.tokens
         ?: return Renewal.Failed(response.call)
     val renewed = SessionTokens(pair.accessToken, pair.refreshToken)
     return if (tokens.replace(current, renewed)) Renewal.Renewed(renewed) else Renewal.Failed(null)
