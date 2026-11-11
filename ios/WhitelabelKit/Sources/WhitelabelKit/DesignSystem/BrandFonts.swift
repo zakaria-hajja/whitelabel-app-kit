@@ -37,16 +37,50 @@ public struct BrandFonts {
     }
 }
 
-/** The type roles screens use, built from a pack's tweaks and the brand fonts. */
+/** One type role's size (scaled with Dynamic Type) and weight. */
+public struct TypeRole: Equatable {
+    public var size: CGFloat
+    public var weight: Font.Weight
+}
+
+/**
+ * The sizes and weights of a pack's type roles. Gallery follows Munch's `docs/design/tokens.json`
+ * (the Kotlin pack defines no sizes); Material keeps iOS's own scale with Material 3's regular
+ * display weights.
+ */
+public struct TypeScale: Equatable {
+    public var display, headline, title, body, label: TypeRole
+
+    public static func `for`(_ pack: StylePack) -> TypeScale {
+        pack.name == StylePack.gallery.name
+            ? TypeScale(
+                display: TypeRole(size: 52, weight: .regular),
+                headline: TypeRole(size: 26, weight: .regular),
+                title: TypeRole(size: 18, weight: .semibold),
+                body: TypeRole(size: 16, weight: .regular),
+                label: TypeRole(size: 14, weight: .semibold)
+            )
+            : TypeScale(
+                display: TypeRole(size: 34, weight: .regular),
+                headline: TypeRole(size: 28, weight: .regular),
+                title: TypeRole(size: 20, weight: .semibold),
+                body: TypeRole(size: 17, weight: .regular),
+                label: TypeRole(size: 15, weight: .medium)
+            )
+    }
+}
+
+/** The type roles screens use, built from a pack's scale, its tweaks and the brand fonts. */
 public struct Typography {
     public let display, headline, title, body, label: Font
 
     public init(pack: StylePack, fonts: BrandFonts) {
+        let scale = TypeScale.for(pack)
         let titleFont: (CGFloat, Font.TextStyle) -> Font = pack.type.titlesUseBodyFont ? fonts.body : fonts.display
-        display = fonts.display(size: 34, relativeTo: .largeTitle).weight(pack.type.displayWeight ?? .bold)
-        headline = fonts.display(size: 28, relativeTo: .title).weight(pack.type.headlineWeight ?? .semibold)
-        title = titleFont(20, .title3).weight(.semibold)
-        body = fonts.body(size: 17, relativeTo: .body)
-        label = fonts.body(size: 15, relativeTo: .subheadline).weight(.medium)
+        display = fonts.display(size: scale.display.size, relativeTo: .largeTitle).weight(pack.type.displayWeight ?? scale.display.weight)
+        headline = fonts.display(size: scale.headline.size, relativeTo: .title).weight(pack.type.headlineWeight ?? scale.headline.weight)
+        title = titleFont(scale.title.size, .title3).weight(scale.title.weight)
+        body = fonts.body(size: scale.body.size, relativeTo: .body).weight(scale.body.weight)
+        label = fonts.body(size: scale.label.size, relativeTo: .subheadline).weight(scale.label.weight)
     }
 }

@@ -30,7 +30,7 @@ public struct AppValueRow: View {
     }
 }
 
-/** An on/off setting: a native toggle, with the pack's toggle haptic. */
+/** An on/off setting: a native toggle (which gives its own feedback when the user flips it). */
 public struct AppToggleRow: View {
     @Environment(\.appStyle) private var style
     private let label: String
@@ -45,7 +45,6 @@ public struct AppToggleRow: View {
         Toggle(label, isOn: $isOn)
             .font(style.typography.body)
             .frame(minHeight: style.pack.sizing.listRowMinHeight)
-            .sensoryFeedback(.selection, trigger: isOn) { _, _ in style.pack.haptics[.toggle] != nil }
     }
 }
 
@@ -90,12 +89,16 @@ public struct AppChoiceSheet<Choice: Hashable>: View {
 }
 
 #Preview("Rows") {
-    ForEach([StylePack.material, .gallery], id: \.name) { pack in
-        VStack(spacing: 0) {
-            AppValueRow("Theme", value: "System") {}
-            AppToggleRow("Push notifications", isOn: .constant(true))
-        }
-        .padding()
-        .appStyle(AppStyle(pack: pack))
+    PackPreviews {
+        AppValueRow("Theme", value: "System") {}
+        AppToggleRow("Push notifications", isOn: .constant(true))
+        AppToggleRow("Marketing emails", isOn: .constant(false))
+    }
+}
+
+#Preview("Choice sheet") {
+    Color.clear.sheet(isPresented: .constant(true)) {
+        AppChoiceSheet(title: "Theme", choices: ["System", "Light", "Dark"], selected: "System", label: { $0 }) { _ in }
+            .appStyle(PreviewStyles.gallery)
     }
 }

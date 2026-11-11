@@ -15,9 +15,8 @@ public struct PrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.sm)
             .frame(maxWidth: .infinity, minHeight: style.pack.sizing.controlHeight)
-            .background(style.colors.primary.opacity(isEnabled ? 1 : 0.4), in: RoundedRectangle(cornerRadius: style.pack.corners.medium))
+            .background(style.colors.primary.opacity(isEnabled ? 1 : 0.4), in: style.pack.buttonShape.shape)
             .pressEffect(configuration.isPressed, style: style)
-            .sensoryFeedback(.selection, trigger: configuration.isPressed) { _, pressed in pressed && style.pack.haptics[.confirm] != nil }
     }
 }
 
@@ -35,7 +34,7 @@ public struct SecondaryButtonStyle: ButtonStyle {
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.sm)
             .frame(maxWidth: .infinity, minHeight: style.pack.sizing.controlHeight)
-            .overlay(RoundedRectangle(cornerRadius: style.pack.corners.medium).strokeBorder(style.colors.outline))
+            .overlay(style.pack.buttonShape.shape.strokeBorder(style.colors.outline))
             .pressEffect(configuration.isPressed, style: style)
     }
 }
@@ -55,24 +54,43 @@ public struct TextButtonStyle: ButtonStyle {
     }
 }
 
+extension ButtonShape {
+    var shape: AnyInsettableShape {
+        switch self {
+        case let .rounded(radius): AnyInsettableShape(RoundedRectangle(cornerRadius: radius))
+        case .capsule: AnyInsettableShape(Capsule())
+        }
+    }
+}
+
+/** A type-erased insettable shape, so a button can be rounded or a capsule from the pack. */
+struct AnyInsettableShape: InsettableShape {
+    private let path: (CGRect) -> Path
+    private let insetBy: (CGFloat) -> AnyInsettableShape
+
+    init<S: InsettableShape>(_ shape: S) {
+        path = { shape.path(in: $0) }
+        insetBy = { AnyInsettableShape(shape.inset(by: $0)) }
+    }
+
+    func path(in rect: CGRect) -> Path { path(rect) }
+    func inset(by amount: CGFloat) -> AnyInsettableShape { insetBy(amount) }
+}
+
 extension View {
     /** The pack's emphasis motion on press (Gallery's soft spring; Reduce Motion: a fade). */
     func pressEffect(_ pressed: Bool, style: AppStyle) -> some View {
-        scaleEffect(pressed ? 0.98 : 1)
+        scaleEffect(pressed && style.pack.motion != .reduced ? 0.98 : 1)
             .opacity(pressed ? 0.9 : 1)
             .animation(style.pack.motion.emphasis.animation, value: pressed)
     }
 }
 
 #Preview("Buttons") {
-    ForEach([StylePack.material, .gallery], id: \.name) { pack in
-        VStack(spacing: Spacing.sm) {
-            Button("Save") {}.buttonStyle(PrimaryButtonStyle())
-            Button("Save") {}.buttonStyle(PrimaryButtonStyle()).disabled(true)
-            Button("Cancel") {}.buttonStyle(SecondaryButtonStyle())
-            Button("Try again") {}.buttonStyle(TextButtonStyle())
-        }
-        .padding()
-        .appStyle(AppStyle(pack: pack))
+    PackPreviews {
+        Button("Save") {}.buttonStyle(PrimaryButtonStyle())
+        Button("Save") {}.buttonStyle(PrimaryButtonStyle()).disabled(true)
+        Button("Cancel") {}.buttonStyle(SecondaryButtonStyle())
+        Button("Try again") {}.buttonStyle(TextButtonStyle())
     }
 }

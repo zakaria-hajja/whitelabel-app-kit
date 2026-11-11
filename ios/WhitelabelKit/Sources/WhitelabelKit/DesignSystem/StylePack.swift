@@ -81,3 +81,41 @@ public enum Spacing {
     public static let lg: CGFloat = 24
     public static let xl: CGFloat = 32
 }
+
+/** How a pack's buttons are shaped: Gallery's small radius (design.html `.btn`), Material's pill (Material 3's default). */
+public enum ButtonShape: Equatable {
+    case rounded(CGFloat)
+    case capsule
+}
+
+public extension StylePack {
+    var buttonShape: ButtonShape { surfaces == .hairline ? .rounded(corners.small) : .capsule }
+}
+
+/**
+ * A pack's feedback for screens to play at the moment it applies, as Android's `haptics(event)`:
+ * an event the pack doesn't map plays nothing (Material maps none).
+ */
+public struct Haptics {
+    public let pack: StylePack
+
+    public func feedback(for event: HapticEvent) -> SensoryFeedback? {
+        switch pack.haptics[event] {
+        case .tick: return .selection
+        case .confirm: return .success
+        case .toggle: return .impact(weight: .light)
+        case nil: return nil
+        }
+    }
+
+    /** Plays [event]'s feedback now (for actions; for state changes prefer `.sensoryFeedback`). */
+    @MainActor
+    public func play(_ event: HapticEvent) {
+        switch pack.haptics[event] {
+        case .tick: UISelectionFeedbackGenerator().selectionChanged()
+        case .confirm: UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case .toggle: UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        case nil: break
+        }
+    }
+}

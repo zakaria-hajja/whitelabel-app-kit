@@ -35,4 +35,12 @@ final class ComponentTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(height, pack.sizing.controlHeight, pack.name)
         }
     }
+
+    /** A filled field keeps its label visible above it (design.html), so it's taller than the bare control. */
+    func testAFilledFieldKeepsItsLabelAboveIt() {
+        for pack in [StylePack.material, .gallery] {
+            let height = size(AppTextField("Email", text: .constant("ada@example.com")), width: 320, dynamicType: .large, pack: pack).height
+            XCTAssertGreaterThan(height, pack.sizing.controlHeight + 12, pack.name)
+        }
+    }
 }

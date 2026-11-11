@@ -10,7 +10,7 @@ public struct BrandColors {
     public var secondary, onSecondary, secondaryContainer, onSecondaryContainer: Color
     public var tertiary, onTertiary, tertiaryContainer, onTertiaryContainer: Color
     public var error, onError: Color
-    public var background, onBackground, surface, onSurface, surfaceVariant, onSurfaceVariant, outline: Color
+    public var background, onBackground, surface, onSurface, surfaceVariant, onSurfaceVariant, outline, outlineVariant: Color
 
     /** [prefix] reads a differently named set (the catalog's `GalleryPreview` sample colors). */
     public init(bundle: Bundle = .main, prefix: String = "") {
@@ -38,5 +38,6 @@ public struct BrandColors {
         surfaceVariant = color("BrandSurfaceVariant", Color(uiColor: .tertiarySystemBackground))
         onSurfaceVariant = color("BrandOnSurfaceVariant", .secondary)
         outline = color("BrandOutline", Color(uiColor: .separator))
+        outlineVariant = color("BrandOutlineVariant", Color(uiColor: .separator).opacity(0.5))
     }
 }

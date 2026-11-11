@@ -14,16 +14,14 @@ public struct AppCard<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(style.colors.surface, in: shape)
             .overlay {
-                if style.pack.surfaces == .hairline { shape.strokeBorder(style.colors.outline, lineWidth: 1) }
+                if style.pack.surfaces == .hairline { shape.strokeBorder(style.colors.outlineVariant, lineWidth: 1) }
             }
             .shadow(color: style.pack.surfaces == .shadow ? .black.opacity(0.12) : .clear, radius: 6, y: 2)
     }
 }
 
 #Preview("Card") {
-    ForEach([StylePack.material, .gallery], id: \.name) { pack in
-        AppCard { Text("Netflix").font(AppStyle(pack: pack).typography.title) }
-            .padding()
-            .appStyle(AppStyle(pack: pack))
+    PackPreviews {
+        AppCard { Text("Netflix") }
     }
 }

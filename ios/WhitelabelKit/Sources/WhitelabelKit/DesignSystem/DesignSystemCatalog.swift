@@ -11,12 +11,7 @@ public struct DesignSystemCatalog: View {
 
     public init(dark: Bool = false) { _dark = State(initialValue: dark) }
 
-    private var styles: [AppStyle] {
-        [
-            AppStyle(pack: .gallery, colors: BrandColors(prefix: "GalleryPreview"), fonts: BrandFonts(displayName: "InstrumentSerif-Regular", bodyName: "Geist-Regular")),
-            AppStyle(pack: .material),
-        ]
-    }
+    private let styles = [PreviewStyles.gallery, PreviewStyles.material]
 
     public var body: some View {
         NavigationStack {

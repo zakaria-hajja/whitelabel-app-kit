@@ -17,6 +17,8 @@ public struct AppTextField: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
+            // Visible above the field even once it's filled (design.html); VoiceOver reads it from the field.
+            Text(label).font(style.typography.label).foregroundStyle(style.colors.onSurfaceVariant).accessibilityHidden(true)
             Group {
                 if isSecure { SecureField(label, text: $text) } else { TextField(label, text: $text) }
             }
@@ -28,24 +30,19 @@ public struct AppTextField: View {
                     .strokeBorder(error == nil ? style.colors.outline : style.colors.error, lineWidth: 1)
             )
             .accessibilityLabel(label)
-            .accessibilityValue(error ?? "")
             if let error {
                 Text(error)
                     .font(style.typography.label)
                     .foregroundStyle(style.colors.error)
-                    .accessibilityHidden(true)
             }
         }
     }
 }
 
 #Preview("Text fields") {
-    ForEach([StylePack.material, .gallery], id: \.name) { pack in
-        VStack(spacing: Spacing.md) {
-            AppTextField("Email", text: .constant("ada@example.com"))
-            AppTextField("Password", text: .constant("secret"), error: "Use at least 10 characters.", isSecure: true)
-        }
-        .padding()
-        .appStyle(AppStyle(pack: pack))
+    PackPreviews {
+        AppTextField("Email", text: .constant(""))
+        AppTextField("Email", text: .constant("ada@example.com"))
+        AppTextField("Password", text: .constant("secret"), error: "Use at least 10 characters.", isSecure: true)
     }
 }

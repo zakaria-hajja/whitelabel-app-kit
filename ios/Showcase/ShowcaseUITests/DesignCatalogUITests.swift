@@ -22,9 +22,11 @@ final class DesignCatalogUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Primary action"].firstMatch.waitForExistence(timeout: 10))
     }
 
-    func testATextFieldAnnouncesItsError() {
-        let field = app.secureTextFields["Password"].firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 10))
-        XCTAssertEqual(field.value as? String, "Use at least 10 characters.")
+    /** VoiceOver reads what was typed as the field's value, and the error as its own element right after. */
+    func testATextFieldKeepsItsTextAndAnnouncesItsError() {
+        let email = app.textFields["Email"].firstMatch
+        XCTAssertTrue(email.waitForExistence(timeout: 10))
+        XCTAssertEqual(email.value as? String, "ada@example.com")
+        XCTAssertTrue(app.staticTexts["Use at least 10 characters."].firstMatch.exists)
     }
 }

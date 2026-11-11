@@ -6,6 +6,7 @@ public struct AppStyle {
     public var colors: BrandColors
     public var fonts: BrandFonts
     public var typography: Typography { Typography(pack: pack, fonts: fonts) }
+    public var haptics: Haptics { Haptics(pack: pack) }
 
     public init(pack: StylePack, colors: BrandColors = BrandColors(), fonts: BrandFonts = BrandFonts()) {
         self.pack = pack

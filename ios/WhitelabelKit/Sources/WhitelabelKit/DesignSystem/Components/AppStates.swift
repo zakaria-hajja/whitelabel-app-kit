@@ -64,12 +64,15 @@ public extension View {
 }
 
 #Preview("States") {
-    ForEach([StylePack.material, .gallery], id: \.name) { pack in
-        VStack {
-            LoadingView().frame(height: 80)
-            EmptyStateView(title: "No items yet", message: "Add your first one to see it here.").frame(height: 140)
-            ErrorStateView(message: "No internet connection. Check your connection and try again.") {}.frame(height: 140)
-        }
-        .appStyle(AppStyle(pack: pack))
+    PackPreviews {
+        LoadingView().frame(height: 80)
+        EmptyStateView(title: "No items yet", message: "Add your first one to see it here.").frame(height: 140)
+        ErrorStateView(message: "No internet connection. Check your connection and try again.") {}.frame(height: 140)
     }
+}
+
+#Preview("Confirmation") {
+    Color.clear
+        .appConfirm("Sign out?", isPresented: .constant(true), confirmLabel: "Sign out", message: "You can sign in again any time.") {}
+        .appStyle(PreviewStyles.gallery)
 }
