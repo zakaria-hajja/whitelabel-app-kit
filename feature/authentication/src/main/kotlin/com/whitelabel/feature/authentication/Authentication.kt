@@ -1,9 +1,9 @@
 package com.whitelabel.feature.authentication
 
-import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import com.whitelabel.core.shell.AppDefinitionBuilder
 import com.whitelabel.core.shell.FeatureEntry
+import com.whitelabel.core.shell.screen
 import com.whitelabel.core.shell.Gate
 import com.whitelabel.feature.authentication.presentation.forgot.ForgotPasswordRoot
 import com.whitelabel.feature.authentication.presentation.login.LoginRoot
@@ -38,16 +38,16 @@ fun AppDefinitionBuilder.auth(options: AuthOptions = AuthOptions()) {
             gate = Gate(LoginRoute),
             routes = { scope ->
                 val navigator = scope.navigator
-                composable<LoginRoute> {
+                screen<LoginRoute> {
                     LoginRoot(
                         options = options,
                         onCreateAccount = { navigator.navigate(RegisterRoute) },
                         onForgotPassword = { navigator.navigate(ForgotPasswordRoute) },
                     )
                 }
-                composable<RegisterRoute> { RegisterRoot(onBack = navigator::back) }
-                composable<ForgotPasswordRoute> { ForgotPasswordRoot(onBack = navigator::back) }
-                composable<ResetPasswordRoute>(
+                screen<RegisterRoute> { RegisterRoot(onBack = navigator::back) }
+                screen<ForgotPasswordRoute> { ForgotPasswordRoot(onBack = navigator::back) }
+                screen<ResetPasswordRoute>(
                     deepLinks = listOf(navDeepLink<ResetPasswordRoute>(basePath = "${scope.deepLinkScheme}://reset-password")),
                 ) {
                     ResetPasswordRoot(
