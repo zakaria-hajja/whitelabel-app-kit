@@ -6,6 +6,7 @@ plugins {
     id("whitelabel.koin")
     // StateFlow → Swift async sequences, sealed types → Swift enums, suspend → async.
     alias(libs.plugins.skie)
+    id("whitelabel.ios.app")
 }
 
 // Showcase's shared code as one iOS framework. Every app's framework is named "Shared", so the
@@ -35,4 +36,9 @@ kotlin {
             linked.forEach { api(project(it)) }
         }
     }
+}
+
+iosApp {
+    androidApp.set(rootProject.layout.projectDirectory.dir("apps/showcase"))
+    iosConfigDir.set(rootProject.layout.projectDirectory.dir("ios/Showcase/Config"))
 }
