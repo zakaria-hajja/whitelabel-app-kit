@@ -154,6 +154,21 @@ next launch, and the screen says so (a shared string).
 (`allowRegistration`, `allowPasswordReset`). Its screens push onto the gate's own stack. The
 title's app name comes from the brand (`@Environment(\.appBrand)`).
 
+**Home** (`Home(shortcuts:)`): the greeting for the signed-in user (shared), pull to refresh,
+and the app's `HomeShortcut(title:systemImage:route:)`s. A shortcut opens the tab with that root
+route, and is hidden when that tab is missing or switched off. Needs `Auth()`.
+
+**Profile** (`Profile(allowPasswordChange:)`, flag key `profile`): the email, the names, and a
+password change that signs out the other devices. Needs `Auth()`.
+
+**Catalog** (`Catalog(categories:pageSize:defaultSort:)`, flag key `catalog`): search
+(`.searchable`), category chips, the sort menu, paging at the end of the list, pull to refresh, and
+the detail by id, also from `<scheme>://catalog/<id>`. The options are checked in Kotlin
+(`CatalogOptions`): an invalid one stops the app at launch, as on Android. Needs `Auth()`.
+
+Showcase on iOS has the same features, order and start tab as on Android:
+`Auth()`, `Home(…)`, `Catalog(…)`, `Profile()`, `Settings()`, start tab home.
+
 ### Debug controls (Debug builds)
 
 | Launch argument / link | Effect |
@@ -165,13 +180,18 @@ title's app name comes from the brand (`@Environment(\.appBrand)`).
 | `-fakeFeatures catalog=false,profile=true` | the fake's remote flags |
 | `-fakeConfigDelayMs 5000` | the fake answers the config that late |
 | `<scheme>://_fake/offline`, `online`, `expire-tokens`, `revoke-sessions` | steer the running fake |
+| `<scheme>://_fake/log` | show the fake's recent requests in the `debug.fakeLog` probe |
+
+Debug probes (invisible, for UI tests): `debug.colorScheme` (the applied scheme),
+`debug.lastLink` (the last link the app received; `openLink` waits for it) and `debug.fakeLog`.
 
 In Debug the fake keeps its sessions in Caches across launches, as a real server would, so a
 relaunch stays signed in. Accounts registered during a run are not kept.
 
 UI tests launch with `-mockApi -freshInstall -AppleLanguages (en)`. iOS reads `AppleLanguages`
 before any app code runs, so `-freshInstall` alone can't undo a language an earlier test picked.
-Robots (`ShowcaseUITests/Robots`) say what the user does, as on Android. Two UI-test traps:
+Robots (`ShowcaseUITests/Robots`) say what the user does, as on Android. Showcase's UI tests
+mirror Android's showcase E2E test for test (the parity table is in the catalog PR). Two UI-test traps:
 - open a link with `openLink` (`XCUIDevice.shared.system.open`). `XCUIApplication.open(url)`
   relaunches the app with the same arguments, `-freshInstall` included;
 - after a successful sign-in, iOS offers to save the password. The sign-in robot answers

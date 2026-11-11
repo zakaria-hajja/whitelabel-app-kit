@@ -26,6 +26,8 @@ import WhitelabelKit
                 HomeShortcut(title: String(localized: "Your profile"), systemImage: "person", route: ProfileRoutes.shared.ROOT),
                 HomeShortcut(title: String(localized: "Settings"), systemImage: "gearshape", route: SettingsRoutes.shared.ROOT),
             ])
+            // The categories of the backend's seed catalog, as on Android.
+            Catalog(categories: ["Books", "Games", "Music", "Travel"])
             Profile()
             Settings()
         })
