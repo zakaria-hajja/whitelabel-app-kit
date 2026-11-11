@@ -18,7 +18,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.whitelabel.core.designsystem.theme.AppTheme
 
-private val MinButtonHeight = 48.dp
 
 @Composable
 fun AppPrimaryButton(
@@ -30,7 +29,7 @@ fun AppPrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.heightIn(min = MinButtonHeight),
+        modifier = modifier.heightIn(min = AppTheme.style.sizing.controlHeight),
         enabled = enabled && !loading,
     ) {
         if (loading) {
@@ -55,7 +54,7 @@ fun AppSecondaryButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.heightIn(min = MinButtonHeight),
+        modifier = modifier.heightIn(min = AppTheme.style.sizing.controlHeight),
         enabled = enabled,
     ) {
         Text(text)
@@ -71,7 +70,7 @@ fun AppTextButton(
 ) {
     TextButton(
         onClick = onClick,
-        modifier = modifier.heightIn(min = MinButtonHeight),
+        modifier = modifier.heightIn(min = AppTheme.style.sizing.controlHeight),
         enabled = enabled,
     ) {
         Text(text)
