@@ -13,6 +13,9 @@ public final class IosLanguageRepository: NSObject, LanguageRepository {
         self.defaults = defaults
     }
 
+    /** iOS reads `AppleLanguages` when the app starts: a change shows at the next launch. */
+    public var appliesImmediately: Bool { false }
+
     public func current() -> String? {
         defaults.string(forKey: Self.key)
     }

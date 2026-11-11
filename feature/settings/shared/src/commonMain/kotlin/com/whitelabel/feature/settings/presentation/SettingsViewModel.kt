@@ -21,6 +21,8 @@ import com.whitelabel.feature.settings.domain.NotificationKind
 import com.whitelabel.feature.settings.domain.NotificationSettings
 import com.whitelabel.feature.settings.domain.SettingsDataSource
 import com.whitelabel.feature.settings.domain.SettingsPatch
+import com.whitelabel.feature.settings.shared.resources.Res
+import com.whitelabel.feature.settings.shared.resources.settings_language_applies_on_restart
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -48,7 +50,12 @@ data class SettingsState(
     val privacyUrl: String = "",
     val termsUrl: String = "",
     val showDiagnostics: Boolean = false,
-)
+    /** A language was picked that takes effect the next time the app opens (iOS). */
+    val languageAppliesOnRestart: Boolean = false,
+) {
+    /** The note under the language row, when the change waits for the next launch. */
+    val languageNote: UiText? get() = if (languageAppliesOnRestart) UiText.Resource(Res.string.settings_language_applies_on_restart) else null
+}
 
 sealed interface SettingsAction {
     data class OnThemeSelect(val theme: ThemePreference) : SettingsAction
@@ -154,7 +161,7 @@ class SettingsViewModel(
 
     private fun selectLanguage(languageTag: String?) {
         languages.set(languageTag)
-        _state.update { it.copy(language = languageTag) }
+        _state.update { it.copy(language = languageTag, languageAppliesOnRestart = !languages.appliesImmediately) }
         // The server has no "follow the device" value, so only a chosen language is sent.
         if (languageTag != null && _state.value.signedIn) {
             viewModelScope.launch { source.patch(SettingsPatch(language = languageTag)) }
