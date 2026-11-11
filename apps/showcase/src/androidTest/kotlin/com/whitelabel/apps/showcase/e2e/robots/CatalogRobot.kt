@@ -3,6 +3,7 @@ package com.whitelabel.apps.showcase.e2e.robots
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import com.whitelabel.core.testing.android.robots.Robot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.performClick

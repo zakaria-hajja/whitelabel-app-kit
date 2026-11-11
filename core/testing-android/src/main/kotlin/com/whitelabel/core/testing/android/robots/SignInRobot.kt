@@ -1,10 +1,14 @@
-package com.whitelabel.apps.showcase.e2e.robots
+package com.whitelabel.core.testing.android.robots
 
 import androidx.compose.ui.test.junit4.ComposeTestRule
 
-class SignInRobot(compose: ComposeTestRule) : Robot(compose) {
+/** The shared sign-in and registration screens; [appName] as in the app's title. */
+class SignInRobot(compose: ComposeTestRule, appName: String) : Robot(compose) {
 
-    fun isShown() = sees(TITLE)
+    private val title = "Sign in to $appName"
+
+
+    fun isShown() = sees(title)
 
     fun signIn(email: String, password: String) {
         isShown()
@@ -24,10 +28,6 @@ class SignInRobot(compose: ComposeTestRule) : Robot(compose) {
 
     fun showsWrongCredentials() {
         sees("Wrong email or password.")
-        sees(TITLE)
-    }
-
-    private companion object {
-        const val TITLE = "Sign in to Showcase"
+        sees(title)
     }
 }

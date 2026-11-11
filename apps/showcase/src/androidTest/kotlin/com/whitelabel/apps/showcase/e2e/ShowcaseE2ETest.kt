@@ -10,13 +10,13 @@ import androidx.test.runner.lifecycle.Stage
 import com.whitelabel.apps.showcase.e2e.robots.CatalogRobot
 import com.whitelabel.apps.showcase.e2e.robots.HomeRobot
 import com.whitelabel.apps.showcase.e2e.robots.ProfileRobot
-import com.whitelabel.apps.showcase.e2e.robots.SettingsRobot
-import com.whitelabel.apps.showcase.e2e.robots.SignInRobot
 import com.whitelabel.core.mockapi.FakeBackend
 import com.whitelabel.core.mockapi.FakeData
 import com.whitelabel.core.shell.FoundationActivity
 import com.whitelabel.core.testing.android.EndAppScopeRule
 import com.whitelabel.core.testing.android.ResetAppDataRule
+import com.whitelabel.core.testing.android.robots.SettingsRobot
+import com.whitelabel.core.testing.android.robots.SignInRobot
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import javax.inject.Inject
@@ -39,7 +39,7 @@ class ShowcaseE2ETest {
 
     @Inject lateinit var backend: FakeBackend
 
-    private val signIn = SignInRobot(compose)
+    private val signIn = SignInRobot(compose, appName = "Showcase")
     private val home = HomeRobot(compose)
     private val catalog = CatalogRobot(compose)
     private val profile = ProfileRobot(compose)

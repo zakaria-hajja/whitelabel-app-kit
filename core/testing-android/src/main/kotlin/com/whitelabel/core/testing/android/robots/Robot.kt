@@ -1,4 +1,4 @@
-package com.whitelabel.apps.showcase.e2e.robots
+package com.whitelabel.core.testing.android.robots
 
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
@@ -17,7 +17,7 @@ import com.whitelabel.core.testing.android.waitForNoText
 import com.whitelabel.core.testing.android.waitForText
 
 /** What every robot can do: find text, type into a labelled field, tap, switch tabs. */
-abstract class Robot(protected val compose: ComposeTestRule) {
+abstract class Robot(val compose: ComposeTestRule) {
 
     fun sees(text: String) = compose.waitForText(text)
 

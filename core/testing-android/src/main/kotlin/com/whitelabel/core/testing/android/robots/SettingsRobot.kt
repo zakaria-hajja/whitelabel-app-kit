@@ -1,7 +1,8 @@
-package com.whitelabel.apps.showcase.e2e.robots
+package com.whitelabel.core.testing.android.robots
 
 import androidx.compose.ui.test.junit4.ComposeTestRule
 
+/** The shared settings screen. */
 class SettingsRobot(compose: ComposeTestRule) : Robot(compose) {
 
     fun signOut() {

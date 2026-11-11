@@ -1,6 +1,7 @@
 package com.whitelabel.apps.showcase.e2e.robots
 
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import com.whitelabel.core.testing.android.robots.Robot
 
 class ProfileRobot(compose: ComposeTestRule) : Robot(compose) {
 
