@@ -86,4 +86,17 @@ class ContractTest {
         assertThat(repository.refresh()).isEqualTo(Result.Success(Unit))
         assertThat(repository.current().termsUrl).isEqualTo(example("/api/v1/app/config", "get", 200, "data.legal.termsUrl"))
     }
+
+    @Test fun `the smallest valid responses still decode`() = runTest {
+        val minimal = ContractBackend(minimal = true)
+        val sessions = DefaultSessionRepository(minimal.client(), LocalSession(tokenStore, userCache), backgroundScope)
+        assertThat(sessions.signIn("ada@example.com", "secret pass")).isEqualTo(Result.Success(Unit))
+        assertThat(userCache.user.first()?.firstName).isEqualTo(null)
+        assertThat(DefaultUserRepository(minimal.client(), userCache).refresh()).isEqualTo(Result.Success(Unit))
+        val brand = BrandConfig(null, "Sample", "com.example", "1.0", Environment.DEVELOPMENT, "https://api.test/api/v1/", "sample",
+            RuntimeDefaults("help@sample.example", "https://p", "https://t", emptySet()))
+        val config = DefaultAppConfigRepository(minimal.client(), brand, AppConfigCache(File(dir, "config-min.json"), storeScope), backgroundScope)
+        assertThat(config.refresh()).isEqualTo(Result.Success(Unit))
+        assertThat(config.current().supportEmail).isEqualTo("help@sample.example") // the contract makes support.email optional
+    }
 }

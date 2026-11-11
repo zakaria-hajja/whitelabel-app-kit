@@ -12,4 +12,8 @@ class ContractTest {
     @Test fun `get api v1 health matches the contract`() = runTest {
         assertThat(KtorHealthDataSource(ContractBackend().client(ContractBackend.SignedOut)).check()).isInstanceOf(Result.Success::class)
     }
+
+    @Test fun `the smallest valid health response still decodes`() = runTest {
+        assertThat(KtorHealthDataSource(ContractBackend(minimal = true).client(ContractBackend.SignedOut)).check()).isInstanceOf(Result.Success::class)
+    }
 }

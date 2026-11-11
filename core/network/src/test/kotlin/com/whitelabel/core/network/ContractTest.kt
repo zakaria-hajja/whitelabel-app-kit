@@ -67,4 +67,12 @@ class ContractTest {
         assertThat(codes.isNotEmpty()).isEqualTo(true)
         assertThat(codes.filter { ApiErrorCode.fromWire(it) == ApiErrorCode.UNKNOWN }).isEqualTo(emptyList())
     }
+
+    @Test fun `the smallest valid refresh response still renews the session`() = runTest {
+        val minimal = ContractBackend(minimal = true)
+        val tokens = FakeSessionTokens(SessionTokens("old-access", "old-refresh"))
+        minimal.answerOnce("get", "/api/v1/users/me", 401)
+        assertThat(minimal.client(tokens).getResult<JsonObject>("users/me")).isInstanceOf(Result.Success::class)
+        assertThat(tokens.replaced).isEqualTo(1)
+    }
 }

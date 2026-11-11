@@ -28,4 +28,8 @@ class ContractTest {
         assertThat(source.patch(SettingsPatch(theme = "DARK", language = "fr", push = false))).isEqualTo(Result.Success(Unit))
         backend.assertRequestMatches("patch", "/api/v1/settings")
     }
+
+    @Test fun `the smallest valid settings response still decodes`() = runTest {
+        assertThat(KtorSettingsDataSource(ContractBackend(minimal = true).client()).get()).isInstanceOf(Result.Success::class)
+    }
 }

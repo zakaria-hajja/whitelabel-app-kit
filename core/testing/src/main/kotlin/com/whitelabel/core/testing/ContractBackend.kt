@@ -25,6 +25,8 @@ data class RecordedRequest(val method: String, val specPath: String, val body: S
 class ContractBackend(
     /** Check each request's query parameters and bearer against the contract (off only for raw error-mapping sweeps). */
     private val checkRequests: Boolean = true,
+    /** Answer success with [OpenApiSpec.minimalResponse] instead of the full example. */
+    private val minimal: Boolean = false,
 ) {
     val requests = mutableListOf<RecordedRequest>()
     private val statuses = mutableMapOf<Pair<String, String>, Int>()
@@ -66,7 +68,7 @@ class ContractBackend(
                 ?: statuses[method to specPath]
                 ?: OpenApiSpec.documentedStatuses(specPath, method).first { it in 200..299 }
             respond(
-                OpenApiSpec.responseExample(specPath, method, status),
+                if (minimal && status in 200..299) OpenApiSpec.minimalResponse(specPath, method, status) else OpenApiSpec.responseExample(specPath, method, status),
                 HttpStatusCode.fromValue(status),
                 headersOf(HttpHeaders.ContentType, "application/json"),
             )

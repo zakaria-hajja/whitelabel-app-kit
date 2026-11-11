@@ -52,3 +52,20 @@ class TemplateTest {
         assertThat(OpenApiSpec.templateFor("/api/v1/nope")).isNull()
     }
 }
+
+class MinimalResponseTest {
+    @Test fun `the minimal variant nulls nullable fields and drops optional ones`() {
+        val item = OpenApiSpec.minimalResponse("/api/v1/catalog/{id}", "get", 200)
+        assertThat(item).contains("\"description\":null")
+        assertThat(item).contains("\"imageUrl\":null")
+        assertThat(OpenApiSpec.responseErrors("/api/v1/catalog/{id}", "get", 200, item)).isEmpty()
+    }
+
+    @Test fun `every success example has a valid minimal variant`() {
+        val problems = OpenApiSpec.operations().flatMap { (path, method) ->
+            OpenApiSpec.documentedStatuses(path, method).filter { it in 200..299 && OpenApiSpec.responseExampleOrNull(path, method, it) != null }
+                .flatMap { status -> OpenApiSpec.responseErrors(path, method, status, OpenApiSpec.minimalResponse(path, method, status)).map { "$method $path: $it" } }
+        }
+        assertThat(problems).isEmpty()
+    }
+}

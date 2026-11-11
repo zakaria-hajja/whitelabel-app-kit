@@ -28,4 +28,13 @@ class ContractTest {
         val item = (source.item("any-id") as Result.Success<CatalogItem>).data
         assertThat(item.title).isEqualTo(OpenApiSpec.exampleValue("/api/v1/catalog/{id}", "get", 200, "data.title"))
     }
+
+    @Test fun `the smallest valid catalog responses still decode`() = runTest {
+        val minimal = KtorCatalogDataSource(ContractBackend(minimal = true).client())
+        val item = (minimal.item("any-id") as Result.Success<CatalogItem>).data
+        assertThat(item.description).isEqualTo(null)
+        assertThat(item.category).isEqualTo(null)
+        val page = minimal.page(CatalogQuery(sort = CatalogSort.NEWEST), page = 1, pageSize = 20)
+        assertThat(page is Result.Success).isEqualTo(true)
+    }
 }

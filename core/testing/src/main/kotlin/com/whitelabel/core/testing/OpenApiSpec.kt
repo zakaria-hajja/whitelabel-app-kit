@@ -75,6 +75,45 @@ object OpenApiSpec {
     fun responseExampleOrNull(path: String, method: String, status: Int): String? =
         example(response(path, method, status).path("content").path(JSON))
 
+    /**
+     * The smallest response the schema allows, built from the example: only required properties are
+     * kept, and every nullable one is `null`. Decoding it proves the app doesn't rely on what the
+     * contract leaves optional.
+     */
+    fun minimalResponse(path: String, method: String, status: Int): String {
+        val example = mapper.readTree(responseExample(path, method, status))
+        return mapper.writeValueAsString(minimal(example, response(path, method, status).path("content").path(JSON).path("schema")))
+    }
+
+    private fun minimal(node: JsonNode, schemaNode: JsonNode): JsonNode {
+        val schema = resolve(schemaNode)
+        val properties = schema.path("properties")
+        return when {
+            node.isObject && properties.isObject -> {
+                val required = schema.path("required").elements().asSequence().map { it.asText() }.toSet()
+                mapper.createObjectNode().apply {
+                    node.properties().filter { it.key in required }.forEach { (key, value) ->
+                        val property = resolve(properties.path(key))
+                        set<JsonNode>(key, if (property.allowsNull()) mapper.nullNode() else minimal(value, property))
+                    }
+                }
+            }
+            node.isArray -> mapper.createArrayNode().apply { node.forEach { add(minimal(it, schema.path("items"))) } }
+            else -> node
+        }
+    }
+
+    private fun resolve(schema: JsonNode): JsonNode {
+        val ref = schema.path("\$ref").asText("")
+        if (!ref.startsWith("#/")) return schema
+        return ref.removePrefix("#/").split('/').fold(root) { node, key -> node.path(key) }.let(::resolve)
+    }
+
+    private fun JsonNode.allowsNull(): Boolean {
+        val type = path("type")
+        return (type.isArray && type.any { it.asText() == "null" }) || type.asText() == "null"
+    }
+
     fun requestExample(path: String, method: String): String? =
         example(operation(path, method).path("requestBody").path("content").path(JSON))
 
