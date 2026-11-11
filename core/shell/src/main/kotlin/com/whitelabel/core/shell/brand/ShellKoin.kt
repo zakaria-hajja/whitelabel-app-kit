@@ -13,6 +13,7 @@ import com.whitelabel.core.data.di.dataModule
 import com.whitelabel.core.network.EngineOverride
 import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.network.NetworkConfig
+import com.whitelabel.core.network.defaultHttpEngine
 import com.whitelabel.core.network.di.networkModule
 import com.whitelabel.core.shell.AppDefinition
 import com.whitelabel.core.shell.ShellViewModel
@@ -20,7 +21,6 @@ import com.whitelabel.core.shell.diagnostics.BrandPreviewViewModel
 import com.whitelabel.core.shell.diagnostics.HealthDataSource
 import com.whitelabel.core.shell.diagnostics.KtorHealthDataSource
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.okhttp.OkHttp
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
@@ -47,7 +47,7 @@ internal fun shellModule(definition: AppDefinition) = module {
             logger = if (brand.environment == Environment.PRODUCTION) null else { line -> Log.d("Http", line) },
         )
     }
-    single<HttpClientEngine> { getOrNull<EngineOverride>()?.engine() ?: OkHttp.create() }
+    single<HttpClientEngine> { getOrNull<EngineOverride>()?.engine() ?: defaultHttpEngine() }
     single(named(USING_MOCK_API)) { getOrNull<EngineOverride>() != null }
     single<Analytics> { definition.analytics ?: LoggingAnalytics { line -> Log.d("Analytics", line) } }
     single<CrashReporter> {

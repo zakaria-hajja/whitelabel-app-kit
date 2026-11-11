@@ -20,8 +20,8 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
-import org.junit.jupiter.api.Test
-import java.io.IOException
+import kotlin.test.Test
+import kotlinx.io.IOException
 
 @Serializable
 private data class Echo(val name: String)
@@ -67,7 +67,7 @@ class SafeCallTest {
         assertThat(methods).isEqualTo(listOf("PATCH", "DELETE"))
     }
 
-    @Test fun `error envelope maps code, status and field errors`() = runTest {
+    @Test fun `error envelope maps code status and field errors`() = runTest {
         val client = testClient {
             respond(
                 """{"success":false,"error":{"code":"VALIDATION_ERROR","message":"Bad","details":[{"path":"email","message":"Invalid email"}]},"meta":{"requestId":"r1"}}""",
@@ -123,11 +123,6 @@ class SafeCallTest {
 
     @Test fun `io failure maps to NO_INTERNET`() = runTest {
         val client = testClient { throw IOException("down") }
-        assertThat(client.getResult<Health>("health")).isEqualTo(Result.Error(DataError.Network.NO_INTERNET))
-    }
-
-    @Test fun `unresolved address maps to NO_INTERNET`() = runTest {
-        val client = testClient { throw java.nio.channels.UnresolvedAddressException() }
         assertThat(client.getResult<Health>("health")).isEqualTo(Result.Error(DataError.Network.NO_INTERNET))
     }
 

@@ -14,8 +14,6 @@ import io.ktor.http.isSuccess
 import io.ktor.serialization.JsonConvertException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
-import java.io.IOException
-import java.nio.channels.UnresolvedAddressException
 import kotlin.coroutines.cancellation.CancellationException
 
 /** Runs [block], mapping every thrown failure to a [DataError]. Cancellation is rethrown. */
@@ -30,14 +28,11 @@ internal suspend inline fun <T> safeCall(block: () -> Result<T, DataError>): Res
     }
 
 @PublishedApi
-internal fun Exception.toDataError(): DataError = when (this) {
-    is HttpRequestTimeoutException,
-    is SocketTimeoutException,
-    is ConnectTimeoutException,
-    is java.net.SocketTimeoutException,
-    -> DataError.Network.REQUEST_TIMEOUT
-    is IOException, is UnresolvedAddressException -> DataError.Network.NO_INTERNET
-    is SerializationException, is JsonConvertException -> DataError.Network.SERIALIZATION
+internal fun Exception.toDataError(): DataError = when {
+    this is HttpRequestTimeoutException || this is SocketTimeoutException || this is ConnectTimeoutException ||
+        isPlatformTimeout() -> DataError.Network.REQUEST_TIMEOUT
+    isConnectivityFailure() -> DataError.Network.NO_INTERNET
+    this is SerializationException || this is JsonConvertException -> DataError.Network.SERIALIZATION
     else -> DataError.Network.UNKNOWN
 }
 

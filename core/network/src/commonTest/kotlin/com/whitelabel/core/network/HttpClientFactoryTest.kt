@@ -13,13 +13,13 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 private const val OK_BODY = """{"success":true,"data":{"status":"ok"},"meta":{"requestId":"r1"}}"""
 
 class HttpClientFactoryTest {
-    @Test fun `sends client id, accept and user agent headers`() = runTest {
+    @Test fun `sends client id accept and user agent headers`() = runTest {
         var captured: Map<String, String?> = emptyMap()
         val client = testClient { req ->
             captured = mapOf(

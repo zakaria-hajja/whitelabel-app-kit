@@ -16,7 +16,6 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.util.AttributeKey
-import java.io.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -94,8 +93,9 @@ private suspend fun HttpClient.renewedTokens(sent: SessionTokens, tokens: Sessio
         refresh(current)
     } catch (e: CancellationException) {
         throw e
-    } catch (_: IOException) {
+    } catch (e: Exception) {
         // No response: the server may have rotated the pair. Retry once now with the same token.
+        if (!e.isConnectivityFailure()) throw e
         refresh(current)
     }
     if (response.status == HttpStatusCode.Unauthorized) {

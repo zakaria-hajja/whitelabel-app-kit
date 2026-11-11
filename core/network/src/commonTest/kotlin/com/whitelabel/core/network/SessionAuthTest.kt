@@ -14,13 +14,15 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
-import java.io.IOException
-import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.io.IOException
+import kotlin.concurrent.atomics.AtomicInt
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 @Serializable
 private data class Profile(val name: String)
@@ -39,6 +41,7 @@ private fun MockRequestHandleScope.error(code: String, status: HttpStatusCode = 
 private val HttpRequestData.bearer: String? get() = headers[HttpHeaders.Authorization]
 private val HttpRequestData.isRefresh: Boolean get() = url.encodedPath.endsWith("/auth/refresh")
 
+@OptIn(ExperimentalAtomicApi::class)
 class SessionAuthTest {
 
     @Test fun `signed in request carries the bearer`() = runTest {
@@ -83,19 +86,19 @@ class SessionAuthTest {
 
     @Test fun `concurrent expired calls share one refresh`() = runTest {
         val store = FakeSessionTokens(OLD)
-        val refreshes = AtomicInteger()
-        val expiredHits = AtomicInteger()
+        val refreshes = AtomicInt(0)
+        val expiredHits = AtomicInt(0)
         val bothExpired = CompletableDeferred<Unit>()
         val client = testClient(tokens = store) { request ->
             when {
                 request.isRefresh -> {
-                    refreshes.incrementAndGet()
+                    refreshes.incrementAndFetch()
                     respond(NEW_PAIR, HttpStatusCode.OK, jsonHeaders)
                 }
                 request.bearer == "Bearer new-access" -> respond(OK_PROFILE, HttpStatusCode.OK, jsonHeaders)
                 else -> {
                     // Hold both calls until each has been rejected with the old token.
-                    if (expiredHits.incrementAndGet() == 2) bothExpired.complete(Unit)
+                    if (expiredHits.incrementAndFetch() == 2) bothExpired.complete(Unit)
                     bothExpired.await()
                     error("TOKEN_EXPIRED")
                 }
@@ -105,7 +108,7 @@ class SessionAuthTest {
         val second = async { client.getResult<Profile>("catalog") }
         assertThat(first.await()).isEqualTo(Result.Success(Profile("Ada")))
         assertThat(second.await()).isEqualTo(Result.Success(Profile("Ada")))
-        assertThat(refreshes.get()).isEqualTo(1)
+        assertThat(refreshes.load()).isEqualTo(1)
     }
 
     @Test fun `rejected refresh ends the session`() = runTest {
@@ -262,10 +265,10 @@ class SessionAuthTest {
 
     @Test fun `a retry still unauthorized ends the session without a second refresh`() = runTest {
         val store = FakeSessionTokens(OLD)
-        val refreshes = AtomicInteger()
+        val refreshes = AtomicInt(0)
         val client = testClient(tokens = store) { request ->
             if (request.isRefresh) {
-                refreshes.incrementAndGet()
+                refreshes.incrementAndFetch()
                 respond(NEW_PAIR, HttpStatusCode.OK, jsonHeaders)
             } else {
                 error("TOKEN_EXPIRED")
@@ -273,7 +276,7 @@ class SessionAuthTest {
         }
         assertThat(client.getResult<Profile>("users/me"))
             .isEqualTo(Result.Error(DataError.Api(ApiErrorCode.TOKEN_EXPIRED, 401)))
-        assertThat(refreshes.get()).isEqualTo(1)
+        assertThat(refreshes.load()).isEqualTo(1)
         assertThat(store.ended).isEqualTo(1)
     }
 }
