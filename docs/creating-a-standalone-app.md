@@ -203,3 +203,14 @@ updates the following, in one commit with the bump:
    - Add a device test calling `GlobalContext.get().assertEveryViewModelResolves()` (from
      `:core:testing-android`) with a `FreshAppRule`. Koin finds a missing binding only when a screen
      opens; this test finds it first.
+
+## 10. Moving to a foundation with KMP core modules
+
+The core modules (`common`, `domain`, `data`, `datastore`, `network`, `analytics`, `branding`,
+the reminder engine) are now Kotlin Multiplatform. An Android app repo changes little:
+
+- **`Reminder.at`** is a `kotlinx.datetime.LocalDateTime`. From `java.time`, use
+  `toKotlinLocalDateTime()`; the stored format is unchanged.
+- **`JsonStore`** takes an okio `Path` (`context.jsonStorePath(name)`). The `File` forms
+  (`JsonStore(file, …)` and `context.jsonStoreFile(name)`) still work on Android.
+- **`StorePaths`** returns a `Path` (`path(name)`) instead of a `File` (`file(name)`).

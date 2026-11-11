@@ -39,13 +39,14 @@ two receivers) merge into the app automatically.
 
 ## Scheduling
 
-Inject `Reminders` and give each reminder a stable id that the app chooses:
+Get `Reminders` from Koin and give each reminder a stable id that the app chooses. Times are
+`kotlinx.datetime.LocalDateTime`, local to the device:
 
 ```kotlin
 reminders.schedule(
     Reminder(
         id = "netflix:renewal",
-        at = LocalDateTime.of(2027, 3, 10, 9, 0),
+        at = LocalDateTime(2027, 3, 10, 9, 0),
         channel = "renewals",
         title = "Netflix renews tomorrow",
         text = "€13.99 on your card",
