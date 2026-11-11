@@ -1,5 +1,8 @@
 plugins {
     id("whitelabel.kmp.library")
+    // Packages every shared module's Compose resources (their strings) with the iOS binaries, so the
+    // ViewModels' messages resolve in the iOS app.
+    id("whitelabel.kmp.resources")
     id("whitelabel.koin")
 }
 

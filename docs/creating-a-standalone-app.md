@@ -227,7 +227,11 @@ depends on, unchanged) and `:feature:<name>:shared`. An app repo changes little:
 - **The app's own features** follow the same split when they should run on iOS: a `:<app>:<feature>`
   Android UI module and a `:<app>:<feature>:shared` KMP module (see
   [adding-a-shared-feature.md](adding-a-shared-feature.md)).
-- **For iOS,** add a KMP module like `:apps:showcase:shared`:
+- **For iOS,** add a KMP module like `:apps:showcase:shared`, with `whitelabel.kmp.resources`
+  applied:
   - it exports the shared modules Swift calls into one static framework;
-  - it lists the app's Koin modules in a `<app>SharedModules(platform)` function that the iOS app
-    starts Koin with.
+  - it packages every shared module's strings. The Xcode build phase runs
+    `embedAndSignAppleFrameworkForXcode` (which syncs them), or else they are missing at runtime;
+  - it lists the app's Koin modules in a `<app>SharedModules(platform)` function. Kotlin code starts
+    Koin with it. The Swift-facing entry point and typed ViewModel accessors come with the iOS
+    starter (step 5 of the iOS design).

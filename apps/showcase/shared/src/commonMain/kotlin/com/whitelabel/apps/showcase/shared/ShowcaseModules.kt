@@ -10,9 +10,12 @@ import com.whitelabel.feature.settings.settingsModule
 import org.koin.core.module.Module
 
 /**
- * Every shared Koin module Showcase uses, plus the iOS app's [platform] module (store paths, the
- * token cipher, the language, the HTTP engine, `NetworkConfig`, `BrandConfig`, `Analytics`). The
- * iOS app hands this list to `startKoin`.
+ * Every shared Koin module Showcase uses, plus a [platform] module (store paths, the token cipher,
+ * the language, the HTTP engine, `NetworkConfig`, `BrandConfig`, `Analytics`).
+ *
+ * Kotlin code starts Koin with it (as ShowcaseGraphIosTest does). Swift can't build a Koin module or
+ * get a ViewModel through Koin's reified functions: the iOS starter (step 5) adds the Swift-facing
+ * entry point (taking the platform pieces as plain parameters) and typed ViewModel accessors on top.
  */
 fun showcaseSharedModules(platform: Module): List<Module> = listOf(
     networkModule,

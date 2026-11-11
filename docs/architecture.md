@@ -35,7 +35,7 @@ business features. The design is in
 | `:feature:home:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
 | `:feature:catalog` | Built | `catalog()`: paginated search with categories and sort, item screen and its deep link. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
 | `:feature:catalog:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
-| `:apps:showcase:shared` | Built | Showcase's shared code as one iOS framework (`ShowcaseShared`), and `showcaseSharedModules(platform)`, the Koin modules the iOS app starts with |
+| `:apps:showcase:shared` | Built | Showcase's shared code as one iOS framework (`ShowcaseShared`, with every shared module's strings) and `showcaseSharedModules(platform)`, its Koin modules. The Swift-facing entry point comes with the iOS starter |
 | `fixtures/standalone-app` | Built | A minimal backendless app wired like an app in its own repo; CI builds and verifies it |
 
 **Apps in their own repo.** An app can also live in a separate repository, with this foundation as a
