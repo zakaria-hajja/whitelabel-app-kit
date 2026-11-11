@@ -22,6 +22,7 @@ import com.whitelabel.feature.settings.domain.NotificationSettings
 import com.whitelabel.feature.settings.domain.SettingsDataSource
 import com.whitelabel.feature.settings.domain.SettingsPatch
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,7 +62,14 @@ internal sealed interface SettingsAction {
     data object OnSignOutClick : SettingsAction
     data object OnSignOutConfirm : SettingsAction
     data object OnSignOutDismiss : SettingsAction
+
+    /** The screen is visible again: the language may have been changed in the system's settings. */
+    data object OnScreenResumed : SettingsAction
 }
+
+/** The chosen language without its region (`fr-CA` → `fr`), as the app offers languages, not regions. */
+private fun LanguageRepository.currentLanguage(): String? =
+    current()?.let { Locale.forLanguageTag(it).language }?.takeIf { it.isNotEmpty() }
 
 /** The app's languages that the backend also supports; all of them when the backend sets no list. */
 internal fun offeredLanguages(options: List<String>, remote: List<String>): List<String> =
@@ -86,7 +94,7 @@ internal class SettingsViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(
         SettingsState(
-            language = languages.current(),
+            language = languages.currentLanguage(),
             appName = brand.appName,
             versionName = brand.versionName,
             showDiagnostics = brand.environment == Environment.DEVELOPMENT,
@@ -136,6 +144,7 @@ internal class SettingsViewModel @Inject constructor(
             SettingsAction.OnSignOutClick -> _state.update { it.copy(confirmSignOut = true) }
             SettingsAction.OnSignOutDismiss -> _state.update { it.copy(confirmSignOut = false) }
             SettingsAction.OnSignOutConfirm -> signOut()
+            SettingsAction.OnScreenResumed -> _state.update { it.copy(language = languages.currentLanguage()) }
         }
     }
 

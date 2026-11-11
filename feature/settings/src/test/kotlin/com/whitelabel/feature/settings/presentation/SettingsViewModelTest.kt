@@ -132,6 +132,19 @@ class SettingsViewModelTest {
         assertThat(source.patches).containsExactly(SettingsPatch(language = "fr"))
     }
 
+    @Test fun `a language changed outside the app shows when the screen is back`() = runTest {
+        val viewModel = viewModel()
+        viewModel.onAction(SettingsAction.OnLanguageSelect("fr"))
+        language.tag = "en" // changed in the system's app-language settings
+        viewModel.onAction(SettingsAction.OnScreenResumed)
+        assertThat(viewModel.state.value.language).isEqualTo("en")
+    }
+
+    @Test fun `a regional language selects its language`() = runTest {
+        language.tag = "fr-CA"
+        assertThat(viewModel().state.value.language).isEqualTo("fr")
+    }
+
     @Test fun `signed out hides notifications and sends no request`() = runTest {
         val viewModel = viewModel(FakeSession(SessionState.SignedOut))
         viewModel.onAction(SettingsAction.OnThemeSelect(ThemePreference.DARK))
