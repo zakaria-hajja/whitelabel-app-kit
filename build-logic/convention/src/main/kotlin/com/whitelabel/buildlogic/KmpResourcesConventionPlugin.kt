@@ -8,7 +8,6 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.register
 import org.jetbrains.compose.ComposeExtension
-import org.jetbrains.compose.ComposePlugin
 import org.jetbrains.compose.resources.ResourcesExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
@@ -39,9 +38,6 @@ class KmpResourcesConventionPlugin : Plugin<Project> {
         dependencies {
             add("commonMainImplementation", libs.library("jetbrains-compose-runtime"))
             add("commonMainApi", libs.library("jetbrains-compose-components-resources"))
-            // Resolving a string on the JVM reads the screen density through Skiko; host tests get
-            // this machine's desktop runtime. Test-only: the JVM target ships nowhere.
-            add("jvmTestImplementation", ComposePlugin.DesktopDependencies.currentOs)
         }
     }
 }

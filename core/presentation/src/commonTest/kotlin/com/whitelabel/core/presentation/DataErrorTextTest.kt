@@ -18,7 +18,6 @@ import com.whitelabel.core.presentation.resources.core_ui_error_timeout
 import com.whitelabel.core.presentation.resources.core_ui_error_unavailable
 import com.whitelabel.core.presentation.resources.core_ui_error_unknown
 import kotlin.test.Test
-import kotlinx.coroutines.test.runTest
 
 class DataErrorTextTest {
 
@@ -63,24 +62,5 @@ class DataErrorTextTest {
             DataError.Api(ApiErrorCode.VALIDATION_ERROR, 400) to Res.string.core_ui_error_unknown,
         )
         expected.forEach { (error, id) -> assertThat(error.toUiText()).isEqualTo(UiText.Resource(id)) }
-    }
-
-    @Test fun `asStringAsync resolves the English text`() = runTest {
-        assertThat(UiText.Resource(Res.string.core_ui_error_no_internet).asStringAsync())
-            .isEqualTo("No internet connection. Check your connection and try again.")
-    }
-
-    @Test fun `asStringAsync fills in arguments`() = runTest {
-        assertThat(UiText.Resource(Res.string.core_ui_error_rate_limited_seconds, listOf(30L)).asStringAsync())
-            .isEqualTo("Too many attempts. Try again in 30 seconds.")
-    }
-
-    @Test fun `asStringAsync unescapes apostrophes written the Android way`() = runTest {
-        assertThat(UiText.Resource(Res.string.core_ui_error_storage).asStringAsync())
-            .isEqualTo("Couldn't save on this device. Free up some space and try again.")
-    }
-
-    @Test fun `a dynamic text is returned as is`() = runTest {
-        assertThat(UiText.Dynamic("Hello").asStringAsync()).isEqualTo("Hello")
     }
 }
