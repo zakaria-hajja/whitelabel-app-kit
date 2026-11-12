@@ -8,7 +8,11 @@ sealed interface AdDecision {
     data class Hide(val reason: HideReason) : AdDecision
 }
 
-enum class HideReason { ADS_OFF, CONSENT_PENDING, CONSENT_FAILED, CONSENT_NO_ADS, FIRST_LAUNCH, AD_FREE, UNDECLARED }
+enum class HideReason { ADS_OFF, CONSENT_PENDING, CONSENT_FAILED, CONSENT_NO_ADS, FIRST_LAUNCH, AD_FREE, UNDECLARED,
+
+    /** Not decided yet: the stored ad-free window is unread, or the tracking prompt is still open. */
+    LOADING,
+}
 
 /**
  * Whether an ad may show. Rules are checked in a fixed order so the reason is deterministic:
