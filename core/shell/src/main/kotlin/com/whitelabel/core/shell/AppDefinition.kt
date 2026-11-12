@@ -6,6 +6,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraphBuilder
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
+import com.whitelabel.core.ads.AdPlacement
+import com.whitelabel.core.ads.AdTabOwner
+import com.whitelabel.core.ads.AdsBuilder
+import com.whitelabel.core.ads.checkAdPlacementTabs
+import com.whitelabel.core.ads.tabPlacementFor
 import org.koin.core.module.Module
 import com.whitelabel.core.shell.model.DefinitionSpec
 import com.whitelabel.core.shell.model.FeatureSpec
@@ -66,7 +71,14 @@ class AppDefinition internal constructor(
     internal val appModules: List<Module> = emptyList(),
     /** The app called `firebase()`: remote values, analytics and crash reports come from Firebase. */
     val usesFirebase: Boolean = false,
+    /** The app called `ads { }`: it shows banners, behind the user's consent. */
+    val usesAds: Boolean = false,
+    /** The banner slots from `ads { }`, in declaration order. */
+    internal val adPlacements: List<AdPlacement> = emptyList(),
 ) {
+    /** Firebase and ads both wait for the user's consent, gathered at launch. */
+    internal val needsConsent: Boolean get() = usesFirebase || usesAds
+
     /**
      * Every Koin module the definition brings, once each: each entry's, then the app's own. Koin
      * keeps the last binding of a type, so an app's binding replaces a feature's.
@@ -87,6 +99,7 @@ class AppDefinitionBuilder internal constructor() {
     private var stylePack: StylePack = StylePack.Material
     private val appModules = mutableListOf<Module>()
     private var usesFirebase = false
+    private var ads: AdsBuilder? = null
 
     fun add(entry: FeatureEntry) {
         entries += entry
@@ -125,14 +138,26 @@ class AppDefinitionBuilder internal constructor() {
         usesFirebase = true
     }
 
+    /**
+     * Shows AdMob banners, behind the user's consent: `ads { placement("home", underTab = HomeRoute) }`.
+     * It needs `ads.enabled` (`true` or `debug`) in app.properties. A placement with `underTab` is
+     * drawn by the shell below that tab's root screen; any other the app places with `AdBanner(name)`.
+     * Never under the Settings tab or the sign-in gate. More than one call adds to the same list.
+     */
+    fun ads(block: AdsBuilder.() -> Unit) {
+        (ads ?: AdsBuilder().also { ads = it }).apply(block)
+    }
+
     internal fun build(): AppDefinition {
         check(!usesFirebase || (analytics == null && crashReporter == null)) {
             "firebase() replaces analytics() and crashReporter(); use one"
         }
         val definition = AppDefinition(
             entries.toList(), startTabRoute, analytics, crashReporter, stylePack, appModules.toList(), usesFirebase,
+            usesAds = ads != null, adPlacements = ads?.build().orEmpty(),
         )
         definition.toSpec().validate()
+        definition.validateAdPlacements()
         return definition
     }
 }
@@ -151,6 +176,29 @@ internal fun checkFirebaseDeclared(definition: AppDefinition, declared: Boolean)
     check(!definition.usesFirebase || declared) { "firebase() needs firebase.enabled=true or debug in app.properties" }
     check(definition.usesFirebase || !declared) { "firebase.enabled is set but the app definition doesn't call firebase()" }
 }
+
+/**
+ * Checks where the shell would draw each placement (the shared [checkAdPlacementTabs]): under a tab,
+ * never Settings or the gate, and one banner per tab.
+ */
+private fun AppDefinition.validateAdPlacements() {
+    val gate = gateEntry
+    checkAdPlacementTabs(
+        adPlacements,
+        ownerOf = { route ->
+            val owner = entries.firstOrNull { it.tab?.route == route } ?: gate?.takeIf { checkNotNull(it.gate).startRoute == route }
+            owner?.let { AdTabOwner(it.id, isGate = it.gate != null) }
+        },
+        routeName = { it::class.simpleName ?: it.toString() },
+    )
+}
+
+/**
+ * The placement the shell draws below the current screen, if that screen is a tab's root:
+ * [isCurrent] says whether a tab route is the current destination.
+ */
+internal fun AppDefinition.tabPlacementFor(isCurrent: (route: Any) -> Boolean): String? =
+    tabPlacementFor(adPlacements, isCurrent)
 
 /** Declares an app's features, e.g. `appDefinition { auth(); notes(); settings(); startTab(NotesRoute) }`. */
 fun appDefinition(block: AppDefinitionBuilder.() -> Unit): AppDefinition =

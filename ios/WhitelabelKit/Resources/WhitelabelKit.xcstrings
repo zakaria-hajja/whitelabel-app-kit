@@ -33,6 +33,23 @@
         }
       }
     },
+    "Ad": {
+      "comment": "The label above every banner ad.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annonce"
+          }
+        }
+      }
+    },
     "All": {
       "localizations": {
         "en": {

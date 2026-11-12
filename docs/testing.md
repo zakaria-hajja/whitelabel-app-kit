@@ -44,6 +44,19 @@ release-only. The release check isn't required, so read its result before mergin
 - The checks that need real config files are manual:
   [the Firebase checklist](superpowers/checklists/2026-11-12-firebase-manual.md).
 
+**Ads suites** (no AdMob account; fake consent, clock and tracking):
+- `:core:ads:shared`: the rules, launch counting, the ad-free window, the controller
+  (`AdGateTest`, `LaunchCounterTest`, `AdFreeTest`, `AdsControllerTest`), and the wiring and placement
+  checks shared with iOS (`AdsWiringTest`, `AdsDslTest`).
+- `:core:ads` and `:core:ads:google`: `AdsDslTest`, `AdBannerLogicTest`, `StartOnceTest`,
+  `AdsContributorTest`. `:core:shell`: `AdsWiringTest`. `:core:ios`: `SharedGraphAdsTest`.
+- Build logic: `AdsSetupTest`, `AppConfigLoaderTest`, `IosConfigTest`. `scripts/verify-apps.sh` checks
+  that a release dex has no AdMob SDK unless `ads.enabled=true`.
+- Swift: `WhitelabelAdsTests` (a non-hosted bundle in showcase's project) and WhitelabelKit's
+  `AdBannerTests`.
+- Real banners, consent and ATT are manual:
+  [the ads checklist](superpowers/checklists/2026-11-12-ads-manual.md).
+
 **UI tests are paused** (owner's decision). `scripts/check-ios.sh` skips `ShowcaseUITests` and no
 new UI or end-to-end tests are written for Firebase until the pause ends.
 

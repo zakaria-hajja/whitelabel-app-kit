@@ -31,6 +31,9 @@ business features. The design is in
 | `:core:firebase:shared` | Built | The `RemoteValues` engine over a `RemoteConfigSource`, consent-gated analytics and crash reporting, the Koin module and the fake. Kotlin Multiplatform (Android, iOS) |
 | `:core:firebase:google` | Built | Android Firebase SDK: Remote Config, Analytics, Crashlytics. Linked per build type (`debugImplementation` for `firebase.enabled=debug`) |
 | `:core:firebase:crashlytics` | Built | iOS only: the Kotlin crash hook over CrashKiOS. Added by the iOS app plugin when Firebase is enabled |
+| `:core:ads:shared` | Built | The ad rules (`AdGate`), `AdsController`, `LaunchCounter`, `AdFree`, `TrackingPort` and the shared wiring checks. Kotlin Multiplatform (Android, iOS). See [ads.md](ads.md) |
+| `:core:ads` | Built | Android `AdBanner`, the `ads { }` DSL and the `BannerHost` interface; no Google SDK |
+| `:core:ads:google` | Built | Android Google Mobile Ads banner behind `BannerHost`. Linked per build type (`debugImplementation` for `ads.enabled=debug`) |
 | `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Kotlin Multiplatform (Android, iOS) |
 | `:feature:authentication` | Built | `auth()`: the whole-app sign-in gate with sign-in, registration and password reset. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
 | `:feature:authentication:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
@@ -44,6 +47,7 @@ business features. The design is in
 | `:feature:catalog:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
 | `:apps:showcase:shared` | Built | Showcase's shared code as one iOS framework (`ShowcaseShared`, with every shared module's strings) and `showcaseSharedModules(platform)`, its Koin modules. The Swift-facing entry point comes with the iOS starter |
 | `ios/WhitelabelConsent`, `ios/WhitelabelFirebase` | Built | Swift targets for UMP and Firebase (`FirebaseService`), included by an app's `project.yml` only when it uses Firebase. See [firebase.md](firebase.md) |
+| `ios/WhitelabelAds` | Built | Swift target for Google Mobile Ads banners, the ATT prompt and `AdsService`, included only by an app with ads. See [ads.md](ads.md) |
 | `ios/WhitelabelKit`, `ios/Showcase` | Built | The Swift half: the reusable kit (bridge, platform pieces; design system, shell and screens to come) and showcase's iOS project. See [ios.md](ios.md) |
 | `fixtures/standalone-app` | Built | A minimal backendless app wired like an app in its own repo; CI builds and verifies it |
 
@@ -214,6 +218,7 @@ progress: [2026-11-11-kmp-migration.md](superpowers/plans/2026-11-11-kmp-migrati
 
 - [creating-an-app.md](creating-an-app.md): build app #N step by step
 - [firebase.md](firebase.md): remote values, analytics, crash reports and consent
+- [ads.md](ads.md): AdMob banners, the house rules, ad-free windows and tracking
 - [adding-a-shared-feature.md](adding-a-shared-feature.md): add a reusable feature
 - [branding.md](branding.md), [api-environments.md](api-environments.md),
   [release-signing.md](release-signing.md), [testing.md](testing.md)

@@ -1,6 +1,17 @@
 package com.whitelabel.core.ios
 
 import androidx.lifecycle.SavedStateHandle
+import com.whitelabel.core.ads.AdFree
+import com.whitelabel.core.ads.AdPlacement
+import com.whitelabel.core.ads.AdTabOwner
+import com.whitelabel.core.ads.AdsBuilder
+import com.whitelabel.core.ads.AdsController
+import com.whitelabel.core.ads.AdsPlatform
+import com.whitelabel.core.ads.AdsWiring
+import com.whitelabel.core.ads.TrackingPort
+import com.whitelabel.core.ads.adsModule
+import com.whitelabel.core.ads.adsWiring
+import com.whitelabel.core.ads.checkAdPlacementTabs
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.analytics.LoggingAnalytics
@@ -96,6 +107,14 @@ object SharedGraph {
     private var fakeConsent: UmpResult? = fakeConsentResult(DebugConsent.DEFAULT_FAKE_STATE)
     private var mode = FirebaseMode.OFF
 
+    /** The app definition's placements (`AppDefinition(ads:)`), or null for an app without ads. */
+    private var adPlacements: List<AdPlacement>? = null
+    /** The routes among the placements' `underTab`s that the sign-in gate's screens own. */
+    private var adGateRoutes: List<String> = emptyList()
+    /** What `AdsService` hands over in `on` mode: the ATT port (or `NoTracking`); null when it installed nothing. */
+    private var adsTracking: TrackingPort? = null
+    private var ads = AdsWiring.OFF
+
     val isStarted: Boolean get() = KoinPlatform.getKoinOrNull() != null
 
     /** Registers a debug-only module (the fake backend, via `IosMock.enable()`). */
@@ -103,10 +122,12 @@ object SharedGraph {
         if (contributors.none { it::class == contributor::class }) contributors += contributor
     }
 
-    /** Hands over the platform's consent form (UMP). Call before [start]; it also declares Firebase. */
+    /**
+     * Hands over the platform's consent form (UMP). Call before [start]. Firebase and ads both hand it
+     * over in `on` mode; the graph has a consent whenever the app uses either (or a port was given).
+     */
     fun useConsent(port: ConsentPort) {
         consentPort = port
-        firebaseDeclared = true
     }
 
     /** Hands over the platform's Firebase pieces. Call before [start]; it also declares Firebase. */
@@ -121,6 +142,34 @@ object SharedGraph {
     }
 
     /**
+     * The app's banner placements (`AppDefinition(ads:)`, Android's `ads { }`): the app uses ads.
+     * [gateRoutes] are the placements' routes that the sign-in gate's screens own (Swift asks the gate
+     * feature), so a placement there fails as on Android. Call before [start], which checks them
+     * against the app's ads settings.
+     */
+    fun declareAds(placements: List<AdPlacement>, gateRoutes: List<String> = emptyList()) {
+        adPlacements = placements
+        adGateRoutes = gateRoutes
+    }
+
+    /**
+     * Hands over what `AdsService` installs in `on` mode: the tracking prompt ([tracking]: ATT, or
+     * `NoTracking` with `ads.ios.requestTracking` off). Without it, ads on fails at [start].
+     */
+    fun useAds(tracking: TrackingPort) {
+        adsTracking = tracking
+    }
+
+    /** The banner rules, or null in an app without ads. With ads off in this build every banner stays hidden. */
+    fun adsController(): AdsController? = koin.getOrNull()
+
+    /** The ad-free window, for an app's rewards; null in an app without ads. */
+    fun adFree(): AdFree? = koin.getOrNull()
+
+    /** The banner unit of each placement in the started graph (tests). */
+    internal fun adsUnits(): Map<String, String> = ads.units
+
+    /**
      * Debug launch arguments, called before [start] in debug builds only (so it also marks the build
      * as debug): [fake] runs Firebase as the in-memory fake, [analytics] lets a debug build collect, and
      * [fakeConsent] (`obtained`, `declined`, `failed`, `notRequired`) is what the fake consent answers.
@@ -132,8 +181,11 @@ object SharedGraph {
         this.fakeConsent = fakeConsentResult(fakeConsent)
     }
 
-    /** Forgets what Swift handed over (tests). */
+    /** Forgets what Swift handed over, for Firebase and ads (tests). */
     fun clearFirebaseServices() {
+        adPlacements = null
+        adGateRoutes = emptyList()
+        adsTracking = null
         consentPort = null
         firebaseServices = null
         firebaseDeclared = false
@@ -152,7 +204,7 @@ object SharedGraph {
     /** The app's remote values: Firebase's in `on`/`fake` mode, the caller's defaults otherwise. */
     fun remoteValues(): RemoteValues = koin.get()
 
-    /** The app's consent, or null when the app has no Firebase service (nothing to ask). */
+    /** The app's consent, or null when the app has neither a Firebase service nor ads (nothing to ask). */
     fun consentOrNull(): Consent? = koin.getOrNull()
 
     /**
@@ -169,15 +221,19 @@ object SharedGraph {
             "The fake backend isn't linked: build the framework with -Pwhitelabel.mockApi=true and call IosMock.enable() first"
         }
         val firebaseMode = firebaseModeFor(platform.firebase, services = firebaseServices != null, declared = firebaseDeclared, fakeMarker = debugFake)
+        val adsWiring = adsWiringFor(platform, definition)
         launch = Launch(platform, definition, appModules, useMockApi)
         mode = firebaseMode
+        ads = adsWiring
         Texts.pinLaunchLanguage()
         startKoin {
             modules(
                 listOf(networkModule, dataModule, shellModelModule(definition), platformModule(platform)) +
                     listOf(authenticationModule, settingsModule, profileModule, homeModule, catalogModule) +
                     appModules +
+                    consentModules() +
                     firebaseModules(firebaseMode) +
+                    adsModules(adsWiring) +
                     (if (useMockApi) contributors.flatMap { it.modules() } else emptyList()) +
                     fakeOverrides(firebaseMode),
             )
@@ -217,13 +273,61 @@ object SharedGraph {
     private fun savedState(vararg pairs: Pair<String, String?>) =
         SavedStateHandle(pairs.filter { it.second != null }.associate { it.first to it.second })
 
+    /**
+     * Checks the app's placements (names, tabs) and its ads settings, as Android's shell does, and
+     * resolves each placement's unit.
+     */
+    private fun adsWiringFor(platform: IosPlatform, definition: DefinitionSpec): AdsWiring {
+        val placements = adPlacements.orEmpty()
+        // The builder applies Android's name rules (letters, digits, '_' and '-'; no repeats).
+        AdsBuilder().apply { placements.forEach { placement(it.name, it.underTab) } }
+        checkAdPlacementTabs(
+            placements,
+            ownerOf = { route ->
+                val tab = definition.features.firstOrNull { it.tabRoute != null && it.tabRoute == route }
+                val gate = definition.features.firstOrNull { it.isGate }?.takeIf { route in adGateRoutes }
+                (tab ?: gate)?.let { AdTabOwner(it.id, it.isGate) }
+            },
+            routeName = { it.toString() },
+        )
+        return adsWiring(
+            usesAds = adPlacements != null,
+            placements = placements.map { it.name },
+            declared = platform.adsDeclared,
+            mode = platform.ads,
+            units = platform.adsUnits,
+            sdkLinked = adsTracking != null,
+            sdkMissing = "ads are on but AdsService() isn't in the app's services",
+            debugBuild = platform.debugBuild,
+            platform = AdsPlatform.IOS,
+        )
+    }
+
+    /** Firebase and ads both wait for the user's consent: the graph has one when the app uses either. */
+    private fun consentModules(): List<Module> {
+        val port = consentPort
+        if (!firebaseDeclared && adPlacements == null && port == null) return emptyList()
+        return listOf(module { if (port != null) single<ConsentPort> { port } }, consentModule())
+    }
+
+    /**
+     * An app with ads always gets the controller, so its banners and `adFree()` resolve even in a
+     * build with ads off (`ads.enabled=debug` in Release), where every banner stays hidden.
+     */
+    private fun adsModules(wiring: AdsWiring): List<Module> {
+        if (adPlacements == null) return emptyList()
+        val tracking = adsTracking
+        return listOf(
+            module { if (tracking != null) single<TrackingPort> { tracking } },
+            adsModule(wiring.enabled, wiring.units),
+        )
+    }
+
     private fun firebaseModules(mode: FirebaseMode): List<Module> {
         if (!firebaseDeclared) return emptyList()
-        val port = consentPort
         val services = firebaseServices
         return listOfNotNull(
             module {
-                if (port != null) single<ConsentPort> { port }
                 if (services != null) {
                     single<RemoteConfigSource> { services.source }
                     single<Analytics>(named("firebase")) { services.analytics }
@@ -231,7 +335,6 @@ object SharedGraph {
                     single<CollectionSwitch> { services.collection }
                 }
             },
-            consentModule(),
             // Fake mode's Firebase module goes last (fakeOverrides), not here.
             if (mode == FirebaseMode.FAKE) null else firebaseModule(mode, debugBuild, debugAnalytics),
         )

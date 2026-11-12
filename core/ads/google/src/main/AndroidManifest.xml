@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Banners load over the network (every app already declares it; lint checks it here). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application>
+        <!-- Keeps the SDK's measurement from starting with the app: it starts with the first banner,
+             after consent (see GoogleBannerHost). The app ID itself comes from :core:consent:google. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
+            android:value="true" />
+    </application>
+</manifest>

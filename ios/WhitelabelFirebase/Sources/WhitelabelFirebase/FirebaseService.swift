@@ -18,6 +18,9 @@ import WhitelabelKit
 public struct FirebaseService: AppService {
     public init() {}
 
+    /** Follows `WL_FIREBASE`. */
+    public var kind: AppServiceKind { .firebase }
+
     @MainActor public func install(mode: String) {
         guard mode == "on" else { return }
         let info = Bundle.main.infoDictionary ?? [:]

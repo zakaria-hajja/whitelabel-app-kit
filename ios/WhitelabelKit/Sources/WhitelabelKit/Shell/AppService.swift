@@ -1,18 +1,30 @@
 import Foundation
 
 /**
- * A platform service an app installs into the shared graph before it starts (for example Firebase
- * and the consent form, which an app target links and WhitelabelKit never imports). The app lists
- * its services in `AppDefinition(services:)`; having one is the iOS twin of Android's `firebase()`.
- * Ports are callback-based: Kotlin never suspends on Swift.
+ * A platform service an app installs into the shared graph before it starts (Firebase and the
+ * consent form, or Google Mobile Ads, which an app target links and WhitelabelKit never imports).
+ * The app lists its services in `AppDefinition(services:)`. Ports are callback-based: Kotlin never
+ * suspends on Swift.
  *
- * `mode` is the app's `WL_FIREBASE` setting (`on`, `fake` or `off`; `fake` also when the Debug
- * argument `-fakeFirebase` asks for it). In `fake` and `off` a service installs nothing (the fakes
- * and the defaults-only values come from Kotlin); in `on` it calls `SharedGraph.shared.useConsent`
- * and `useFirebase`.
+ * Its [kind] says which setting it follows and so which `mode` it gets:
+ * - `.firebase` (`FirebaseService`, the twin of Android's `firebase()`): `WL_FIREBASE`, `on`, `fake`
+ *   or `off` (`fake` also when the Debug argument `-fakeFirebase` asks for it). In `on` it calls
+ *   `SharedGraph.shared.useConsent` and `useFirebase`;
+ * - `.ads` (`AdsService`, the twin of `:core:ads:google`): `WL_ADS`, `on` or `off`. In `on` it calls
+ *   `useConsent` and `useAds` and registers the banner host.
+ *
+ * In any other mode a service installs nothing (the fakes, the defaults-only values and hidden
+ * banners come from Kotlin).
  */
 public protocol AppService {
+    var kind: AppServiceKind { get }
     @MainActor func install(mode: String)
+}
+
+/** Which app setting an [AppService] follows. */
+public enum AppServiceKind: Sendable {
+    case firebase
+    case ads
 }
 
 /** Debug launch arguments a service may read (always false in Release). */

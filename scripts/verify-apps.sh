@@ -11,7 +11,7 @@
 # Always: application IDs and deep-link schemes are unique across apps.
 # Unless --config-only, for each app's built APK of each build type (aapt2 from the newest
 # build-tools): package, label and version match app.properties; no other app's application ID
-# appears in its dex; a release dex has no mock backend and no Firebase unless firebase.enabled=true; its deep links use only its own scheme; its launcher foreground differs from every other app's; the generated
+# appears in its dex; a release dex has no mock backend, no Firebase unless firebase.enabled=true and no AdMob SDK unless ads.enabled=true; its deep links use only its own scheme; its launcher foreground differs from every other app's; the generated
 # foundation_* config resources the shell reads exist, match app.properties and nothing else.
 # Prints one OK/FAIL line per check and exits non-zero if any check fails.
 set -eu
@@ -37,6 +37,15 @@ find_aapt2() {
   fi
 }
 
+# ads_in_dex DEX: succeeds when the dex holds the AdMob SDK. R8 may rename package names, so also
+# look for the init provider's class name, which the manifest keeps. The package
+# com/google/android/gms/ads/identifier (play-services-ads-identifier, which Firebase Analytics
+# pulls in) is not the AdMob SDK and is ignored.
+ads_in_dex() {
+  grep -aqF 'MobileAdsInitProvider' "$1" && return 0
+  grep -aoE 'com/google/android/gms/ads/[A-Za-z]+' "$1" | grep -qv '^com/google/android/gms/ads/identifier$'
+}
+
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
@@ -55,9 +64,16 @@ verify_apk() {
   code=$(prop "$props" app.versionCode); version=$(prop "$props" app.versionName)
   echo "$badging" | grep -q "versionCode='$code' versionName='$version'" && ok "$app $type: version $code ($version)" \
     || bad "$app $type: version is not $code ($version)"
-  # Deep links (reset password, catalog items) open the app only through its own scheme.
+  # Deep links (reset password, catalog items) open the app only through its own scheme. A library's
+  # <queries> (the AdMob SDK's https/sms intents: package visibility, not links into the app) is skipped.
   scheme=$(prop "$props" app.deepLinkScheme)
-  schemes=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" | sed -n 's/.*android:scheme([^)]*)="\([^"]*\)".*/\1/p' | sort -u | tr '\n' ' ')
+  schemes=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" \
+    | awk '{ match($0, /^ */); d = RLENGTH }
+           skip && d > depth { next }
+           { skip = 0 }
+           /E: queries / { skip = 1; depth = d; next }
+           { print }' \
+    | sed -n 's/.*android:scheme([^)]*)="\([^"]*\)".*/\1/p' | sort -u | tr '\n' ' ')
   [ "$schemes" = "$scheme " ] && ok "$app $type: deep links use scheme '$scheme'" \
     || bad "$app $type: deep-link schemes are '$schemes', expected only '$scheme'"
 
@@ -68,14 +84,21 @@ verify_apk() {
            name != "" { v = $0; sub(/^[^"]*"/, "", v); sub(/"[^"]*$/, "", v); print name "=" v; name = "" }' \
     | sort > "$tmp/config"
   names=$(cut -d= -f1 "$tmp/config" | LC_ALL=C sort | tr '\n' ' ')
-  expected_names="foundation_api_base_url foundation_app_name foundation_deep_link_scheme foundation_default_features foundation_environment foundation_firebase foundation_firebase_declared foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
+  expected_names="foundation_ads foundation_ads_declared foundation_ads_units foundation_api_base_url foundation_app_name foundation_deep_link_scheme foundation_default_features foundation_environment foundation_firebase foundation_firebase_declared foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
   [ "$names" = "$expected_names" ] && ok "$app $type: config resources are the expected set" \
     || bad "$app $type: config resources are [$names], expected [$expected_names]"
   # No api.<type>.baseUrl means an app without a backend: the generated URL is empty.
   url=$(prop "$props" "api.$type.baseUrl"); case "$url" in ""|*/) ;; *) url="$url/" ;; esac
   # The mode itself depends on build type and google-services.json, so only "declared" is compared.
   case "$(prop "$props" firebase.enabled)" in true|debug) declared=true ;; *) declared=false ;; esac
-  for pair in "foundation_firebase_declared=$declared" "foundation_api_base_url=$url" "foundation_app_name=$name" "foundation_tenant=$(prop "$props" api.tenant)"; do
+  # The ads mode per build type: true is on in both, debug only in debug builds.
+  case "$(prop "$props" ads.enabled)" in
+    true) ads=on ;;
+    debug) if [ "$type" = debug ]; then ads=on; else ads=off; fi ;;
+    *) ads=off ;;
+  esac
+  case "$(prop "$props" ads.enabled)" in true|debug) ads_declared=true ;; *) ads_declared=false ;; esac
+  for pair in "foundation_firebase_declared=$declared" "foundation_ads=$ads" "foundation_ads_declared=$ads_declared" "foundation_api_base_url=$url" "foundation_app_name=$name" "foundation_tenant=$(prop "$props" api.tenant)"; do
     grep -qxF "$pair" "$tmp/config" && ok "$app $type: $pair" \
       || bad "$app $type: expected $pair, APK has $(grep "^${pair%%=*}=" "$tmp/config" || echo 'nothing')"
   done
@@ -176,6 +199,15 @@ for type in $types; do
         bad "$app release: dex contains Firebase (firebase.enabled is not true)"
       else
         ok "$app release: no Firebase beyond firebase.enabled"
+      fi
+    fi
+
+    # The AdMob SDK ships only in an app that declares ads.enabled=true (debug mode is debug only).
+    if [ "$type" = release ]; then
+      if ads_in_dex "$tmp/dex" && [ "$(prop "$props" ads.enabled)" != true ]; then
+        bad "$app release: dex contains the AdMob SDK (ads.enabled is not true)"
+      else
+        ok "$app release: no AdMob SDK beyond ads.enabled"
       fi
     fi
 

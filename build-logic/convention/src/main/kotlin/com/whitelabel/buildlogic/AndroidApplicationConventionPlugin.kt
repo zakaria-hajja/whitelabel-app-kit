@@ -8,7 +8,10 @@ import com.whitelabel.buildlogic.apps.AppConfigLoader
 import com.whitelabel.buildlogic.apps.androidStringResource
 import com.whitelabel.buildlogic.apps.ServiceMode
 import com.whitelabel.buildlogic.apps.appConfigFields
-import com.whitelabel.buildlogic.apps.admobManifestPlaceholder
+import com.whitelabel.buildlogic.apps.Platform
+import com.whitelabel.buildlogic.apps.adsSetup
+import com.whitelabel.buildlogic.apps.adsUnitsString
+import com.whitelabel.buildlogic.apps.resolvedAdmobAppId
 import com.whitelabel.buildlogic.apps.firebaseSetup
 import com.whitelabel.buildlogic.apps.resourceNameFor
 import org.gradle.api.Plugin
@@ -100,9 +103,27 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         if (app.firebase != ServiceMode.OFF) {
             dependencies.add("implementation", project(":core:firebase:shared"))
         }
-        // :core:consent:google's manifest reads this; always set so merging never fails.
+        // Ads: the Google module per build type, and the shared ads modules whenever ads aren't off.
+        // An app with ads off gets no SDK and no Google module (core/shell already links :core:ads,
+        // which has none), and no ads rules module. The AdMob app ID is one manifest placeholder that
+        // :core:consent:google's manifest and the ads SDK both read: the ads value when ads are on
+        // for the build type (the real ID, or Google's test ID in Debug without one), else the
+        // plain ads.android.appId Firebase's consent needs, else empty so merging never fails.
+        val ads = adsSetup(
+            app.ads, app.adsAndroidAppId, app.adsAndroidUnits, Platform.ANDROID,
+            label = rootDir.toPath().relativize(projectDir.toPath()).toString(),
+        )
+        if (app.ads != ServiceMode.OFF) {
+            dependencies.add("implementation", project(":core:ads"))
+            dependencies.add("implementation", project(":core:ads:shared"))
+        }
+        ads.dependencyConfiguration?.let { dependencies.add(it, project(":core:ads:google")) }
         extensions.configure<ApplicationExtension> {
-            defaultConfig.manifestPlaceholders["admobAppId"] = admobManifestPlaceholder(app.adsAndroidAppId)
+            defaultConfig.manifestPlaceholders["admobAppId"] = resolvedAdmobAppId(ads, app.adsAndroidAppId, "release")
+            buildTypes {
+                getByName("debug").manifestPlaceholders["admobAppId"] = resolvedAdmobAppId(ads, app.adsAndroidAppId, "debug")
+                getByName("release").manifestPlaceholders["admobAppId"] = resolvedAdmobAppId(ads, app.adsAndroidAppId, "release")
+            }
         }
         firebase.dependencyConfiguration?.let { dependencies.add(it, project(":core:firebase:google")) }
         if (firebase.disabledTasks.isNotEmpty()) {
@@ -126,6 +147,9 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 mapOf(
                     "foundation_firebase" to firebase.modeFor.getValue(buildType),
                     "foundation_firebase_declared" to (app.firebase != ServiceMode.OFF).toString(),
+                    "foundation_ads" to ads.modeFor.getValue(buildType),
+                    "foundation_ads_declared" to ads.declared.toString(),
+                    "foundation_ads_units" to adsUnitsString(ads.unitsFor.getValue(buildType)),
                 ).forEach { (name, value) ->
                     variant.resValues.put(variant.makeResValueKey("string", name), ResValue(value, null))
                 }

@@ -23,6 +23,8 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:firebase:shared"))
     implementation(project(":core:consent:shared"))
+    // The banner and the ads rules; the Google SDK (:core:ads:google) is linked only by apps with ads on.
+    implementation(project(":core:ads"))
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
@@ -38,4 +40,6 @@ dependencies {
     androidTestImplementation(libs.assertk)
     testImplementation(project(":core:testing"))
     testImplementation(project(":core:mockapi"))
+    // AdsWiringTest points the ads stores at a temporary directory.
+    testImplementation(project(":core:datastore"))
 }
