@@ -1,0 +1,70 @@
+# WhitelabelAds: Google Mobile Ads banners as the kit's BannerHost, the ATT prompt as the Kotlin
+# TrackingPort, and the AdsService an app lists in AppDefinition(services:). Only an app with ads
+# includes it, with WhitelabelConsent.yml (Google's consent form); WhitelabelKit itself never imports
+# the ads SDK:
+#
+#   include: [path/to/foundation/ios/WhitelabelKit/WhitelabelKit.yml,
+#             path/to/foundation/ios/WhitelabelConsent/WhitelabelConsent.yml,
+#             path/to/foundation/ios/WhitelabelAds/WhitelabelAds.yml]
+#
+# and the app target uses the template, which links both targets (with their packages) and adds the
+# ads keys to the built Info.plist (merge-info-plist.sh: Google's SKAdNetworkItems when WL_ADS is
+# on, NSUserTrackingUsageDescription from ads.ios.trackingMessage when tracking is on, and the WLAds*
+# settings). As with WhitelabelFirebase, the app must be the only target linking them; a hosted test
+# bundle depends on them with `link: false`.
+#
+#   targets:
+#     MyApp:
+#       templates: [WhitelabelAdsApp]      # with Firebase too: [WhitelabelFirebaseApp, WhitelabelAdsApp]
+#       settings: { base: { OTHER_LDFLAGS: [$(inherited), -ObjC, -framework, Shared] } }
+#
+# -ObjC is Google's requirement for the app target. The app's Info.plist maps
+# GADApplicationIdentifier = $(WL_ADMOB_APP_ID) (AdsService checks it). The package links in Release
+# too (SPM can't drop it per configuration); AdsService only installs anything when WL_ADS is on, and
+# the SDK starts only on the first banner the rules let load.
+packages:
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads
+    # The latest stable tag on 2026-11-12 (released 2026-11-02). It accepts UMP 1.1.0..<4.0.0, so it
+    # shares WhitelabelConsent's pinned UMP.
+    exactVersion: 13.12.0
+targets:
+  WhitelabelAds:
+    type: framework.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources/WhitelabelAds
+    dependencies:
+      # BannerHost and AppService; WhitelabelKit also builds Shared first. The app links the kit and
+      # the consent target.
+      - target: WhitelabelKit
+        link: false
+      - target: WhitelabelConsent
+        link: false
+      # Xcode puts the package's code into this static framework when the app is its only linker.
+      - package: GoogleMobileAds
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.whitelabel.ads
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+        SWIFT_VERSION: "5.9"
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+targetTemplates:
+  WhitelabelAdsApp:
+    # The static frameworks carry the packages' code. The SDK's binary (a static framework) isn't
+    # autolinked through the Swift import, so the app links it itself, as Firebase's measurement binary.
+    dependencies:
+      - target: WhitelabelConsent
+        embed: false
+      - target: WhitelabelAds
+        embed: false
+      - framework: GoogleMobileAds.framework
+        implicit: true
+        embed: false
+    postBuildScripts:
+      - name: Add the ads keys to Info.plist
+        basedOnDependencyAnalysis: false
+        path: merge-info-plist.sh

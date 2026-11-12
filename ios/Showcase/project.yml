@@ -5,6 +5,8 @@ include:
   - ../WhitelabelKit/WhitelabelKit.yml
   - ../WhitelabelConsent/WhitelabelConsent.yml
   - ../WhitelabelFirebase/WhitelabelFirebase.yml
+  # Only for WhitelabelAdsTests: the showcase app itself doesn't link the ads target (no ads yet).
+  - ../WhitelabelAds/WhitelabelAds.yml
 configFiles:
   Debug: Config/Debug.generated.xcconfig
   Release: Config/Release.generated.xcconfig
@@ -88,6 +90,31 @@ targets:
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/$(WL_APP_NAME).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/$(WL_APP_NAME)
         BUNDLE_LOADER: $(TEST_HOST)
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+  WhitelabelAdsTests:
+    # Not hosted: the showcase app doesn't link the ads target, so the bundle links it (with its
+    # package and the SDK's binary), the kit, the consent target and Shared itself. Showcase's Shared
+    # carries the Kotlin Crashlytics hook, so the Firebase target comes too. The tests touch no SDK state.
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ../WhitelabelAds/Tests/WhitelabelAdsTests
+    dependencies:
+      - target: WhitelabelKit
+      - target: WhitelabelConsent
+      - target: WhitelabelFirebase
+      - target: WhitelabelAds
+      - framework: GoogleMobileAds.framework
+        implicit: true
+        embed: false
+      - framework: GoogleAppMeasurement.framework
+        implicit: true
+        embed: false
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.whitelabel.ads.tests
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+        OTHER_LDFLAGS: [$(inherited), -ObjC, -framework, Shared]
   ShowcaseUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -109,4 +136,5 @@ schemes:
       targets:
         - WhitelabelKitTests
         - WhitelabelFirebaseTests
+        - WhitelabelAdsTests
         - ShowcaseUITests
