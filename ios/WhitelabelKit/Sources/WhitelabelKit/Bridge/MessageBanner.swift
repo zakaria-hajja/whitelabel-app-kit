@@ -12,7 +12,8 @@ public extension View {
 }
 
 enum MessageBanner {
-    static let seconds = 3.0
+    /** As Android's short snackbar; Debug `-messageSeconds` lengthens it for UI tests. */
+    static var seconds = 4.0
 
     /**
      * Resolves, shows, waits, hides, then reports shown. A cancelled run (a newer message arrived)

@@ -18,8 +18,8 @@ struct HomeRobot {
     func shortcut(_ route: String) -> XCUIElement { app.buttons["shortcut.\(route)"] }
 
     func pullToRefresh() {
-        let start = app.staticTexts.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let end = start.withOffset(CGVector(dx: 0, dy: 400))
-        start.press(forDuration: 0.05, thenDragTo: end)
+        let start = app.scrollViews.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        let end = start.withOffset(CGVector(dx: 0, dy: 500))
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.5)
     }
 }

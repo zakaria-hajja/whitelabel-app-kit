@@ -8,7 +8,8 @@ final class HomeUITests: XCTestCase {
 
     override func setUp() {
         continueAfterFailure = false
-        app.launchFresh()
+        // XCUITest gestures return only once the app is idle: keep messages up long enough to read.
+        app.launchFresh(["-messageSeconds", "15"])
         SignInRobot(app: app).signInToTabs()
     }
 

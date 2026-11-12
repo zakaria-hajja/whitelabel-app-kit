@@ -24,16 +24,18 @@ struct AuthForm<Content: View>: View {
     }
 }
 
-/** A text field whose error is a shared message. */
+/** A text field on a shared state's text, whose error is a shared message. */
 struct SharedTextField: View {
     let label: String
     @Binding var text: String
     var error: UiText?
     var isSecure = false
     @State private var resolved: String?
+    @State private var local = ""
 
     var body: some View {
-        AppTextField(label, text: $text, error: error == nil ? nil : resolved, isSecure: isSecure)
+        AppTextField(label, text: $local, error: error == nil ? nil : resolved, isSecure: isSecure)
+            .bufferedText(text, local: $local) { text = $0 }
             .task(id: error.map(ObjectIdentifier.init)) { resolved = if let error { await resolve(error) } else { nil } }
     }
 }
@@ -58,7 +60,11 @@ struct SubmitButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button {
+            // The form is sent: put the keyboard away (it would cover the result and the tab bar).
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            action()
+        } label: {
             HStack(spacing: Spacing.sm) {
                 if loading { ProgressView().tint(.white) }
                 Text(label)
