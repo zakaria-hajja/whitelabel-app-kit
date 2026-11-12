@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,7 +39,9 @@ fun AdBanner(placement: String, modifier: Modifier = Modifier) {
     var load by remember(unitId) { mutableStateOf(BannerLoad.LOADING) }
     // The banner stays composed while it loads (so the SDK can load it) and after a failure, but takes
     // no space until it has an ad.
-    Column(modifier.fillMaxWidth().collapsedUnless(load == BannerLoad.LOADED), horizontalAlignment = Alignment.CenterHorizontally) {
+    // While it takes no space its semantics are hidden too, so TalkBack doesn't read a collapsed "Ad" label.
+    val column = modifier.fillMaxWidth().collapsedUnless(load.takesSpace)
+    Column(if (load.takesSpace) column else column.clearAndSetSemantics {}, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = stringResource(R.string.ads_label),
             style = MaterialTheme.typography.labelSmall,

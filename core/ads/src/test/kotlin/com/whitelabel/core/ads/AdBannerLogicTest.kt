@@ -34,6 +34,10 @@ class AdBannerLogicTest {
 
     // The load state machine.
 
+    @Test fun `only a loaded banner takes space, so only it is visible to accessibility`() {
+        assertThat(BannerLoad.entries.filter { it.takesSpace }).isEqualTo(listOf(BannerLoad.LOADED))
+    }
+
     @Test fun `loading becomes loaded or failed`() {
         assertThat(BannerLoad.LOADING.on(BannerEvent.LOADED)).isEqualTo(BannerLoad.LOADED)
         assertThat(BannerLoad.LOADING.on(BannerEvent.FAILED)).isEqualTo(BannerLoad.FAILED)

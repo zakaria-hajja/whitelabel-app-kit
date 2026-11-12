@@ -19,6 +19,9 @@ internal enum class BannerEvent { REQUESTED, LOADED, FAILED }
 internal enum class BannerLoad {
     LOADING, LOADED, FAILED;
 
+    /** Whether the banner takes space and is exposed to accessibility (the "Ad" label included). */
+    val takesSpace: Boolean get() = this == LOADED
+
     /**
      * The state after [event]. Once an ad shows, a failed refresh keeps it (the SDK leaves the last
      * ad in place), so the banner never vanishes mid-visit. A new request (a new ad view, after a
