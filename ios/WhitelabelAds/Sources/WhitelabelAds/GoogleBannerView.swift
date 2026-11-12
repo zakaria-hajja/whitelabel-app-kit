@@ -22,6 +22,7 @@ private struct GoogleBanner: View {
 
     @State private var started = false
     @State private var width: CGFloat = 0
+    @State private var requests = BannerRequests()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,8 +35,8 @@ private struct GoogleBanner: View {
                 // A new unit or width is a new banner view and a new request: the slot collapses until it loads.
                 GoogleBannerRepresentable(unitId: unitId, size: size, onLoaded: onLoaded, onFailed: onFailed)
                     .frame(width: size.size.width, height: size.size.height)
-                    .id("\(unitId)@\(Int(width))")
-                    .onAppear(perform: onRequested)
+                    .id(BannerRequests.key(unitId: unitId, width: width))
+                    .onAppear { if requests.appeared(unitId: unitId, width: width) { onRequested() } }
             }
         }
         .task {
@@ -79,5 +80,24 @@ private struct GoogleBannerRepresentable: UIViewRepresentable {
         func bannerViewDidReceiveAd(_ bannerView: BannerView) { onLoaded() }
 
         func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Swift.Error) { onFailed() }
+    }
+}
+
+/**
+ * Which appearances of a banner view are new requests. A new unit or width is a new banner view (it
+ * is keyed by [key]) and so a new request; the same view appearing again (back to the tab root, or
+ * back to the tab) keeps its ad, so it must not reset the slot to loading.
+ */
+struct BannerRequests {
+    private var last: String?
+
+    static func key(unitId: String, width: CGFloat) -> String { "\(unitId)@\(Int(width))" }
+
+    /** Records that the view for [unitId] at [width] appeared; true when it is a new banner view. */
+    mutating func appeared(unitId: String, width: CGFloat) -> Bool {
+        let key = Self.key(unitId: unitId, width: width)
+        guard key != last else { return false }
+        last = key
+        return true
     }
 }
