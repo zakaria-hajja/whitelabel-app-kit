@@ -157,7 +157,7 @@ final class AppRuntime {
         debug.beforeStart(bundle: .main)
         useMockApi = debug.useMockApi
         if useMockApi { IosMock.shared.enable() }
-        if debug.fakeFirebase, !definition.services.isEmpty { mode = "fake" }
+        if debug.fakeFirebase, !definition.services(.firebase).isEmpty { mode = "fake" }
         #endif
         do {
             try start(definition, platform: platform, useMockApi: useMockApi, mode: mode)
@@ -175,19 +175,27 @@ final class AppRuntime {
         return runtime
     }
 
-    /** Installs the app's services, then starts the graph: a service hands Kotlin its ports before they are needed. */
+    /**
+     * Installs the app's services, then starts the graph: a service hands Kotlin its ports before they
+     * are needed. Firebase services get [mode] (`WL_FIREBASE`, or `fake`), ads services `WL_ADS`.
+     */
     static func start(_ definition: AppDefinition, platform: IosPlatform, useMockApi: Bool, mode: String) throws {
-        if !definition.services.isEmpty {
+        let firebase = definition.services(.firebase)
+        if !firebase.isEmpty {
             SharedGraph.shared.declareFirebase()
-            for service in definition.services { service.install(mode: mode) }
+            for service in firebase { service.install(mode: mode) }
         }
+        if !definition.ads.isEmpty { SharedGraph.shared.declareAds(placements: definition.ads) }
+        for service in definition.services(.ads) { service.install(mode: platform.ads) }
         try SharedGraph.shared.start(platform: platform, definition: definition.spec, appModules: definition.modules, useMockApi: useMockApi)
     }
 
-    /** Once per launch, after the first content shows (never from the splash), and only for an app with a Firebase service. */
+    /**
+     * Once per launch, after the first content shows (never from the splash), and only for an app
+     * that has a consent to gather (a Firebase service or ads).
+     */
     func gatherConsent() {
-        guard !definition.services.isEmpty else { return }
-        SharedGraph.shared.consent().gatherOnLaunch()
+        SharedGraph.shared.consentOrNull()?.gatherOnLaunch()
     }
 
     private var signedIn: Bool { shell.state.session is SessionStateSignedIn }

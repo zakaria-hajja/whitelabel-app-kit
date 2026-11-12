@@ -12,8 +12,26 @@ public enum PlatformFactory {
             language: IosLanguageRepository(),
             brand: brand(from: bundle),
             logger: logger,
-            firebase: firebase(from: bundle)
+            firebase: firebase(from: bundle),
+            ads: string(bundle, "WLAds") == "on" ? "on" : "off",
+            adsUnits: string(bundle, "WLAdsUnits") ?? "",
+            adsDeclared: string(bundle, "WLAdsDeclared") == "true",
+            debugBuild: debugBuild
         )
+    }
+
+    #if DEBUG
+    static let debugBuild = true
+    #else
+    static let debugBuild = false
+    #endif
+
+    /**
+     * The app's ads settings: `WLAds` (`$(WL_ADS)`: `on`, else off), `WLAdsUnits` (`$(WL_ADS_UNITS)`)
+     * and `WLAdsDeclared` (`$(WL_ADS_DECLARED)`). An app without the keys has no ads.
+     */
+    static func string(_ bundle: Bundle, _ key: String) -> String? {
+        bundle.object(forInfoDictionaryKey: key) as? String
     }
 
     /** `WLFirebase` (`on`, `fake` or `off`); anything else is off. */

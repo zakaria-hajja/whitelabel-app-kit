@@ -1,7 +1,11 @@
 import SwiftUI
 import Shared
 
-/** The visible tabs in order, each a native navigation stack starting at its feature's root. */
+/**
+ * The visible tabs in order, each a native navigation stack starting at its feature's root. A
+ * placement declared with `underTab` is drawn between that tab's root screen and the tab bar, only
+ * while the root screen shows (as on Android).
+ */
 struct TabsView: View {
     let definition: AppDefinition
     let routes: [String]
@@ -16,6 +20,11 @@ struct TabsView: View {
                             .navigationDestination(for: Destination.self) { destination in
                                 definition.view(for: destination) ?? AnyView(EmptyView())
                             }
+                    }
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        if let placement = definition.tabPlacement(forTab: route), navigator.path(for: route).wrappedValue.isEmpty {
+                            AdBanner(placement: placement).id(placement)
+                        }
                     }
                     .tabItem { Label(tab.title, systemImage: tab.systemImage) }
                     .tag(Optional(route))
