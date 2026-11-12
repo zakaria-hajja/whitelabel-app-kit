@@ -31,11 +31,10 @@ public final class Navigator {
     /** Whether [route] is a visible tab: a shortcut to a missing or switched-off tab is hidden. */
     public func canOpenTab(_ route: String) -> Bool { visibleTabs.contains(route) }
 
-    /** Switches to the tab with root [route], at its root, if it is visible (Android's `toTab`). */
+    /** Switches to the tab with root [route], if it is visible, with its stack as it was (Android's `toTab` restores it too). */
     public func openTab(_ route: String) {
         guard canOpenTab(route) else { return }
         selectedTab = route
-        paths[route] = []
     }
 
     /** Goes back one screen. */

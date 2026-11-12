@@ -8,7 +8,8 @@ final class ProfileUITests: XCTestCase {
 
     override func setUp() {
         continueAfterFailure = false
-        app.launchFresh()
+        // XCUITest taps return once the app is idle: keep "Profile saved." up long enough to read.
+        app.launchFresh(["-messageSeconds", "15"])
         SignInRobot(app: app).signInToTabs()
     }
 

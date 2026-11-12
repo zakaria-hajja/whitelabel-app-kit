@@ -55,7 +55,8 @@ final class GateNavigatorTests: XCTestCase {
 
 @MainActor
 final class TabShortcutTests: XCTestCase {
-    func testOpensOnlyAVisibleTabAtItsRoot() {
+    /** As tapping the tab bar (and Android's toTab): the tab comes back as it was left. */
+    func testOpensOnlyAVisibleTabKeepingItsStack() {
         let navigator = Navigator()
         navigator.visibleTabs = ["home", "settings"]
         navigator.selectedTab = "home"
@@ -65,6 +66,6 @@ final class TabShortcutTests: XCTestCase {
         XCTAssertEqual(navigator.selectedTab, "home")
         navigator.openTab("settings")
         XCTAssertEqual(navigator.selectedTab, "settings")
-        XCTAssertEqual(navigator.paths["settings"], [])
+        XCTAssertEqual(navigator.paths["settings"], [Destination("settings/x")])
     }
 }
