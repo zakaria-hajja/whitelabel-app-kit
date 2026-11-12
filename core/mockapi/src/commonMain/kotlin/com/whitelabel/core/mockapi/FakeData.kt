@@ -10,6 +10,8 @@ import kotlin.time.Instant
 /** What the in-memory backend starts with: the same seeded users and password as the real one. */
 object FakeData {
     const val PASSWORD = "Password123!"
+    /** The seeded account the Debug guest sign-in uses. */
+    const val GUEST_EMAIL = "alice@shared.test"
     const val ACCESS_TTL_SECONDS = 900L
     const val ITEM_COUNT = 25
     val CATEGORIES = listOf("Books", "Games", "Music", "Travel")
@@ -38,7 +40,7 @@ object FakeData {
     )
 
     internal fun users(): List<User> = listOf(
-        User(uuid(101), "alice@shared.test", PASSWORD, "Alice", "Anderson", SEEDED_AT),
+        User(uuid(101), GUEST_EMAIL, PASSWORD, "Alice", "Anderson", SEEDED_AT),
         User(uuid(102), "bob@shared.test", PASSWORD, "Bob", "Brown", SEEDED_AT),
     )
 

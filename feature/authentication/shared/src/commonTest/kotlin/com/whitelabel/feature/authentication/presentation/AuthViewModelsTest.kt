@@ -22,6 +22,7 @@ import com.whitelabel.core.analytics.AnalyticsEvents
 import com.whitelabel.core.common.ApiErrorCode
 import com.whitelabel.core.common.DataError
 import com.whitelabel.core.common.Result
+import com.whitelabel.core.domain.DebugGuestAccount
 import com.whitelabel.core.presentation.UiText
 import com.whitelabel.feature.authentication.presentation.forgot.ForgotPasswordAction
 import com.whitelabel.feature.authentication.presentation.forgot.ForgotPasswordViewModel
@@ -69,6 +70,53 @@ class AuthViewModelsTest {
         pending.complete(Unit)
         assertThat(session.signIns).isEqualTo(1)
         assertThat(viewModel.state.value.isSubmitting).isFalse()
+    }
+
+    private val guest = DebugGuestAccount("alice@shared.test", "Password123!")
+
+    @Test fun `guest is unavailable without a debug account`() = runTest {
+        val viewModel = LoginViewModel(session, analytics, SavedStateHandle(), guest = null)
+        assertThat(viewModel.state.value.guestAvailable).isFalse()
+        viewModel.onAction(LoginAction.OnContinueAsGuest)
+        assertThat(session.signIns).isEqualTo(0)
+    }
+
+    @Test fun `continue as guest signs in with the debug account`() = runTest {
+        val viewModel = LoginViewModel(session, analytics, SavedStateHandle(), guest)
+        assertThat(viewModel.state.value.guestAvailable).isTrue()
+        viewModel.onAction(LoginAction.OnContinueAsGuest)
+        assertThat(session.signedInWith).containsExactly("alice@shared.test" to "Password123!")
+        assertThat(analytics.events).containsExactly(AnalyticsEvent(AnalyticsEvents.LOGIN, mapOf("method" to "debug_guest")))
+    }
+
+    @Test fun `guest sign in ignored while submitting`() = runTest {
+        val pending = CompletableDeferred<Unit>()
+        session.answer = { pending.await(); Result.Success(Unit) }
+        val viewModel = LoginViewModel(session, analytics, SavedStateHandle(), guest)
+        viewModel.onAction(LoginAction.OnContinueAsGuest)
+        assertThat(viewModel.state.value.isSubmitting).isTrue()
+        viewModel.onAction(LoginAction.OnContinueAsGuest)
+        pending.complete(Unit)
+        assertThat(session.signIns).isEqualTo(1)
+        assertThat(viewModel.state.value.isSubmitting).isFalse()
+    }
+
+    @Test fun `guest sign in failure shows the error and re-enables`() = runTest {
+        session.answer = { Result.Error(DataError.Api(ApiErrorCode.INVALID_CREDENTIALS, 401)) }
+        val viewModel = LoginViewModel(session, analytics, SavedStateHandle(), guest)
+        viewModel.onAction(LoginAction.OnContinueAsGuest)
+        assertThat(viewModel.state.value.error).isEqualTo(UiText.Resource(Res.string.auth_error_invalid_credentials))
+        assertThat(viewModel.state.value.isSubmitting).isFalse()
+    }
+
+    @Test fun `guest sign in leaves the typed email alone`() = runTest {
+        val saved = SavedStateHandle()
+        val viewModel = LoginViewModel(session, analytics, saved, guest)
+        viewModel.onAction(LoginAction.OnEmailChange("me@x.com"))
+        viewModel.onAction(LoginAction.OnContinueAsGuest)
+        assertThat(viewModel.state.value.email).isEqualTo("me@x.com")
+        assertThat(saved.get<String>("email")).isEqualTo("me@x.com")
+        assertThat(session.signedInWith).containsExactly("alice@shared.test" to "Password123!")
     }
 
     @Test fun `invalid email is caught before any request`() = runTest {

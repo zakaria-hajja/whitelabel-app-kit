@@ -1,5 +1,6 @@
 package com.whitelabel.core.mockapi
 
+import com.whitelabel.core.domain.DebugGuestAccount
 import com.whitelabel.core.network.EngineOverride
 import com.whitelabel.core.network.ModuleContributor
 import org.koin.dsl.module
@@ -8,6 +9,7 @@ import org.koin.dsl.module
 val mockApiModule = module {
     single { FakeBackend() }
     single<EngineOverride> { EngineOverride { get<FakeBackend>().engine } }
+    single { DebugGuestAccount(FakeData.GUEST_EMAIL, FakeData.PASSWORD) }
 }
 
 /** Found by the shell through `ServiceLoader`: being on the classpath is the switch. */

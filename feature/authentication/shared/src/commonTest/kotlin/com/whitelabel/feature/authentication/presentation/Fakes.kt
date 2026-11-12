@@ -14,12 +14,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class FakeSession : SessionRepository {
     override val state = MutableStateFlow<SessionState>(SessionState.SignedOut)
     var signIns = 0
+    val signedInWith = mutableListOf<Pair<String, String>>()
     var registrations = mutableListOf<Registration>()
     /** Suspends until it returns: lets a test hold a call in flight. */
     var answer: suspend () -> EmptyResult<DataError> = { Result.Success(Unit) }
 
     override suspend fun signIn(email: String, password: String): EmptyResult<DataError> {
         signIns++
+        signedInWith += email to password
         return answer()
     }
 

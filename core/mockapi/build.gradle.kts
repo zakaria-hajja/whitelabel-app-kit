@@ -9,6 +9,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core:network"))
+            implementation(project(":core:domain"))
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.mock)
             implementation(libs.kotlinx.atomicfu)
