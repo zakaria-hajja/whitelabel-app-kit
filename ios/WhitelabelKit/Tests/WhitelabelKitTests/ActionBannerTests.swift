@@ -23,6 +23,14 @@ final class ActionBannerTests: XCTestCase {
         XCTAssertEqual(shown, ["First", "Second", nil])
     }
 
+    /** With VoiceOver, reaching the Undo button takes longer than a glance: an action banner stays at least 10 s. */
+    func testAnActionBannerStaysLongerWithVoiceOver() {
+        XCTAssertEqual(ActionBanner.duration(seconds: 4, hasAction: true, voiceOver: true), 10)
+        XCTAssertEqual(ActionBanner.duration(seconds: 15, hasAction: true, voiceOver: true), 15)
+        XCTAssertEqual(ActionBanner.duration(seconds: 4, hasAction: true, voiceOver: false), 4)
+        XCTAssertEqual(ActionBanner.duration(seconds: 4, hasAction: false, voiceOver: true), 4)
+    }
+
     func testItemsAreEqualByIdentity() {
         let a = item("Same")
         XCTAssertEqual(a, a)

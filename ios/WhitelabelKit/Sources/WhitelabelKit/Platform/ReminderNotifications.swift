@@ -35,6 +35,12 @@ public final class ReminderNotifications: NSObject, UNUserNotificationCenterDele
         }
     }
 
+    /** From any thread (iOS doesn't promise the delegate's): the link is handed to the main actor. */
+    nonisolated func received(userInfo: [AnyHashable: Any]) {
+        guard let link = userInfo["deepLink"] as? String else { return }
+        Task { @MainActor in self.handleTap(userInfo: ["deepLink": link]) }
+    }
+
     func handleTap(userInfo: [AnyHashable: Any]) {
         guard let link = userInfo["deepLink"] as? String, !link.isEmpty, let url = URL(string: link) else { return }
         if let open { open(url) } else { pending = url }
@@ -53,8 +59,7 @@ public final class ReminderNotifications: NSObject, UNUserNotificationCenterDele
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo = response.notification.request.content.userInfo
-        MainActor.assumeIsolated { handleTap(userInfo: userInfo) }
+        received(userInfo: response.notification.request.content.userInfo)
         completionHandler()
     }
 }

@@ -32,7 +32,7 @@ internal fun triggerComponents(at: LocalDateTime): NSDateComponents = NSDateComp
     day = at.day.toLong()
     hour = at.hour.toLong()
     minute = at.minute.toLong()
-    second = 0
+    second = at.second.toLong()
 }
 
 /** The text, sound and tap link; WhitelabelKit's notification delegate reads `userInfo["deepLink"]`. */

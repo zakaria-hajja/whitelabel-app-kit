@@ -39,6 +39,20 @@ final class ReminderTapTests: XCTestCase {
         XCTAssertEqual(opened.count, 1, "a pending tap is delivered once")
     }
 
+    /** iOS doesn't promise the delegate runs on the main thread: a tap from elsewhere must still arrive, not trap. */
+    func testATapFromABackgroundThreadIsDelivered() async {
+        let taps = ReminderNotifications()
+        let opened = expectation(description: "opened")
+        taps.connect { url in
+            XCTAssertEqual(url, URL(string: "app://creature/n")!)
+            opened.fulfill()
+        }
+
+        await Task.detached { taps.received(userInfo: ["deepLink": "app://creature/n"]) }.value
+
+        await fulfillment(of: [opened], timeout: 2)
+    }
+
     func testRemindersShowWhileTheAppIsOpen() {
         XCTAssertEqual(ReminderNotifications.foregroundPresentation, [.banner, .sound, .list])
     }

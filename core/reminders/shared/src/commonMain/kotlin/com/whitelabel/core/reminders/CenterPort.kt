@@ -58,7 +58,9 @@ private class JsonArmedStore(private val json: JsonStore<StoredArmed>) : ArmedSt
  * - A reminder whose time has passed **and that was armed** was shown by the system: it's no longer
  *   pending and is removed silently at the next change. One that was **never armed** (beyond the cap)
  *   is still pending, so the engine's late rule decides whether to post it.
- * - [sweepDelivered] then [ReminderEngine.onSystemChange] then [rebalance] once per launch.
+ * - [sweepDelivered] then [ReminderEngine.onSystemChange] then `rebalance(rearmAll = true)` once per
+ *   launch: the system may have lost a request the record says is armed (a failed add, a migrated
+ *   phone), so launch hands every wanted request over again, as Android re-arms every alarm.
  */
 class CenterReminderPort(
     private val inner: ReminderStore,
@@ -99,10 +101,10 @@ class CenterReminderPort(
     /** Removes the reminders the system already showed. */
     suspend fun sweepDelivered() = store.update { it }
 
-    /** Arms the soonest [MAX_PENDING_REQUESTS] future reminders and disarms the rest. */
-    suspend fun rebalance() = lock.withLock { rebalanceLocked() }
+    /** Arms the soonest [MAX_PENDING_REQUESTS] future reminders and disarms the rest; [rearmAll] re-adds even those recorded as armed. */
+    suspend fun rebalance(rearmAll: Boolean = false) = lock.withLock { rebalanceLocked(rearmAll) }
 
-    private suspend fun rebalanceLocked() {
+    private suspend fun rebalanceLocked(rearmAll: Boolean = false) {
         val list = inner.reminders.first()
         val armed = armedStore.armed.first()
         val justCancelled = cancelled.getAndUpdate { emptySet() }
@@ -114,7 +116,7 @@ class CenterReminderPort(
 
         val disarm = armed.keys.filter { it !in wantedIds && it !in shown }
         if (disarm.isNotEmpty()) center.removePending(disarm)
-        wanted.filter { armed[it.id] != it.signature() || it.id in justCancelled }.forEach { center.add(it.toRequest()) }
+        wanted.filter { rearmAll || armed[it.id] != it.signature() || it.id in justCancelled }.forEach { center.add(it.toRequest()) }
         val next = wanted.associate { it.id to it.signature() } + armed.filterKeys { it in shown }
         if (next != armed) armedStore.update { next }
     }

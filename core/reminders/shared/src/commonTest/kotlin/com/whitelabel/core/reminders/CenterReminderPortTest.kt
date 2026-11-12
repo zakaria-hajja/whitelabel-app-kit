@@ -22,7 +22,9 @@ class CenterReminderPortTest {
     private val start = LocalDateTime(2027, 3, 10, 8, 0)
     private var now = start
     private val center = FakeCenter()
-    private val port = CenterReminderPort(PortMemoryStore(), MemoryArmedStore(), center) { now }
+    private val reminderStore = PortMemoryStore()
+    private val armedStore = MemoryArmedStore()
+    private val port = CenterReminderPort(reminderStore, armedStore, center) { now }
     private val engine = ReminderEngine(port.store, port, port) { now }
 
     private fun plus(at: LocalDateTime, minutes: Int) =
@@ -131,6 +133,22 @@ class CenterReminderPortTest {
         engine.setAll(list, idPrefix = "m:")
 
         assertThat(center.added.size).isEqualTo(added)
+    }
+
+    /**
+     * The record says armed but iOS no longer holds the request (a failed add, a migrated phone):
+     * the next launch must arm it again, as Android re-arms every alarm, or it would pass as "shown".
+     */
+    @Test fun launch_reArmsWhatTheRecordSaysIsArmed() = runTest {
+        engine.schedule(reminder("a", LocalDateTime(2027, 3, 10, 9, 0)))
+        center.pending.clear()
+
+        val relaunched = CenterReminderPort(reminderStore, armedStore, center) { now }
+        relaunched.sweepDelivered()
+        ReminderEngine(relaunched.store, relaunched, relaunched) { now }.onSystemChange()
+        relaunched.rebalance(rearmAll = true)
+
+        assertThat(center.pending.keys.toList()).containsExactly("a")
     }
 
     @Test fun cancel_removesTheDeliveredNotificationToo() = runTest {

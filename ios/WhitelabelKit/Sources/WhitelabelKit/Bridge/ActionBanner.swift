@@ -30,6 +30,11 @@ public extension View {
 }
 
 enum ActionBanner {
+    /** With VoiceOver, reaching the action takes longer than a glance (Android lengthens action snackbars too). */
+    static func duration(seconds: Double, hasAction: Bool, voiceOver: Bool) -> Double {
+        hasAction && voiceOver ? max(seconds, 10) : seconds
+    }
+
     /** Shows, announces, waits, hides. A cancelled run (a newer item, or the action) leaves the banner to its successor. */
     @MainActor
     static func present(_ item: BannerItem, show: (BannerItem?) -> Void, seconds: Double) async {
@@ -56,7 +61,8 @@ private struct ActionBannerModifier: ViewModifier {
             }
             .task(id: item?.id) {
                 guard let item else { return }
-                await ActionBanner.present(item, show: { value in withAnimation { shown = value } }, seconds: MessageBanner.seconds)
+                let seconds = ActionBanner.duration(seconds: MessageBanner.seconds, hasAction: item.action != nil, voiceOver: UIAccessibility.isVoiceOverRunning)
+                await ActionBanner.present(item, show: { value in withAnimation { shown = value } }, seconds: seconds)
                 if shown == nil, self.item == item { self.item = nil }
             }
     }

@@ -47,7 +47,7 @@ internal fun openIosReminders(directory: Path, center: NotificationCenter, scope
     scope.launch {
         port.sweepDelivered()
         engine.onSystemChange()
-        port.rebalance()
+        port.rebalance(rearmAll = true)
     }
     return Reminders(engine)
 }

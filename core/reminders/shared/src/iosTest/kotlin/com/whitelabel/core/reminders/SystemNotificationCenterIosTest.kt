@@ -39,6 +39,11 @@ class SystemNotificationCenterIosTest {
         assertThat(components.timeZone).isNull()
     }
 
+    /** A trigger at 09:00:00 for a 09:00:45 reminder scheduled at 09:00:20 would never fire. */
+    @Test fun trigger_keepsTheSeconds() {
+        assertThat(triggerComponents(LocalDateTime(2027, 3, 10, 9, 0, 45)).second).isEqualTo(45L)
+    }
+
     @Test fun content_carriesTheDeepLink() {
         val content = content(CenterRequest("a", null, "Netflix eats in 3 days", "€13.99", "app://a"))
 
