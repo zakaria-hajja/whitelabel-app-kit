@@ -39,7 +39,7 @@ class FirebaseSetupTest {
     }
 
     @Test fun `debug with the file is real in debug only`() {
-        assertThat(firebaseSetup(ServiceMode.DEBUG, configFileExists = true)).isEqualTo(
+        assertThat(firebaseSetup(ServiceMode.DEBUG, configFileExists = true).copy(disabledTasks = emptyList())).isEqualTo(
             FirebaseSetup("debugImplementation", true, mapOf("debug" to "on", "release" to "off")),
         )
     }
@@ -48,5 +48,16 @@ class FirebaseSetupTest {
         assertThat(firebaseSetup(ServiceMode.DEBUG, configFileExists = false)).isEqualTo(
             FirebaseSetup("debugImplementation", false, mapOf("debug" to "fake", "release" to "off")),
         )
+    }
+
+    @Test fun `debug with the file skips release google-services processing`() {
+        assertThat(firebaseSetup(ServiceMode.DEBUG, configFileExists = true).disabledTasks)
+            .contains("processReleaseGoogleServices")
+    }
+
+    @Test fun `debug without the file and the other modes disable nothing`() {
+        assertThat(firebaseSetup(ServiceMode.DEBUG, configFileExists = false).disabledTasks).isEqualTo(emptyList())
+        assertThat(firebaseSetup(ServiceMode.ON, configFileExists = true).disabledTasks).isEqualTo(emptyList())
+        assertThat(firebaseSetup(ServiceMode.OFF, configFileExists = false).disabledTasks).isEqualTo(emptyList())
     }
 }

@@ -5,11 +5,14 @@ package com.whitelabel.buildlogic.apps
  * Firebase libraries (`null` for none), [applyGradlePlugins] whether the google-services plugins
  * apply, and [modeFor] the mode per build type (`debug`/`release`) written as the
  * `foundation_firebase` string on Android and `WL_FIREBASE` on iOS: `on`, `fake` or `off`.
+ * [disabledTasks] are Gradle tasks (by name) to switch off: in `debug` mode the plugins also see the
+ * release variant, which must not process the config file or upload a mapping.
  */
 data class FirebaseSetup(
     val dependencyConfiguration: String?,
     val applyGradlePlugins: Boolean,
     val modeFor: Map<String, String>,
+    val disabledTasks: List<String> = emptyList(),
 )
 
 /**
@@ -28,6 +31,16 @@ fun firebaseSetup(
         if (configFileExists) FirebaseSetup("implementation", true, mapOf("debug" to "on", "release" to "on"))
         else throw InvalidAppConfigException(listOf("$label: firebase.enabled=true needs $configFileName"))
     ServiceMode.DEBUG ->
-        if (configFileExists) FirebaseSetup("debugImplementation", true, mapOf("debug" to "on", "release" to "off"))
+        if (configFileExists) FirebaseSetup(
+            "debugImplementation", true, mapOf("debug" to "on", "release" to "off"), RELEASE_FIREBASE_TASKS,
+        )
         else FirebaseSetup("debugImplementation", false, mapOf("debug" to "fake", "release" to "off"))
 }
+
+/** The release variant's Firebase Gradle tasks (AGP 8.13, crashlytics-gradle 3.0.8). */
+private val RELEASE_FIREBASE_TASKS = listOf(
+    "processReleaseGoogleServices",
+    "injectCrashlyticsMappingFileIdRelease",
+    "injectCrashlyticsVersionControlInfoRelease",
+    "uploadCrashlyticsMappingFileRelease",
+)

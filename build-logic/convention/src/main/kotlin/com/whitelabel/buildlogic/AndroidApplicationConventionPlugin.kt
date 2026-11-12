@@ -6,7 +6,9 @@ import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.ResValue
 import com.whitelabel.buildlogic.apps.AppConfigLoader
 import com.whitelabel.buildlogic.apps.androidStringResource
+import com.whitelabel.buildlogic.apps.ServiceMode
 import com.whitelabel.buildlogic.apps.appConfigFields
+import com.whitelabel.buildlogic.apps.firebaseSetup
 import com.whitelabel.buildlogic.apps.resourceNameFor
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -82,6 +84,25 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         mockApiDependency(mapOf(MOCK_API_PROPERTY to providers.gradleProperty(MOCK_API_PROPERTY).orNull))
             ?.let { (configuration, module) -> dependencies.add(configuration, project(module)) }
 
+        // Firebase: libraries per build type, the google-services plugins when the config file is
+        // there, and the mode the shell reads. Release never gets the libraries in `debug` mode.
+        val firebase = firebaseSetup(
+            app.firebase,
+            configFileExists = projectDir.resolve("google-services.json").isFile,
+            label = rootDir.toPath().relativize(projectDir.toPath()).toString(),
+        )
+        if (firebase.applyGradlePlugins) {
+            pluginManager.apply(libs.pluginId("google-services"))
+            pluginManager.apply(libs.pluginId("firebase-crashlytics"))
+        }
+        if (app.firebase != ServiceMode.OFF) {
+            dependencies.add("implementation", project(":core:firebase:shared"))
+        }
+        firebase.dependencyConfiguration?.let { dependencies.add(it, project(":core:firebase:google")) }
+        if (firebase.disabledTasks.isNotEmpty()) {
+            tasks.configureEach { if (name in firebase.disabledTasks) enabled = false }
+        }
+
         extensions.configure<ApplicationAndroidComponentsExtension> {
             onVariants { variant ->
                 val buildType = requireNotNull(variant.buildType)
@@ -93,6 +114,14 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                         variant.makeResValueKey("string", resourceNameFor(name)),
                         ResValue(androidStringResource(value), null),
                     )
+                }
+                // Resources only, not BuildConfig: they are build-wiring state for the shell, not
+                // app identity, so the apps' identity tests stay as they are.
+                mapOf(
+                    "foundation_firebase" to firebase.modeFor.getValue(buildType),
+                    "foundation_firebase_declared" to (app.firebase != ServiceMode.OFF).toString(),
+                ).forEach { (name, value) ->
+                    variant.resValues.put(variant.makeResValueKey("string", name), ResValue(value, null))
                 }
             }
         }
