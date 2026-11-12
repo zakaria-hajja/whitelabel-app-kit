@@ -24,8 +24,8 @@ import kotlin.test.Test
 
 class FirebaseKoinTest {
     private class RecordingSwitch : CollectionSwitch {
-        val applied = mutableListOf<Collection>()
-        override fun apply(collection: Collection) { applied += collection }
+        val applied = mutableListOf<FirebaseCollection>()
+        override fun apply(collection: FirebaseCollection) { applied += collection }
     }
 
     private class NoopAnalytics : Analytics, CrashReporter {
@@ -66,8 +66,8 @@ class FirebaseKoinTest {
         val port = FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1011"))
         val koin = app(FirebaseMode.ON, switch, port).koin
         assertThat(koin.get<RemoteValues>()).isInstanceOf<SourceRemoteValues>()
-        assertThat(switch.applied).containsExactly(Collection(false, false, false))
+        assertThat(switch.applied).containsExactly(FirebaseCollection(false, false, false))
         koin.get<Consent>().gatherOnLaunch()
-        assertThat(switch.applied.last()).isEqualTo(Collection(true, true, true))
+        assertThat(switch.applied.last()).isEqualTo(FirebaseCollection(true, true, true))
     }
 }
