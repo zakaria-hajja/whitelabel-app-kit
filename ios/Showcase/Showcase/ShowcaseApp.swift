@@ -45,7 +45,7 @@ private struct RemoteNoteRow: View {
     @State private var note = Self.read()
 
     var body: some View {
-        AppValueRow(String(localized: "Remote note"), value: note) {}
+        AppValueRow(String(localized: "Remote note"), value: note)
             .accessibilityIdentifier("showcase.remoteNote")
             .task {
                 for await _ in SharedGraph.shared.remoteValues().changes { note = Self.read() }

@@ -31,16 +31,17 @@ import com.whitelabel.core.designsystem.theme.ValueRowLayout
 /**
  * A setting and its current value ("Theme · System default"), on one line or with the value under the
  * label, as the style pack says; tapping it usually opens a [SettingsChoiceSheet]. Use it in an app's
- * own `SettingsSection` so its rows match the shared ones.
+ * own `SettingsSection` so its rows match the shared ones. A null [onClick] makes it read-only: not a
+ * button, so it neither ripples nor announces itself as one.
  */
 @Composable
-fun SettingsValueRow(label: String, value: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SettingsValueRow(label: String, value: String, onClick: (() -> Unit)?, modifier: Modifier = Modifier) {
     val layout = AppTheme.style.valueRows
     val row = modifier
         .fillMaxWidth()
         // Inline keeps the 48 dp rows (as the toggle rows); stacked rows hold two lines.
         .heightIn(min = if (layout == ValueRowLayout.Stacked) AppTheme.style.sizing.listRowMinHeight else 48.dp)
-        .clickable(role = Role.Button, onClick = onClick)
+        .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
         .padding(horizontal = AppTheme.style.sizing.screenGutter, vertical = AppTheme.spacing.sm)
     when (layout) {
         ValueRowLayout.Inline -> Row(verticalAlignment = Alignment.CenterVertically, modifier = row) {

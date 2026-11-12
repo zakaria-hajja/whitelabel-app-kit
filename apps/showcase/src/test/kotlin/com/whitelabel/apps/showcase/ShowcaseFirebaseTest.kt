@@ -3,6 +3,7 @@ package com.whitelabel.apps.showcase
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.whitelabel.core.domain.remote.DefaultsOnlyRemoteValues
+import com.whitelabel.core.domain.remote.RemoteValues
 import org.junit.jupiter.api.Test
 
 /** Showcase turns Firebase on (Debug builds only decide at runtime, from app.properties) and reads one remote note. */
@@ -14,6 +15,12 @@ class ShowcaseFirebaseTest {
 
     @Test fun `remote note falls back to the default`() {
         assertThat(remoteNote(DefaultsOnlyRemoteValues)).isEqualTo("default")
-        assertThat(REMOTE_NOTE_KEY).isEqualTo("showcase_remote_note")
+    }
+
+    @Test fun `remote note reads the showcase key`() {
+        val fetched = object : RemoteValues by DefaultsOnlyRemoteValues {
+            override fun string(key: String, default: String) = if (key == "showcase_remote_note") "from the console" else default
+        }
+        assertThat(remoteNote(fetched)).isEqualTo("from the console")
     }
 }
