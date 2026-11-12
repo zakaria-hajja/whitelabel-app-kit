@@ -2,6 +2,7 @@ package com.whitelabel.core.shell.brand
 
 import android.os.Build
 import android.util.Log
+import com.whitelabel.core.ads.AdsWiring
 import com.whitelabel.core.ads.adsModule
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter

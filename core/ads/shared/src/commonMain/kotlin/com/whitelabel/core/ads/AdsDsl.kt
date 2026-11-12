@@ -1,9 +1,9 @@
 package com.whitelabel.core.ads
 
 /**
- * A banner slot the app declares. [name] keys its unit (`ads.android.banner.<name>`); [underTab],
- * when set, is a tab's route: the shell draws the banner below that tab's root screen. Without it,
- * the app places `AdBanner(name)` itself.
+ * A banner slot the app declares. [name] keys its unit (`ads.<platform>.banner.<name>`); [underTab],
+ * when set, is a tab's route (Android: the route object; iOS: the tab's route id): the shell draws
+ * the banner below that tab's root screen. Without it, the app places `AdBanner(name)` itself.
  */
 data class AdPlacement(val name: String, val underTab: Any?)
 

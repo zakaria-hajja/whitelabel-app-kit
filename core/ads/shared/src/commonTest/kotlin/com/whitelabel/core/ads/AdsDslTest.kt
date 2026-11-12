@@ -6,7 +6,7 @@ import assertk.assertions.containsExactly
 import assertk.assertions.hasMessage
 import assertk.assertions.isEmpty
 import assertk.assertions.isInstanceOf
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 class AdsDslTest {
 

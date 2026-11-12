@@ -7,7 +7,10 @@ import androidx.navigation.NavGraphBuilder
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.ads.AdPlacement
+import com.whitelabel.core.ads.AdTabOwner
 import com.whitelabel.core.ads.AdsBuilder
+import com.whitelabel.core.ads.checkAdPlacementTabs
+import com.whitelabel.core.ads.tabPlacementFor
 import org.koin.core.module.Module
 import com.whitelabel.core.shell.model.DefinitionSpec
 import com.whitelabel.core.shell.model.FeatureSpec
@@ -174,39 +177,28 @@ internal fun checkFirebaseDeclared(definition: AppDefinition, declared: Boolean)
     check(definition.usesFirebase || !declared) { "firebase.enabled is set but the app definition doesn't call firebase()" }
 }
 
-/** The entry id of the shared Settings feature, whose tab never shows a banner. */
-private const val SETTINGS_ENTRY_ID = "settings"
-
 /**
- * Checks where the shell would draw each placement: under a tab, never Settings or the gate (no
- * ads on forms or settings), and one banner per tab.
+ * Checks where the shell would draw each placement (the shared [checkAdPlacementTabs]): under a tab,
+ * never Settings or the gate, and one banner per tab.
  */
 private fun AppDefinition.validateAdPlacements() {
     val gate = gateEntry
-    adPlacements.filter { it.underTab != null }.forEach { placement ->
-        val route = checkNotNull(placement.underTab)
-        val owner = entries.firstOrNull { it.tab?.route == route }
-            ?: gate?.takeIf { checkNotNull(it.gate).startRoute == route }
-        require(owner != null) { "placement '${placement.name}' is under ${route.routeName()}, which isn't a tab" }
-        require(owner.id != SETTINGS_ENTRY_ID && owner.gate == null) {
-            "No ads under ${owner.id}: settings and sign-in screens stay ad-free"
-        }
-    }
-    adPlacements.filter { it.underTab != null }.groupBy { it.underTab }.values.firstOrNull { it.size > 1 }?.let { (first, second) ->
-        throw IllegalArgumentException(
-            "placements '${first.name}' and '${second.name}' are both under ${checkNotNull(first.underTab).routeName()}; a tab has one banner",
-        )
-    }
+    checkAdPlacementTabs(
+        adPlacements,
+        ownerOf = { route ->
+            val owner = entries.firstOrNull { it.tab?.route == route } ?: gate?.takeIf { checkNotNull(it.gate).startRoute == route }
+            owner?.let { AdTabOwner(it.id, isGate = it.gate != null) }
+        },
+        routeName = { it::class.simpleName ?: it.toString() },
+    )
 }
-
-private fun Any.routeName(): String = this::class.simpleName ?: toString()
 
 /**
  * The placement the shell draws below the current screen, if that screen is a tab's root:
  * [isCurrent] says whether a tab route is the current destination.
  */
 internal fun AppDefinition.tabPlacementFor(isCurrent: (route: Any) -> Boolean): String? =
-    adPlacements.firstOrNull { placement -> placement.underTab?.let(isCurrent) == true }?.name
+    tabPlacementFor(adPlacements, isCurrent)
 
 /** Declares an app's features, e.g. `appDefinition { auth(); notes(); settings(); startTab(NotesRoute) }`. */
 fun appDefinition(block: AppDefinitionBuilder.() -> Unit): AppDefinition =
