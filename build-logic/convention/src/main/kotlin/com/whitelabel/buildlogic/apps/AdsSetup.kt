@@ -13,13 +13,17 @@ enum class Platform(val appIdKey: String, val unitKeyPrefix: String, val testApp
  * (`debug`/`release`): [modeFor] is `on` or `off` (`foundation_ads` on Android, `WL_ADS` on iOS),
  * [unitsFor] the banner unit per placement (the units string is [adsUnitsString]), and
  * [admobAppIdFor] the AdMob app ID to publish, present only for build types where ads are on.
+ * [declared] is true when `ads.enabled` isn't `false` (`foundation_ads_declared`, the same in every
+ * build type), so the shell can tell `ads { }` without the setting from a build type with ads off.
  */
 data class AdsSetup(
     val dependencyConfiguration: String?,
     val modeFor: Map<String, String>,
     val unitsFor: Map<String, Map<String, String>>,
     val admobAppIdFor: Map<String, String>,
-)
+) {
+    val declared: Boolean get() = dependencyConfiguration != null
+}
 
 /**
  * Decides the ads setup from `ads.enabled` ([mode]), the platform's AdMob [appId] and its banner

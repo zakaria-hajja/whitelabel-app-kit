@@ -1,6 +1,5 @@
 package com.whitelabel.core.ads.google
 
-import android.content.Context
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +27,7 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.whitelabel.core.ads.BannerHost
 import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -41,14 +41,14 @@ internal object GoogleBannerHost : BannerHost {
     @Composable
     override fun Banner(unitId: String, onLoaded: () -> Unit, onFailed: () -> Unit) {
         val context = LocalContext.current
-        var started by remember { mutableStateOf(MobileAdsStart.isDone) }
-        LaunchedEffect(Unit) {
-            MobileAdsStart.await(context)
-            started = true
-        }
-        if (!started) return
         val currentOnLoaded by rememberUpdatedState(onLoaded)
         val currentOnFailed by rememberUpdatedState(onFailed)
+        var started by remember { mutableStateOf(MobileAdsStart.isDone) }
+        LaunchedEffect(Unit) {
+            val app = context.applicationContext
+            if (MobileAdsStart.await { done -> MobileAds.initialize(app) { done() } }) started = true else currentOnFailed()
+        }
+        if (!started) return
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val widthDp = maxWidth.value.toInt()
             val size = remember(widthDp) { AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, widthDp) }
@@ -94,19 +94,42 @@ private fun PauseWithLifecycle(view: AdView?) {
     }
 }
 
-/** Starts the SDK once per process, off the main thread, and lets every banner wait for it. */
-private object MobileAdsStart {
+/** The Google Mobile Ads SDK's start, shared by every banner in the process. */
+private val MobileAdsStart = StartOnce()
+
+/**
+ * Runs a start once and lets every caller wait for it, off the main thread. A start that throws
+ * reports failure to its waiters and is forgotten, so a later caller tries again.
+ */
+internal class StartOnce {
     private val start = AtomicReference<CompletableDeferred<Unit>?>(null)
 
-    val isDone: Boolean get() = start.get()?.isCompleted == true
+    val isDone: Boolean get() = start.get()?.let { it.isCompleted && !it.isCancelled && it.getCompletionExceptionOrNull() == null } == true
 
-    suspend fun await(context: Context) {
+    /** Starts with [begin] (which calls its argument once started) unless already started; true once started. */
+    suspend fun await(begin: (onDone: () -> Unit) -> Unit): Boolean {
         val mine = CompletableDeferred<Unit>()
-        if (start.compareAndSet(null, mine)) {
-            val app = context.applicationContext
-            // Not cancellable: a banner that leaves first must not leave the SDK unstarted for the others.
-            withContext(NonCancellable + Dispatchers.IO) { MobileAds.initialize(app) { mine.complete(Unit) } }
+        val current = if (start.compareAndSet(null, mine)) {
+            // Not cancellable: a banner that leaves first must not leave the start half done for the others.
+            withContext(NonCancellable + Dispatchers.IO) {
+                try {
+                    begin { mine.complete(Unit) }
+                } catch (e: Exception) {
+                    start.compareAndSet(mine, null)
+                    mine.completeExceptionally(e)
+                }
+            }
+            mine
+        } else {
+            start.get() ?: return false
         }
-        checkNotNull(start.get()).await()
+        return try {
+            current.await()
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            false
+        }
     }
 }

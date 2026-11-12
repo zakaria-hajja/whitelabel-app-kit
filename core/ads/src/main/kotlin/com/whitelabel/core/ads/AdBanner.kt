@@ -1,5 +1,6 @@
 package com.whitelabel.core.ads
 
+import android.content.pm.ApplicationInfo
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,7 +24,7 @@ import org.koin.compose.getKoin
 /**
  * The banner for [placement], labelled "Ad". It takes no space while the rules hide it, while it
  * loads and when it fails (never an error), and always without the ads SDK (no [BannerHost]) or
- * without `ads { }` (no [AdsController]).
+ * without `ads { }` (no [AdsController]). A [placement] missing from `ads { }` throws in a debug build.
  */
 @Composable
 fun AdBanner(placement: String, modifier: Modifier = Modifier) {
@@ -30,10 +32,12 @@ fun AdBanner(placement: String, modifier: Modifier = Modifier) {
     val controller = remember(koin) { koin.getOrNull<AdsController>() } ?: return
     val host = remember(koin) { koin.getOrNull<BannerHost>() } ?: return
     val state by remember(controller, placement) { controller.bannerState(placement) }.collectAsStateWithLifecycle()
-    val unitId = (state as? BannerState.Ready)?.unitId ?: return
+    val context = LocalContext.current
+    val debugBuild = remember(context) { context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 }
+    val unitId = bannerUnit(state, placement, debugBuild) ?: return
     var load by remember(unitId) { mutableStateOf(BannerLoad.LOADING) }
-    if (load == BannerLoad.FAILED) return
-    // The banner is composed while it loads, so the SDK can load it, but takes no space until it has an ad.
+    // The banner stays composed while it loads (so the SDK can load it) and after a failure, but takes
+    // no space until it has an ad.
     Column(modifier.fillMaxWidth().collapsedUnless(load == BannerLoad.LOADED), horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = stringResource(R.string.ads_label),
@@ -41,11 +45,13 @@ fun AdBanner(placement: String, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(vertical = 2.dp),
         )
-        host.Banner(unitId = unitId, onLoaded = { load = BannerLoad.LOADED }, onFailed = { load = BannerLoad.FAILED })
+        host.Banner(
+            unitId = unitId,
+            onLoaded = { load = load.on(BannerEvent.LOADED) },
+            onFailed = { load = load.on(BannerEvent.FAILED) },
+        )
     }
 }
-
-private enum class BannerLoad { LOADING, LOADED, FAILED }
 
 /** Measures the content as usual but, unless [shown], reports (and draws) zero height. */
 private fun Modifier.collapsedUnless(shown: Boolean): Modifier = clipToBounds().layout { measurable, constraints ->

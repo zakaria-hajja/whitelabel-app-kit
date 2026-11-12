@@ -34,28 +34,28 @@ internal fun parseAdsUnits(value: String): Map<String, String> =
     }
 
 /**
- * Checks the definition's `ads { }` against this build's [mode] (`foundation_ads`: `on`, or `off`
- * when ads are off for the build type) and [units] (`foundation_ads_units`), and resolves each
- * declared placement's unit. Startup fails on an inconsistent configuration.
- *
- * `off` with `ads { }` is an error only in a debug build: there it can only mean `ads.enabled=false`,
- * while in a release build it is also `ads.enabled=debug`, whose placements just stay hidden.
- * In a debug build a placement without a unit gets Google's test unit.
+ * Checks the definition's `ads { }` against the app's setting ([declared]: `ads.enabled` isn't
+ * `false`), this build's [mode] (`foundation_ads`: `on`, or `off` when ads are off for the build
+ * type, as in a release build of `ads.enabled=debug`) and [units] (`foundation_ads_units`), and
+ * resolves each declared placement's unit. Startup fails on an inconsistent configuration: a unit
+ * needs its placement, and in a release build a placement needs its unit. In a debug build a
+ * placement without a unit gets Google's test unit.
  */
 internal fun adsWiring(
     definition: AppDefinition,
+    declared: Boolean,
     mode: String,
     units: String,
     contributorPresent: Boolean,
     debugBuild: Boolean,
 ): AdsWiring {
-    val on = mode == "on"
-    check(!on || definition.usesAds) { "ads.enabled is set but the app definition doesn't call ads { }" }
-    if (!definition.usesAds) return AdsWiring.OFF
-    check(on || !debugBuild) { "ads { } needs ads.enabled=true or debug in app.properties" }
-    if (!on) return AdsWiring.OFF
+    check(!declared || definition.usesAds) { "ads.enabled is set but the app definition doesn't call ads { }" }
+    check(declared || !definition.usesAds) { "ads { } needs ads.enabled=true or debug in app.properties" }
+    if (!definition.usesAds || mode != "on") return AdsWiring.OFF
     check(contributorPresent) { "ads are on but :core:ads:google isn't linked" }
     val built = parseAdsUnits(units)
+    val names = definition.adPlacements.map { it.name }.toSet()
+    built.keys.firstOrNull { it !in names }?.let { error("ads.android.banner.$it has no matching ads { placement(\"$it\") }") }
     return AdsWiring(
         enabled = true,
         units = definition.adPlacements.associate { placement ->
@@ -65,7 +65,10 @@ internal fun adsWiring(
     )
 }
 
-/** Reads the app's `foundation_ads` and `foundation_ads_units` strings (off and none until the app plugin writes them). */
+/**
+ * Reads the app's `foundation_ads_declared`, `foundation_ads` and `foundation_ads_units` strings
+ * (false, off and none until the app plugin writes them).
+ */
 internal fun adsWiringFor(context: Context, definition: AppDefinition, contributors: List<ModuleContributor>): AdsWiring {
     fun string(name: String, fallback: String): String {
         val id = context.resources.getIdentifier(name, "string", context.packageName)
@@ -73,6 +76,7 @@ internal fun adsWiringFor(context: Context, definition: AppDefinition, contribut
     }
     return adsWiring(
         definition,
+        declared = string("foundation_ads_declared", "false") == "true",
         mode = string("foundation_ads", "off"),
         units = string("foundation_ads_units", ""),
         contributorPresent = adsContributorPresent(contributors),

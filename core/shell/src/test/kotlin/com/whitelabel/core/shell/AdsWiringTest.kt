@@ -127,50 +127,66 @@ class AdsWiringTest {
 
     // The startup checks against the build's settings.
 
-    @Test fun `ads() without the setting fails in a debug build`() {
-        assertFailure { adsWiring(withHome, mode = "off", units = "", contributorPresent = false, debugBuild = true) }
-            .isInstanceOf<IllegalStateException>()
-            .hasMessage("ads { } needs ads.enabled=true or debug in app.properties")
+    @Test fun `ads() without the setting fails in every build type`() {
+        listOf(true, false).forEach { debugBuild ->
+            assertFailure { adsWiring(withHome, declared = false, mode = "off", units = "", contributorPresent = false, debugBuild = debugBuild) }
+                .isInstanceOf<IllegalStateException>()
+                .hasMessage("ads { } needs ads.enabled=true or debug in app.properties")
+        }
     }
 
     @Test fun `the setting without ads() fails`() {
         assertFailure {
-            adsWiring(appDefinition { add(entry("a", RouteA)) }, mode = "on", units = "", contributorPresent = true, debugBuild = true)
+            adsWiring(appDefinition { add(entry("a", RouteA)) }, declared = true, mode = "on", units = "", contributorPresent = true, debugBuild = true)
+        }.isInstanceOf<IllegalStateException>()
+            .hasMessage("ads.enabled is set but the app definition doesn't call ads { }")
+        // ads.enabled=debug in a release build: off, but still declared.
+        assertFailure {
+            adsWiring(appDefinition { add(entry("a", RouteA)) }, declared = true, mode = "off", units = "", contributorPresent = false, debugBuild = false)
         }.isInstanceOf<IllegalStateException>()
             .hasMessage("ads.enabled is set but the app definition doesn't call ads { }")
     }
 
     @Test fun `ads off in this build keeps placements inert`() {
         // ads.enabled=debug in a release build: the definition still declares its placements.
-        assertThat(adsWiring(withHome, mode = "off", units = "", contributorPresent = false, debugBuild = false))
+        assertThat(adsWiring(withHome, declared = true, mode = "off", units = "", contributorPresent = false, debugBuild = false))
             .isEqualTo(AdsWiring(enabled = false, units = emptyMap()))
     }
 
     @Test fun `an app without ads, or a missing resource, is off`() {
         val plain = appDefinition { add(entry("a", RouteA)) }
-        assertThat(adsWiring(plain, mode = "off", units = "", contributorPresent = false, debugBuild = true)).isEqualTo(AdsWiring.OFF)
-        assertThat(adsWiring(plain, mode = "", units = "", contributorPresent = false, debugBuild = false)).isEqualTo(AdsWiring.OFF)
+        assertThat(adsWiring(plain, declared = false, mode = "off", units = "", contributorPresent = false, debugBuild = true)).isEqualTo(AdsWiring.OFF)
+        assertThat(adsWiring(plain, declared = false, mode = "", units = "", contributorPresent = false, debugBuild = false)).isEqualTo(AdsWiring.OFF)
     }
 
     @Test fun `on without the sdk module fails`() {
-        assertFailure { adsWiring(withHome, mode = "on", units = "home=$UNIT", contributorPresent = false, debugBuild = false) }
+        assertFailure { adsWiring(withHome, declared = true, mode = "on", units = "home=$UNIT", contributorPresent = false, debugBuild = false) }
             .isInstanceOf<IllegalStateException>()
             .hasMessage("ads are on but :core:ads:google isn't linked")
     }
 
-    @Test fun `on in release uses the built units for the declared placements only`() {
-        val wiring = adsWiring(withHome, mode = "on", units = "home=$UNIT;other=$OTHER", contributorPresent = true, debugBuild = false)
+    @Test fun `on in release uses the built units`() {
+        val wiring = adsWiring(withHome, declared = true, mode = "on", units = "home=$UNIT", contributorPresent = true, debugBuild = false)
         assertThat(wiring).isEqualTo(AdsWiring(enabled = true, units = mapOf("home" to UNIT)))
     }
 
+    @Test fun `a unit without a placement fails, in release and in debug`() {
+        listOf(false, true).forEach { debugBuild ->
+            assertFailure {
+                adsWiring(withHome, declared = true, mode = "on", units = "home=$UNIT;other=$OTHER", contributorPresent = true, debugBuild = debugBuild)
+            }.isInstanceOf<IllegalStateException>()
+                .hasMessage("ads.android.banner.other has no matching ads { placement(\"other\") }")
+        }
+    }
+
     @Test fun `on in release fails for a placement without a unit`() {
-        assertFailure { adsWiring(withHome, mode = "on", units = "other=$OTHER", contributorPresent = true, debugBuild = false) }
+        assertFailure { adsWiring(withHome, declared = true, mode = "on", units = "", contributorPresent = true, debugBuild = false) }
             .isInstanceOf<IllegalStateException>()
             .hasMessage("placement 'home' has no ads.android.banner.home")
     }
 
     @Test fun `in debug a placement without a unit gets google's test banner`() {
-        val wiring = adsWiring(withHome, mode = "on", units = "", contributorPresent = true, debugBuild = true)
+        val wiring = adsWiring(withHome, declared = true, mode = "on", units = "", contributorPresent = true, debugBuild = true)
         assertThat(wiring).isEqualTo(AdsWiring(enabled = true, units = mapOf("home" to DEBUG_TEST_BANNER_UNIT)))
         assertThat(DEBUG_TEST_BANNER_UNIT).isEqualTo("ca-app-pub-3940256099942544/9214589741")
     }

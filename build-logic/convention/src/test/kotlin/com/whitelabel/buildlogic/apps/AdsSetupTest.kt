@@ -25,6 +25,12 @@ class AdsSetupTest {
         )
     }
 
+    @Test fun `the setting is declared unless it is false, in every build type`() {
+        assertThat(adsSetup(ServiceMode.OFF, APP_ID, units, Platform.ANDROID, "apps/sample").declared).isEqualTo(false)
+        assertThat(adsSetup(ServiceMode.ON, APP_ID, units, Platform.ANDROID, "apps/sample").declared).isEqualTo(true)
+        assertThat(adsSetup(ServiceMode.DEBUG, null, emptyMap(), Platform.ANDROID, "apps/sample").declared).isEqualTo(true)
+    }
+
     @Test fun `off ignores an app id and units`() {
         val setup = adsSetup(ServiceMode.OFF, APP_ID, units, Platform.ANDROID, "apps/sample")
 

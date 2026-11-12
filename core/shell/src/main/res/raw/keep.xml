@@ -5,4 +5,4 @@
 -->
 <resources
     xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@string/foundation_firebase,@string/foundation_firebase_declared,@string/foundation_ads,@string/foundation_ads_units" />
+    tools:keep="@string/foundation_firebase,@string/foundation_firebase_declared,@string/foundation_ads,@string/foundation_ads_declared,@string/foundation_ads_units" />

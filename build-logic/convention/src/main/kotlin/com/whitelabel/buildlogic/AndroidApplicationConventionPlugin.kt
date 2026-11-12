@@ -147,6 +147,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     "foundation_firebase" to firebase.modeFor.getValue(buildType),
                     "foundation_firebase_declared" to (app.firebase != ServiceMode.OFF).toString(),
                     "foundation_ads" to ads.modeFor.getValue(buildType),
+                    "foundation_ads_declared" to ads.declared.toString(),
                     "foundation_ads_units" to adsUnitsString(ads.unitsFor.getValue(buildType)),
                 ).forEach { (name, value) ->
                     variant.resValues.put(variant.makeResValueKey("string", name), ResValue(value, null))
