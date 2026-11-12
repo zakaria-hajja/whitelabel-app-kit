@@ -24,6 +24,14 @@ import com.whitelabel.core.domain.ThemePreference
 import com.whitelabel.feature.settings.presentation.SettingsAction
 import com.whitelabel.feature.settings.presentation.SettingsScreen
 import com.whitelabel.feature.settings.presentation.SettingsState
+import androidx.compose.ui.test.onAllNodesWithTag
+import assertk.assertions.isEqualTo
+import assertk.assertions.isGreaterThanOrEqualTo
+import com.whitelabel.core.designsystem.theme.StylePack
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.height
 import org.junit.Rule
 import org.junit.Test
 
@@ -34,13 +42,13 @@ class SettingsScreenTest {
 
     private val actions = mutableListOf<SettingsAction>()
 
-    private fun show(state: SettingsState, options: SettingsOptions = SettingsOptions()) {
-        rule.setContent { Screen(state, options) }
+    private fun show(state: SettingsState, options: SettingsOptions = SettingsOptions(), pack: StylePack = StylePack.Material) {
+        rule.setContent { Screen(state, options, pack) }
     }
 
     @androidx.compose.runtime.Composable
-    private fun Screen(state: SettingsState, options: SettingsOptions) {
-        AppTheme {
+    private fun Screen(state: SettingsState, options: SettingsOptions, pack: StylePack = StylePack.Material) {
+        AppTheme(stylePack = pack) {
             SettingsScreen(state, options, onAction = { actions += it }, onOpenUrl = {}, onOpenDiagnostics = {})
         }
     }
@@ -124,10 +132,15 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun aboutNote_showsUnderVersion() {
+    fun aboutIsOneLine() {
         show(SettingsState(appName = "Sample", versionName = "1.0.0"), SettingsOptions(aboutNote = R.string.settings_retry))
-        rule.onNodeWithText("Retry").performScrollTo()
-        assertThat(top("Retry")).isGreaterThan(top("Version 1.0.0"))
+        rule.onNodeWithText("Sample 1.0.0 · Retry").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun aboutWithoutANoteIsNameAndVersion() {
+        show(SettingsState(appName = "Sample", versionName = "1.0.0"))
+        rule.onNodeWithText("Sample 1.0.0").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -171,5 +184,73 @@ class SettingsScreenTest {
         show(SettingsState(appName = "Sample", signedIn = false))
         rule.onNodeWithText("Account").assertDoesNotExist()
         rule.onNodeWithText("Privacy policy").performScrollTo().assertExists()
+    }
+
+    private fun bounds(text: String) = rule.onNodeWithText(text, useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+    @Test
+    fun valueRowStacksUnderGallery() {
+        show(SettingsState(appName = "Sample"), pack = StylePack.Gallery)
+        assertThat(bounds("System default").top).isGreaterThanOrEqualTo(bounds("Theme").bottom)
+        rule.onNodeWithText("APPEARANCE").assertExists()
+    }
+
+    @Test
+    fun materialKeepsInlineRowsAndAccentHeaders() {
+        show(SettingsState(appName = "Sample"))
+        assertThat(bounds("System default").top).isLessThan(bounds("Theme").bottom)
+        rule.onNodeWithText("Appearance").assertExists()
+        rule.onNodeWithText("APPEARANCE").assertDoesNotExist()
+    }
+
+    @Test
+    fun stackedRowIsOneButton() {
+        show(SettingsState(appName = "Sample"), pack = StylePack.Gallery)
+        rule.onNodeWithText("Theme")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(hasText("System default"))
+    }
+
+    @Test
+    fun aLongStackedValueWraps() {
+        rule.setContent {
+            AppTheme(stylePack = StylePack.Gallery) {
+                SettingsValueRow("Default reminder", "A very long value that cannot fit on one line at all, not even close", onClick = {})
+            }
+        }
+        val label = bounds("Default reminder")
+        val value = bounds("A very long value that cannot fit on one line at all, not even close")
+        assertThat(value.left).isEqualTo(label.left)
+        assertThat(value.top).isGreaterThanOrEqualTo(label.bottom)
+    }
+
+    @Test
+    fun onlyEmptySectionsVanish() {
+        val empty = SettingsSection(null) {}
+        val callout = SettingsSection(null) { Text("Blocked") }
+        var withCallout by mutableStateOf(false)
+        rule.setContent {
+            Screen(SettingsState(appName = "Sample"), SettingsOptions(sections = if (withCallout) listOf(empty, callout) else listOf(empty)))
+        }
+        val withoutCallout = rule.onAllNodesWithTag("SettingsDivider").fetchSemanticsNodes().size
+        withCallout = true
+        rule.waitForIdle()
+        assertThat(rule.onAllNodesWithTag("SettingsDivider").fetchSemanticsNodes().size).isEqualTo(withoutCallout + 1)
+        assertThat(withoutCallout).isEqualTo(2) // Appearance and About: the empty section drew none.
+    }
+
+    @Test
+    fun linksAreRowsAtTheGutter() {
+        show(SettingsState(appName = "Sample"), pack = StylePack.Gallery)
+        rule.onNodeWithText("Privacy policy").performScrollTo()
+        rule.onNode(hasText("Privacy policy") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button)).assertExists()
+        // 20 dp gutter, within pixel rounding.
+        assertThat(kotlin.math.abs((bounds("Privacy policy").left - 20.dp).value)).isLessThan(0.5f)
+    }
+
+    /** Material rows keep their 48 dp height, the same as the toggle rows beside them. */
+    @Test fun materialValueRowKeepsItsHeight() {
+        rule.setContent { AppTheme(stylePack = StylePack.Material) { SettingsValueRow("Theme", "System default", onClick = {}) } }
+        assertThat(kotlin.math.abs((rule.onNodeWithText("Theme").getUnclippedBoundsInRoot().height - 48.dp).value)).isLessThan(0.5f)
     }
 }

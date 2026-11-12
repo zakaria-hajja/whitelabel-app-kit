@@ -78,7 +78,7 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
 - **Components** are native controls styled by the pack:
   - `PrimaryButtonStyle`/`SecondaryButtonStyle`/`TextButtonStyle`, `AppCard`, `AppTextField`
     (announces its error);
-  - `AppValueRow`, `AppToggleRow`, `AppChoiceSheet`;
+  - `AppValueRow` (inline or stacked, per the pack), `AppToggleRow`, `AppChoiceSheet`, `AppSectionHeader`;
   - `LoadingView`, `EmptyStateView`, `ErrorStateView`, `.appConfirm(…)`.
 
   Labels wrap at every Dynamic Type size.

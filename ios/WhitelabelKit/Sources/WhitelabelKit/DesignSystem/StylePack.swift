@@ -14,6 +14,12 @@ public struct StylePack: Equatable {
     public var motion: MotionSpec
     /** Which feedback each event plays; an event not in the map plays nothing. */
     public var haptics: [HapticEvent: HapticPattern]
+    /** How screen top bars look. */
+    public var topBar: TopBarStyle = .raised
+    /** How section titles look (`AppSectionHeader`). */
+    public var sectionHeader: SectionHeaderStyle = .accent
+    /** How a setting and its value sit in a row (`AppValueRow`). */
+    public var valueRows: ValueRowLayout = .inline
 
     /** This pack with Reduce Motion applied: every movement becomes a short crossfade. */
     public func reduced() -> StylePack {
@@ -30,7 +36,10 @@ public struct StylePack: Equatable {
         surfaces: .shadow,
         sizing: Sizing(controlHeight: 48, listRowMinHeight: 56, screenGutter: 16), // Kotlin: StylePack.Material.sizing
         motion: .material,
-        haptics: [:]
+        haptics: [:],
+        topBar: .raised, // Kotlin: StylePack.Material.topBar
+        sectionHeader: .accent,
+        valueRows: .inline
     )
 
     /** Editorial and quiet: small radii, hairlines instead of shadows, roomier controls, soft motion. */
@@ -41,7 +50,10 @@ public struct StylePack: Equatable {
         surfaces: .hairline,
         sizing: Sizing(controlHeight: 52, listRowMinHeight: 72, screenGutter: 20), // Kotlin: StylePack.Gallery.sizing
         motion: .gallery,
-        haptics: [.confirm: .tick, .success: .confirm, .toggle: .toggle] // Kotlin: StylePack.Gallery.haptics
+        haptics: [.confirm: .tick, .success: .confirm, .toggle: .toggle], // Kotlin: StylePack.Gallery.haptics
+        topBar: .flat, // Kotlin: StylePack.Gallery.topBar
+        sectionHeader: .caption,
+        valueRows: .stacked
     )
 }
 
@@ -67,6 +79,15 @@ public struct Sizing: Equatable {
     public var listRowMinHeight: CGFloat
     public var screenGutter: CGFloat
 }
+
+/** A screen's top bar: the standard bar, or flat on the page background (Kotlin: TopBarStyle). */
+public enum TopBarStyle: Equatable { case raised, flat }
+
+/** A section title: accent-colored as written, or a small uppercase caption (Kotlin: SectionHeaderStyle). */
+public enum SectionHeaderStyle: Equatable { case accent, caption }
+
+/** A setting's label and value: on one line, or the value under the label (Kotlin: ValueRowLayout). */
+public enum ValueRowLayout: Equatable { case inline, stacked }
 
 /** Moments that may give haptic feedback. */
 public enum HapticEvent: Hashable { case confirm, success, toggle }

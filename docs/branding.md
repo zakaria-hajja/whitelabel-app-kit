@@ -66,12 +66,17 @@ appDefinition {
 | Type | Material weights; titles in the display font | display and headlines at regular weight; titles in the body font |
 | Motion | Navigation's default 700 ms fades | 420 ms pushes and shared elements, 320 ms back, a 210 ms fade-through between tabs |
 | Haptics | none | a tick on confirm, a confirm on success, a toggle click |
+| Top bar (`AppScaffold`) | Material's raised bar on the surface color | flat on the page background, title in the headline (display) font |
+| Section headers (`AppSectionHeader`) | `titleSmall` in the primary color | a small uppercase caption, letter-spaced, muted |
+| Value rows (`SettingsValueRow`) | label and value on one line | the value under the label, muted |
 
 - An app that never calls `style()` gets `Material`, which is exactly the look apps had before packs.
 - Vary a pack with `copy`: `StylePack.Gallery.copy(sizing = StylePack.Gallery.sizing.copy(controlHeight = 56.dp))`.
 - With Android's "Remove animations" on, every transition becomes a 150 ms crossfade, and
   `AppTheme.reducedMotion` is true so features can stop their own ambient animations.
 - The diagnostics catalog shows the active pack's name.
+- An app's own screens use `AppSectionHeader` for their section titles, so they match the shared
+  screens under any pack.
 
 ## Fonts (optional)
 

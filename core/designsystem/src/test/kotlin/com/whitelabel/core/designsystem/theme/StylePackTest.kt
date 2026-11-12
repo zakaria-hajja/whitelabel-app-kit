@@ -31,6 +31,20 @@ class StylePackTest {
         assertThat(m.motion.tabSwitchScale).isEqualTo(1f)
     }
 
+    @Test fun `material keeps today's chrome`() {
+        val m = StylePack.Material
+        assertThat(m.topBar).isEqualTo(TopBarStyle.Raised)
+        assertThat(m.sectionHeader).isEqualTo(SectionHeaderStyle.Accent)
+        assertThat(m.valueRows).isEqualTo(ValueRowLayout.Inline)
+    }
+
+    @Test fun `gallery chrome follows the design`() {
+        val g = StylePack.Gallery
+        assertThat(g.topBar).isEqualTo(TopBarStyle.Flat)
+        assertThat(g.sectionHeader).isEqualTo(SectionHeaderStyle.Caption)
+        assertThat(g.valueRows).isEqualTo(ValueRowLayout.Stacked)
+    }
+
     @Test fun `gallery matches the design`() {
         val g = StylePack.Gallery
         assertThat(g.corners).isEqualTo(Corners(small = 4.dp, medium = 8.dp, large = 14.dp))

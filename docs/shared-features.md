@@ -55,7 +55,7 @@ settings(SettingsOptions(showNotifications = true, languages = listOf("en", "fr"
 | `showNotifications` | `true` | Shows the push, email and marketing toggles (signed in only) |
 | `languages` | `en`, `fr` | The languages offered for the app, as BCP 47 tags; limited further by the backend's `runtime.supportedLanguages` when it sends one. An empty list hides the language row |
 | `sections` | none | The app's own sections, shown above the shared ones (see below) |
-| `aboutNote` | none | A line under the version in About, e.g. "Your data stays on this phone." |
+| `aboutNote` | none | Follows the app name and version on the About line: "Munch 0.1.0 · Your data stays on this phone." |
 
 - **Appearance:** theme and language are rows showing their current value; a tap opens a sheet
   where a choice applies at once and **Done** closes it.
@@ -81,7 +81,9 @@ An app adds sections above the shared ones with `SettingsSection(title, content)
 no header, which suits a callout. The content is composed inside the settings screen, so it can use
 `koinViewModel()` for its own state (bind its ViewModel in a module the app adds with `modules(...)`). Build its rows from the same pieces as the shared rows:
 
-- `SettingsValueRow(label, value, onClick)`: a setting and its current value on one row;
+- `SettingsValueRow(label, value, onClick)`: a setting and its current value, on one line or stacked as the pack says;
+- `SettingsLinkRow(label, onClick)`: a full-width row that opens something (a link, another screen);
+- `AppSectionHeader(text)` (`:core:designsystem`): a section title as the style pack draws them;
 - `SettingsChoiceSheet(title, choices, selected, label, onSelect, onDismiss)`: the sheet to pick a value.
 
 ```kotlin

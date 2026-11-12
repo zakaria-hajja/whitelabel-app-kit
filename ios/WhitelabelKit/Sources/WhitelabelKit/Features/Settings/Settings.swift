@@ -26,7 +26,7 @@ public struct Settings: Feature {
 /**
  * [showNotifications] shows the notification toggles (signed in only). [languages] are the BCP 47
  * tags the app is translated into (filtered by the backend's list); empty hides the language row.
- * [sections] are the app's own, above the shared ones. [aboutNote] is a line under the version.
+ * [sections] are the app's own, above the shared ones. [aboutNote] follows the name and version on the About line.
  */
 public struct SettingsOptions {
     public var showNotifications: Bool

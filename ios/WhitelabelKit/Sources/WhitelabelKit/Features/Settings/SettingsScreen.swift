@@ -36,6 +36,8 @@ struct SettingsScreen: View {
             onOpen: open
         )
         .navigationTitle(KitStrings.text("Settings"))
+        // Gallery: list and bar on the page background. Material: unchanged.
+        .flatPageChrome()
         .sheet(item: $sheet) { sheet in
             switch sheet {
             case .theme:
@@ -86,10 +88,10 @@ struct SettingsList: View {
                 Section {
                     section.content()
                 } header: {
-                    if let title = section.title { Text(title) }
+                    if let title = section.title { AppSectionHeader(title) }
                 }
             }
-            Section(KitStrings.text("Appearance")) {
+            Section {
                 AppValueRow(KitStrings.text("Theme"), value: Self.themeLabel(state.theme)) { onChoose(.theme) }
                 if !languages.isEmpty {
                     AppValueRow(KitStrings.text("Language"), value: Self.languageLabel(state.language)) { onChoose(.language) }
@@ -99,30 +101,40 @@ struct SettingsList: View {
                             .foregroundStyle(style.colors.onSurfaceVariant)
                     }
                 }
+            } header: {
+                AppSectionHeader(KitStrings.text("Appearance"))
             }
             if options.showNotifications && state.signedIn {
-                Section(KitStrings.text("Notifications")) { notifications }
+                Section { notifications } header: { AppSectionHeader(KitStrings.text("Notifications")) }
             }
-            Section(KitStrings.text("About")) {
-                Text(String(format: KitStrings.text("Version %@"), state.versionName))
+            Section {
+                // One muted line, as Android: "Munch 0.1.0 · Your data stays on this phone."
+                Text(Self.aboutLine(appName: state.appName, version: state.versionName, note: options.aboutNote))
                     .font(style.typography.body)
-                if let note = options.aboutNote {
-                    Text(note).font(style.typography.body).foregroundStyle(style.colors.onSurfaceVariant)
-                }
+                    .foregroundStyle(style.colors.onSurfaceVariant)
                 if let email = state.supportEmail {
                     link(KitStrings.text("Contact support")) { onOpen("mailto:\(email)") }
                 }
                 link(KitStrings.text("Privacy policy")) { onOpen(state.privacyUrl) }
                 link(KitStrings.text("Terms of use")) { onOpen(state.termsUrl) }
+            } header: {
+                AppSectionHeader(KitStrings.text("About"))
             }
             if state.signedIn {
-                Section(KitStrings.text("Account")) {
+                Section(header: AppSectionHeader(KitStrings.text("Account"))) {
                     Button(KitStrings.text("Sign out")) { send(SettingsActionOnSignOutClick.shared) }
                         .buttonStyle(SecondaryButtonStyle())
                         .listRowSeparator(.hidden)
                 }
             }
         }
+    }
+
+    /** "<name> <version>", plus " · <note>" when the app gives one. */
+    static func aboutLine(appName: String, version: String, note: String?) -> String {
+        let nameAndVersion = "\(appName) \(version)"
+        guard let note else { return nameAndVersion }
+        return "\(nameAndVersion) · \(note)"
     }
 
     @ViewBuilder private var notifications: some View {

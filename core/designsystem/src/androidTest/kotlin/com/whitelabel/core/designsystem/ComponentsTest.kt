@@ -32,12 +32,25 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.isHeading
+import assertk.assertions.isLessThan
 import com.whitelabel.core.designsystem.component.AppConfirmDialog
+import com.whitelabel.core.designsystem.component.AppScaffold
+import com.whitelabel.core.designsystem.component.AppSectionHeader
+import com.whitelabel.core.designsystem.theme.StylePack
 import com.whitelabel.core.designsystem.component.AppPrimaryButton
 import com.whitelabel.core.designsystem.component.AppTextField
 import com.whitelabel.core.designsystem.component.EmptyState
 import com.whitelabel.core.designsystem.component.ErrorState
 import com.whitelabel.core.designsystem.theme.AppTheme
+import androidx.compose.ui.unit.height
 import org.junit.Rule
 import org.junit.Test
 
@@ -188,5 +201,69 @@ class ComponentsTest {
         rule.onNodeWithText("Cancel").performClick()
         assertThat(confirmed).isEqualTo(1)
         assertThat(dismissed).isEqualTo(1)
+    }
+
+    @Test fun sectionHeaderIsUppercaseUnderGallery() {
+        rule.setContent { AppTheme(stylePack = StylePack.Gallery) { AppSectionHeader("Appearance") } }
+        rule.onNodeWithText("APPEARANCE").assert(isHeading())
+    }
+
+    @Test fun sectionHeaderKeepsItsCaseUnderMaterial() {
+        rule.setContent { AppTheme(stylePack = StylePack.Material) { AppSectionHeader("Appearance") } }
+        rule.onNodeWithText("Appearance").assert(isHeading())
+    }
+
+    /** The colour at the middle of the top bar's right half (away from the title). */
+    private fun topBarColor(): Int {
+        val image = rule.onNodeWithTag("AppTopBar").captureToImage().asAndroidBitmap()
+        return image.getPixel(image.width * 3 / 4, image.height / 2)
+    }
+
+    private fun showScaffold(pack: StylePack, dark: Boolean): Pair<Color, Color> {
+        var background = Color.Unspecified
+        var surface = Color.Unspecified
+        rule.setContent {
+            AppTheme(darkTheme = dark, stylePack = pack) {
+                // The default brand paints background and surface alike; tell them apart here.
+                val scheme = MaterialTheme.colorScheme.copy(
+                    background = if (dark) Color(0xFF101010) else Color(0xFFF6F6F4),
+                    surface = if (dark) Color(0xFF2A2A2A) else Color(0xFFFFFFFF),
+                )
+                MaterialTheme(colorScheme = scheme) {
+                    background = MaterialTheme.colorScheme.background
+                    surface = MaterialTheme.colorScheme.surface
+                    AppScaffold(title = "T") { Text("Content") }
+                }
+            }
+        }
+        rule.waitForIdle()
+        return background to surface
+    }
+
+    @Test fun flatTopBarMatchesTheBackground() {
+        val (background, _) = showScaffold(StylePack.Gallery, dark = false)
+        assertThat(topBarColor()).isEqualTo(background.toArgb())
+    }
+
+    @Test fun flatTopBarMatchesTheBackgroundInDark() {
+        val (background, _) = showScaffold(StylePack.Gallery, dark = true)
+        assertThat(topBarColor()).isEqualTo(background.toArgb())
+    }
+
+    @Test fun materialKeepsTheRaisedBar() {
+        val (_, surface) = showScaffold(StylePack.Material, dark = false)
+        assertThat(topBarColor()).isEqualTo(surface.toArgb())
+    }
+
+    /** Material keeps its section spacing: 8 dp above and below the title, as before packs had a say. */
+    @Test fun accentHeaderKeepsItsSpacing() {
+        rule.setContent {
+            AppTheme(stylePack = StylePack.Material) {
+                androidx.compose.foundation.layout.Box(Modifier.testTag("header")) { AppSectionHeader("Appearance") }
+            }
+        }
+        // The title's line (20 sp) plus 8 dp above and below; the Caption style's 24 dp top would exceed it.
+        val height = rule.onNodeWithTag("header").getUnclippedBoundsInRoot().height
+        assertThat(height.value).isLessThan(42f)
     }
 }

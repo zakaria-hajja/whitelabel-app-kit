@@ -1,6 +1,7 @@
 package com.whitelabel.feature.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,30 +26,54 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.whitelabel.core.designsystem.component.AppTextButton
 import com.whitelabel.core.designsystem.theme.AppTheme
+import com.whitelabel.core.designsystem.theme.ValueRowLayout
 
 /**
- * A setting and its current value on one row ("Theme · System default"); tapping it usually opens a
- * [SettingsChoiceSheet]. Use it in an app's own `SettingsSection` so its rows match the shared ones.
+ * A setting and its current value ("Theme · System default"), on one line or with the value under the
+ * label, as the style pack says; tapping it usually opens a [SettingsChoiceSheet]. Use it in an app's
+ * own `SettingsSection` so its rows match the shared ones.
  */
 @Composable
 fun SettingsValueRow(label: String, value: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val layout = AppTheme.style.valueRows
+    val row = modifier
+        .fillMaxWidth()
+        // Inline keeps the 48 dp rows (as the toggle rows); stacked rows hold two lines.
+        .heightIn(min = if (layout == ValueRowLayout.Stacked) AppTheme.style.sizing.listRowMinHeight else 48.dp)
+        .clickable(role = Role.Button, onClick = onClick)
+        .padding(horizontal = AppTheme.style.sizing.screenGutter, vertical = AppTheme.spacing.sm)
+    when (layout) {
+        ValueRowLayout.Inline -> Row(verticalAlignment = Alignment.CenterVertically, modifier = row) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.End,
+                // Weighted without filling: a short value hugs the end, a long one wraps instead of crushing the label.
+                modifier = Modifier.weight(1f, fill = false).padding(start = AppTheme.spacing.md),
+            )
+        }
+        // The label, then its value under it: long values wrap under the label instead of beside it.
+        ValueRowLayout.Stacked -> Column(verticalArrangement = Arrangement.Center, modifier = row) {
+            Text(label, style = MaterialTheme.typography.bodyLarge)
+            Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** A row that opens something (a link, another screen): full width, at the screen gutter, one button. */
+@Composable
+fun SettingsLinkRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp)
+            .heightIn(min = AppTheme.style.sizing.listRowMinHeight)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = AppTheme.spacing.md, vertical = AppTheme.spacing.sm),
+            .padding(horizontal = AppTheme.style.sizing.screenGutter),
     ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-            // Weighted without filling: a short value hugs the end, a long one wraps instead of crushing the label.
-            modifier = Modifier.weight(1f, fill = false).padding(start = AppTheme.spacing.md),
-        )
+        Text(label, style = MaterialTheme.typography.bodyLarge)
     }
 }
 
