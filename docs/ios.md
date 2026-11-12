@@ -192,7 +192,7 @@ Showcase on iOS has the same features, order and start tab as on Android:
 | `-fakeConfigDelayMs 5000` | the fake answers the config that late |
 | `-fakeFirebase` | Firebase runs as the in-memory fake (needs `FirebaseService()`) |
 | `-analyticsDebug` | analytics and crash collection on in Debug, events to Firebase's DebugView |
-| `-consentEEA` | the consent form behaves as in the EEA |
+| `-consentEEA` | the consent form behaves as in the EEA, and the stored consent is reset first |
 | `-fakeConsent obtained\|declined\|failed\|notRequired` | what the fake consent answers (default `obtained`) |
 | `-messageSeconds 15` | one-off messages and banners stay that long |
 | `-notificationAccess notAskedYet\|granted\|blocked` | the notification permission reports that status; asking grants without the system alert, which UI tests can't answer |

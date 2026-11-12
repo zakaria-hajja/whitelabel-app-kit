@@ -27,3 +27,6 @@ ios/**/.build/
 ios/**/DerivedData/
 apps/showcase/google-services.json
 ios/Showcase/Showcase/GoogleService-Info.plist
+# Config files dropped at the repo root before being copied into place.
+/google-services.json
+/GoogleService-Info.plist

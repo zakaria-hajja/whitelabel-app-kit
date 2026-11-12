@@ -126,13 +126,17 @@ first screen appears and never over the splash. Elsewhere nothing shows.
 - If the consent request fails or the form is dismissed, nothing is collected that launch and it is
   asked again next launch.
 - The collection flags persist across launches. A cold start with a consent given earlier collects
-  before this launch's re-check finishes; a withdrawal is applied when made.
+  before this launch's re-check finishes. A change made in the privacy options form, a withdrawal
+  included, applies as soon as the form closes: the app re-reads UMP's answer then.
+- A Debug build without the DebugView switch turns collection off at startup, before consent, so
+  flags left on by an earlier `analytics-debug` / `-analyticsDebug` run don't keep it collecting.
 
 Put `PrivacyChoicesRow()` in the app's own settings section, so users can reopen the form. It shows
 only while UMP says privacy options are required, and draws nothing in an app without Firebase:
 
 ```kotlin
-settings(SettingsOptions(sections = listOf(SettingsSection(R.string.settings_privacy) {
+// R.string.my_settings_privacy is the app's own string (showcase uses R.string.showcase_settings_firebase).
+settings(SettingsOptions(sections = listOf(SettingsSection(R.string.my_settings_privacy) {
     PrivacyChoicesRow()
 })))
 ```
@@ -147,7 +151,7 @@ Debug builds only. A release build ignores them.
 |---|---|---|
 | Fake Firebase (in-memory values, logging analytics) | `fake-firebase` | `-fakeFirebase` |
 | Collection on in Debug, events to DebugView | `analytics-debug` | `-analyticsDebug` (also Firebase's debug mode) |
-| Behave as in the EEA (form on first launch) | `consent-eea` | `-consentEEA` |
+| Behave as in the EEA and reset the stored consent (the form shows on every launch) | `consent-eea` | `-consentEEA` |
 | What the fake consent answers | `fake-consent-<obtained\|declined\|failed\|notRequired>` | `-fakeConsent <state>` |
 
 Fake mode never shows a real consent form: it answers from the `fake-consent` switch (default
@@ -186,6 +190,10 @@ Without the switch, no event appears in DebugView. Release collects normally, on
   it isn't there, so check that a real upload shows in the console (see the manual checklist).
 - Kotlin exceptions reach Crashlytics with their Kotlin frames on iOS, through CrashKiOS. Both
   uncaught ones and `CrashReporter.record(throwable)`.
+- Each uncaught crash is reported once. On Android with Firebase on, the shell's uncaught-exception
+  handler doesn't record it through `CrashReporter` (that would add a non-fatal copy): it chains to
+  Crashlytics' own handler, which reports the fatal crash. Off and fake builds record it through the
+  app's `CrashReporter` (the log).
 - The Android release check (`scripts/verify-apps.sh release`) fails if a release dex contains
   Firebase while `firebase.enabled` is not `true`.
 
