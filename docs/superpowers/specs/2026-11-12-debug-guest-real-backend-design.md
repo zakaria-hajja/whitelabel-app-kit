@@ -57,9 +57,10 @@ It's a developer convenience, not a product guest mode.
   keys in the app's `local.properties` (untracked) replace the default, for a backend seeded with
   other accounts. Both must be set together, or the build fails with a clear message, following
   `AppConfigLoader`'s style.
-- **Fake backend:** with the fake linked, the binding resolves to the fake's own seeded account, as
-  it does today. There must be exactly one binding, so Koin never sees two definitions in
-  conflict.
+- **Fake backend:** with the fake linked, the guest is the fake's own seeded account, as it is
+  today. The Debug binding goes before the contributors, and the fake's binding replaces it under
+  the shell's existing rule that the last binding of a type wins and contributors come last
+  (`foundationModules` in `ShellKoin.kt`, `SharedGraph.start` on iOS).
 - **iOS:** Debug builds of the framework or app bind the same default account through the shared
   graph, so the button appears without `-mockApi`. Release doesn't. Claude's call: iOS gets the
   default only, with no override key, in this change.
