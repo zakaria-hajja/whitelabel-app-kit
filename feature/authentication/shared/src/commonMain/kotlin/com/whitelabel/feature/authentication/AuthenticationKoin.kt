@@ -6,13 +6,15 @@ import com.whitelabel.feature.authentication.presentation.forgot.ForgotPasswordV
 import com.whitelabel.feature.authentication.presentation.login.LoginViewModel
 import com.whitelabel.feature.authentication.presentation.register.RegisterViewModel
 import com.whitelabel.feature.authentication.presentation.reset.ResetPasswordViewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
 /** Sign-in, registration and password reset: added by `auth()`. */
 val authenticationModule = module {
     single<PasswordResetDataSource> { KtorPasswordResetDataSource(get()) }
-    viewModelOf(::LoginViewModel)
+    // The guest account exists only when the fake backend is linked (Debug builds).
+    viewModel { LoginViewModel(get(), get(), get(), getOrNull()) }
     viewModelOf(::RegisterViewModel)
     viewModelOf(::ForgotPasswordViewModel)
     viewModelOf(::ResetPasswordViewModel)

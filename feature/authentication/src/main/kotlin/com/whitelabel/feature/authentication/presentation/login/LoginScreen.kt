@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -81,6 +82,15 @@ internal fun LoginScreen(
         if (options.allowRegistration) {
             AppTextButton(text = stringResource(R.string.auth_create_account), onClick = onCreateAccount)
         }
+        // Debug builds on the fake backend only: signs in as its seeded test account.
+        if (state.guestAvailable) {
+            AppTextButton(
+                text = stringResource(R.string.auth_continue_as_guest),
+                onClick = { onAction(LoginAction.OnContinueAsGuest) },
+                enabled = !state.isSubmitting,
+                modifier = Modifier.testTag("auth.guest"),
+            )
+        }
     }
 }
 
@@ -90,6 +100,21 @@ private fun LoginScreenPreview() {
     AppTheme {
         LoginScreen(
             state = LoginState(email = "ada@example.com"),
+            appName = "Sample",
+            options = AuthOptions(),
+            onAction = {},
+            onCreateAccount = {},
+            onForgotPassword = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun LoginScreenGuestPreview() {
+    AppTheme {
+        LoginScreen(
+            state = LoginState(guestAvailable = true),
             appName = "Sample",
             options = AuthOptions(),
             onAction = {},

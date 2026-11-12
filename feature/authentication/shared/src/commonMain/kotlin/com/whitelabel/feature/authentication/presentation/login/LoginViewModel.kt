@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whitelabel.core.analytics.Analytics
+import com.whitelabel.core.domain.DebugGuestAccount
 import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.AnalyticsEvents
 import com.whitelabel.core.common.onFailure
@@ -24,6 +25,8 @@ data class LoginState(
     val emailError: UiText? = null,
     val error: UiText? = null,
     val isSubmitting: Boolean = false,
+    /** A Debug build on the fake backend offers a one-tap guest sign-in. */
+    val guestAvailable: Boolean = false,
 ) {
     val canSubmit: Boolean get() = email.isNotBlank() && password.isNotEmpty() && !isSubmitting
 }
@@ -32,6 +35,7 @@ sealed interface LoginAction {
     data class OnEmailChange(val email: String) : LoginAction
     data class OnPasswordChange(val password: String) : LoginAction
     data object OnSubmit : LoginAction
+    data object OnContinueAsGuest : LoginAction
 }
 
 private const val KEY_EMAIL = "email"
@@ -41,10 +45,11 @@ class LoginViewModel(
     private val session: SessionRepository,
     private val analytics: Analytics,
     private val savedState: SavedStateHandle,
+    private val guest: DebugGuestAccount? = null,
 ) : ViewModel() {
 
     // The email survives process death; the password deliberately doesn't.
-    private val _state = MutableStateFlow(LoginState(email = savedState[KEY_EMAIL] ?: ""))
+    private val _state = MutableStateFlow(LoginState(email = savedState[KEY_EMAIL] ?: "", guestAvailable = guest != null))
     val state = _state.asStateFlow()
 
     fun onAction(action: LoginAction) {
@@ -55,6 +60,7 @@ class LoginViewModel(
             }
             is LoginAction.OnPasswordChange -> _state.update { it.copy(password = action.password, error = null) }
             LoginAction.OnSubmit -> submit()
+            LoginAction.OnContinueAsGuest -> guest?.let { signIn(it.email, it.password, method = "debug_guest") }
         }
     }
 
@@ -65,10 +71,16 @@ class LoginViewModel(
             _state.update { it.copy(emailError = error.toUiText()) }
             return
         }
+        signIn(current.email, current.password, method = "password")
+    }
+
+    /** One sign-in at a time; the form's email and password are left as typed. */
+    private fun signIn(email: String, password: String, method: String) {
+        if (_state.value.isSubmitting) return
         _state.update { it.copy(isSubmitting = true, error = null) }
         viewModelScope.launch {
-            session.signIn(current.email, current.password)
-                .onSuccess { analytics.track(AnalyticsEvent(AnalyticsEvents.LOGIN, mapOf("method" to "password"))) }
+            session.signIn(email, password)
+                .onSuccess { analytics.track(AnalyticsEvent(AnalyticsEvents.LOGIN, mapOf("method" to method))) }
                 .onFailure { error -> _state.update { it.copy(error = error.toAuthUiText()) } }
             _state.update { it.copy(isSubmitting = false) }
         }
