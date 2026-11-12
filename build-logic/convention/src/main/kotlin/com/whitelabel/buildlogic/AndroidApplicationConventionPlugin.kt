@@ -8,11 +8,14 @@ import com.whitelabel.buildlogic.apps.AppConfigLoader
 import com.whitelabel.buildlogic.apps.androidStringResource
 import com.whitelabel.buildlogic.apps.ServiceMode
 import com.whitelabel.buildlogic.apps.appConfigFields
+import com.whitelabel.buildlogic.apps.debugGuestOverride
+import com.whitelabel.buildlogic.apps.debugGuestResValues
 import com.whitelabel.buildlogic.apps.admobManifestPlaceholder
 import com.whitelabel.buildlogic.apps.firebaseSetup
 import com.whitelabel.buildlogic.apps.resourceNameFor
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.util.Properties
 import org.gradle.kotlin.dsl.configure
 
 /**
@@ -30,6 +33,12 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         pluginManager.apply("whitelabel.koin")
 
         val app = AppConfigLoader.load(projectDir, label = rootDir.toPath().relativize(projectDir.toPath()).toString())
+        // Debug's guest sign-in account, if local.properties (never committed) names one.
+        val debugGuest = debugGuestOverride(
+            rootDir.resolve("local.properties").takeIf { it.isFile }
+                ?.let { file -> Properties().also { p -> file.reader(Charsets.UTF_8).use { p.load(it) } } },
+            label = "local.properties",
+        )
 
         extensions.configure<ApplicationExtension> {
             configureKotlinAndroid(this)
@@ -127,6 +136,10 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     "foundation_firebase" to firebase.modeFor.getValue(buildType),
                     "foundation_firebase_declared" to (app.firebase != ServiceMode.OFF).toString(),
                 ).forEach { (name, value) ->
+                    variant.resValues.put(variant.makeResValueKey("string", name), ResValue(value, null))
+                }
+                // Debug only: replaces the shell's default guest account (the seeded alice).
+                debugGuestResValues(debugGuest, buildType).forEach { (name, value) ->
                     variant.resValues.put(variant.makeResValueKey("string", name), ResValue(value, null))
                 }
             }
