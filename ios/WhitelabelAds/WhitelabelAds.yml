@@ -7,7 +7,7 @@
 #             path/to/foundation/ios/WhitelabelConsent/WhitelabelConsent.yml,
 #             path/to/foundation/ios/WhitelabelAds/WhitelabelAds.yml]
 #
-# and the app target uses the template, which links both targets (with their packages) and adds the
+# and the app target uses the template, which links the ads target (with its package) and adds the
 # ads keys to the built Info.plist (merge-info-plist.sh: Google's SKAdNetworkItems when WL_ADS is
 # on, NSUserTrackingUsageDescription from ads.ios.trackingMessage when tracking is on, and the WLAds*
 # settings). As with WhitelabelFirebase, the app must be the only target linking them; a hosted test
@@ -15,7 +15,9 @@
 #
 #   targets:
 #     MyApp:
-#       templates: [WhitelabelAdsApp]      # with Firebase too: [WhitelabelFirebaseApp, WhitelabelAdsApp]
+#       # The consent target comes from one template only (XcodeGen rejects a dependency listed
+#       # twice): WhitelabelConsentApp, or WhitelabelFirebaseApp, which links it too.
+#       templates: [WhitelabelConsentApp, WhitelabelAdsApp]    # with Firebase: [WhitelabelFirebaseApp, WhitelabelAdsApp]
 #       settings: { base: { OTHER_LDFLAGS: [$(inherited), -ObjC, -framework, Shared] } }
 #
 # -ObjC is Google's requirement for the app target. The app's Info.plist maps
@@ -57,8 +59,6 @@ targetTemplates:
     # The static frameworks carry the packages' code. The SDK's binary (a static framework) isn't
     # autolinked through the Swift import, so the app links it itself, as Firebase's measurement binary.
     dependencies:
-      - target: WhitelabelConsent
-        embed: false
       - target: WhitelabelAds
         embed: false
       - framework: GoogleMobileAds.framework
@@ -67,4 +67,8 @@ targetTemplates:
     postBuildScripts:
       - name: Add the ads keys to Info.plist
         basedOnDependencyAnalysis: false
+        # The processed Info.plist as an input orders this phase after Xcode writes it; without it the
+        # two can run in either order and Xcode's copy wins.
+        inputFiles:
+          - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
         path: merge-info-plist.sh

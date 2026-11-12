@@ -5,8 +5,9 @@
 #             path/to/foundation/ios/WhitelabelConsent/WhitelabelConsent.yml, …]
 #
 # Like WhitelabelKit it is a static framework compiled against the app's Shared framework
-# (WL_SHARED_FRAMEWORKS). The app links it through WhitelabelFirebase.yml's WhitelabelFirebaseApp
-# template, and with it the UMP package.
+# (WL_SHARED_FRAMEWORKS). The app links it, and with it the UMP package, through WhitelabelFirebase.yml's
+# WhitelabelFirebaseApp template, or, in an app with ads and no Firebase, through WhitelabelConsentApp
+# below (beside WhitelabelAdsApp).
 packages:
   GoogleUserMessagingPlatform:
     url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform
@@ -32,3 +33,9 @@ targets:
         SKIP_INSTALL: YES
         GENERATE_INFOPLIST_FILE: YES
         "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+targetTemplates:
+  WhitelabelConsentApp:
+    # For an app without Firebase (WhitelabelFirebaseApp links the consent target itself).
+    dependencies:
+      - target: WhitelabelConsent
+        embed: false
