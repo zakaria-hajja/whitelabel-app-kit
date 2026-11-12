@@ -429,4 +429,102 @@ class AppConfigLoaderTest {
 
         assertThat(problems().single()).contains("ads.ios.appId")
     }
+
+    private val androidUnit = "ca-app-pub-1234567890123456/1234567890"
+    private val iosUnit = "ca-app-pub-6543210987654321/0987654321"
+
+    @Test
+    fun `ads default to off with no units and no tracking`() {
+        writeApp()
+
+        val config = AppConfigLoader.load(appDir)
+
+        assertThat(config.ads).isEqualTo(ServiceMode.OFF)
+        assertThat(config.adsAndroidUnits).isEqualTo(emptyMap())
+        assertThat(config.adsIosUnits).isEqualTo(emptyMap())
+        assertThat(config.iosRequestTracking).isEqualTo(false)
+        assertThat(config.iosTrackingMessage).isNull()
+    }
+
+    @Test
+    fun `ads enabled accepts false, true and debug`() {
+        mapOf("false" to ServiceMode.OFF, "true" to ServiceMode.ON, "debug" to ServiceMode.DEBUG).forEach { (raw, mode) ->
+            writeApp(mapOf("ads.enabled" to raw))
+
+            assertThat(AppConfigLoader.load(appDir).ads).isEqualTo(mode)
+        }
+    }
+
+    @Test
+    fun `ads enabled rejects other values naming the key`() {
+        writeApp(mapOf("ads.enabled" to "yes"))
+
+        assertThat(problems().single()).contains("apps/sample/app.properties: ads.enabled")
+    }
+
+    @Test
+    fun `banner units are collected per placement and platform`() {
+        writeApp(
+            mapOf(
+                "ads.android.banner.home" to androidUnit,
+                "ads.android.banner.catalog-list" to androidUnit,
+                "ads.ios.banner.home" to iosUnit,
+            ),
+        )
+
+        val config = AppConfigLoader.load(appDir)
+
+        assertThat(config.adsAndroidUnits).isEqualTo(mapOf("catalog-list" to androidUnit, "home" to androidUnit))
+        assertThat(config.adsIosUnits).isEqualTo(mapOf("home" to iosUnit))
+    }
+
+    @Test
+    fun `malformed banner units are rejected naming the key`() {
+        // An app id (tilde) for Android; a short publisher id for iOS.
+        writeApp(
+            mapOf(
+                "ads.android.banner.home" to "ca-app-pub-1234567890123456~1234567890",
+                "ads.ios.banner.home" to "ca-app-pub-123/1234567890",
+            ),
+        )
+
+        val all = problems()
+
+        assertThat(all.single { "ads.android.banner.home" in it }).contains("apps/sample/app.properties: ads.android.banner.home")
+        assertThat(all.single { "ads.ios.banner.home" in it }).contains("apps/sample/app.properties: ads.ios.banner.home")
+    }
+
+    @Test
+    fun `a placement name that cannot be written into the units string is rejected`() {
+        writeApp(mapOf("ads.android.banner.a;b" to androidUnit, "ads.ios.banner." to iosUnit))
+
+        val all = problems()
+
+        assertThat(all.single { "ads.android.banner.a;b" in it }).contains("placement")
+        assertThat(all.single { "ads.ios.banner." in it }).contains("placement")
+    }
+
+    @Test
+    fun `request tracking is a boolean and defaults to false`() {
+        writeApp(mapOf("ads.ios.requestTracking" to "true", "ads.ios.trackingMessage" to "Ads stay relevant."))
+        assertThat(AppConfigLoader.load(appDir).iosRequestTracking).isEqualTo(true)
+        assertThat(AppConfigLoader.load(appDir).iosTrackingMessage).isEqualTo("Ads stay relevant.")
+
+        writeApp(mapOf("ads.ios.requestTracking" to "maybe"))
+        assertThat(problems().single()).contains("apps/sample/app.properties: ads.ios.requestTracking")
+    }
+
+    @Test
+    fun `the tracking message is required with tracking on`() {
+        writeApp(mapOf("ads.ios.requestTracking" to "true"))
+
+        assertThat(problems().single()).contains("apps/sample/app.properties: ads.ios.trackingMessage")
+    }
+
+    @Test
+    fun `the tracking message is optional with tracking off`() {
+        writeApp(mapOf("ads.ios.trackingMessage" to "Unused"))
+
+        assertThat(AppConfigLoader.load(appDir).iosTrackingMessage).isEqualTo("Unused")
+    }
 }

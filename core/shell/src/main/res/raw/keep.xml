@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The shell reads the Firebase mode strings by name (getIdentifier), which the resource shrinker
-    can't see: without this a release build would drop foundation_firebase and silently read "off".
+    The shell reads the Firebase and ads mode strings by name (getIdentifier), which the resource shrinker
+    can't see: without this a release build would drop foundation_firebase or foundation_ads and silently read "off".
 -->
 <resources
     xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@string/foundation_firebase,@string/foundation_firebase_declared" />
+    tools:keep="@string/foundation_firebase,@string/foundation_firebase_declared,@string/foundation_ads,@string/foundation_ads_units" />

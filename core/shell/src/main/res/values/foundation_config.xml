@@ -17,4 +17,6 @@
     <string name="foundation_default_features" translatable="false"></string>
     <string name="foundation_firebase" translatable="false">off</string>
     <string name="foundation_firebase_declared" translatable="false">false</string>
+    <string name="foundation_ads" translatable="false">off</string>
+    <string name="foundation_ads_units" translatable="false"></string>
 </resources>
