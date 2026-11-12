@@ -48,6 +48,38 @@
           }
         }
       }
+    },
+    "Firebase": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firebase"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firebase"
+          }
+        }
+      }
+    },
+    "Remote note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remote note"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note distante"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

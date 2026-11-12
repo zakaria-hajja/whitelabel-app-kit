@@ -28,7 +28,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import okio.FileSystem
-import org.koin.mp.KoinPlatform
 
 /** How the graph decides its Firebase mode and binds the services Swift hands over. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -61,7 +60,7 @@ class SharedGraphFirebaseTest {
     private fun start(firebase: String) =
         SharedGraph.start(testPlatform(dir, firebase = firebase), settingsOnly, emptyList(), useMockApi = false)
 
-    private fun values() = KoinPlatform.getKoin().get<RemoteValues>()
+    private fun values(): RemoteValues = SharedGraph.remoteValues()
 
     @Test fun `on without registered services fails at start`() {
         val error = assertFailsWith<IllegalStateException> { start("on") }

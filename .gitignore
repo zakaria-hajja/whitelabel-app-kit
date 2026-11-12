@@ -25,3 +25,5 @@ ios/**/*.generated.xcconfig
 ios/**/build/
 ios/**/.build/
 ios/**/DerivedData/
+apps/showcase/google-services.json
+ios/Showcase/Showcase/GoogleService-Info.plist

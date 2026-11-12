@@ -65,7 +65,7 @@ class AppDefinition internal constructor(
     /** The app's own Koin bindings, from `modules(...)`. */
     internal val appModules: List<Module> = emptyList(),
     /** The app called `firebase()`: remote values, analytics and crash reports come from Firebase. */
-    internal val usesFirebase: Boolean = false,
+    val usesFirebase: Boolean = false,
 ) {
     /**
      * Every Koin module the definition brings, once each: each entry's, then the app's own. Koin

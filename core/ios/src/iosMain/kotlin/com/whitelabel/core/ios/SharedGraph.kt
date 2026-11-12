@@ -147,6 +147,9 @@ object SharedGraph {
     /** The app's consent state; only an app with a Firebase service has one to gather. */
     fun consent(): Consent = koin.get()
 
+    /** The app's remote values: Firebase's in `on`/`fake` mode, the caller's defaults otherwise. */
+    fun remoteValues(): RemoteValues = koin.get()
+
     /** The app's consent, or null when the app has no Firebase service (nothing to ask). */
     fun consentOrNull(): Consent? = koin.getOrNull()
 

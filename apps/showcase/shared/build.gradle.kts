@@ -22,10 +22,7 @@ val exported = listOf(
 // -Pwhitelabel.mockApi=true (passed only by the Xcode Debug configuration) links the fake backend;
 // Release builds never contain it.
 val withMockApi = providers.gradleProperty("whitelabel.mockApi").orNull == "true"
-// The Kotlin crash hook (ios/Showcase includes WhitelabelFirebase, which calls it): added by hand
-// until Task 11 sets firebase.enabled=debug — then the plugin adds it; remove this line.
-val crashHook = listOf(":core:firebase:crashlytics")
-val linked = (if (withMockApi) exported + ":core:ios:mock" else exported) + crashHook
+val linked = if (withMockApi) exported + ":core:ios:mock" else exported
 
 kotlin {
     listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
@@ -45,4 +42,6 @@ kotlin {
 iosApp {
     androidApp.set(rootProject.layout.projectDirectory.dir("apps/showcase"))
     iosConfigDir.set(rootProject.layout.projectDirectory.dir("ios/Showcase/Config"))
+    // Gitignored (the repo is public): without it Debug runs on the fake Firebase.
+    firebaseConfigFile.set(rootProject.layout.projectDirectory.file("ios/Showcase/Showcase/GoogleService-Info.plist"))
 }
