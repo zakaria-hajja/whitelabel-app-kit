@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.doesNotContain
 import java.io.File
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
 class IosConfigTest {
@@ -47,5 +48,22 @@ class IosConfigTest {
 
     @Test fun `values with spaces or equals signs are written verbatim after the key`() {
         assertThat(iosXcconfig(app().copy(appName = "My App = Best"), "debug")).contains("WL_APP_NAME = My App = Best\n")
+    }
+
+    @Test fun `writes WL_FIREBASE per build type`() {
+        val config = app().copy(firebase = ServiceMode.DEBUG)
+
+        assertThat(iosXcconfig(config, "debug", firebaseConfigFileExists = false)).contains("WL_FIREBASE = fake\n")
+        assertThat(iosXcconfig(config, "release", firebaseConfigFileExists = false)).contains("WL_FIREBASE = off\n")
+        assertThat(iosXcconfig(config, "debug", firebaseConfigFileExists = true)).contains("WL_FIREBASE = on\n")
+        assertThat(iosXcconfig(app(), "debug")).contains("WL_FIREBASE = off\n")
+    }
+
+    @Test fun `a missing plist with firebase on fails generation`() {
+        val e = assertThrows(InvalidAppConfigException::class.java) {
+            iosXcconfig(app().copy(firebase = ServiceMode.ON), "debug", firebaseConfigFileExists = false)
+        }
+
+        assertThat(e.message!!).contains("apps/showcase: firebase.enabled=true needs GoogleService-Info.plist")
     }
 }

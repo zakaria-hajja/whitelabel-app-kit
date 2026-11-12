@@ -375,4 +375,27 @@ class AppConfigLoaderTest {
 
         assertThat(found.single()).contains("app/app.properties: app.name")
     }
+
+    @Test
+    fun `firebase enabled defaults to off`() {
+        writeApp()
+
+        assertThat(AppConfigLoader.load(appDir).firebase).isEqualTo(ServiceMode.OFF)
+    }
+
+    @Test
+    fun `firebase enabled accepts false, true and debug`() {
+        mapOf("false" to ServiceMode.OFF, "true" to ServiceMode.ON, "debug" to ServiceMode.DEBUG).forEach { (raw, mode) ->
+            writeApp(mapOf("firebase.enabled" to raw))
+
+            assertThat(AppConfigLoader.load(appDir).firebase).isEqualTo(mode)
+        }
+    }
+
+    @Test
+    fun `firebase enabled rejects other values naming the key`() {
+        writeApp(mapOf("firebase.enabled" to "yes"))
+
+        assertThat(problems().single()).contains("apps/sample/app.properties: firebase.enabled")
+    }
 }

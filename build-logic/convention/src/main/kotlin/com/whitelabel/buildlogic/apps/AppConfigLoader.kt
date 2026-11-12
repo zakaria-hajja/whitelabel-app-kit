@@ -126,6 +126,13 @@ object AppConfigLoader {
             problems += "$label: missing required color $it"
         }
 
+        val firebase = when (val raw = value("firebase.enabled")) {
+            null, "false" -> ServiceMode.OFF
+            "true" -> ServiceMode.ON
+            "debug" -> ServiceMode.DEBUG
+            else -> { fail("firebase.enabled", "'$raw' must be false, true or debug"); null }
+        }
+
         val signing = parseSigning(dir, label, problems)
 
         if (problems.size != before) return null
@@ -141,6 +148,7 @@ object AppConfigLoader {
             privacyPolicyUrl = privacyUrl!!,
             termsUrl = termsUrl!!,
             defaultFeatures = features,
+            firebase = firebase!!,
             signing = signing,
             appDir = dir,
         )

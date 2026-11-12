@@ -17,6 +17,7 @@ data class AppConfig(
     val privacyPolicyUrl: String,
     val termsUrl: String,
     val defaultFeatures: List<String>,
+    val firebase: ServiceMode = ServiceMode.OFF,
     val signing: AppSigning?,
     val appDir: File,
 ) {

@@ -6,6 +6,10 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
@@ -18,6 +22,9 @@ import org.gradle.kotlin.dsl.register
 abstract class IosAppExtension {
     abstract val androidApp: DirectoryProperty
     abstract val iosConfigDir: DirectoryProperty
+
+    /** The app's `GoogleService-Info.plist`; defaults to `<iosConfigDir>/../<project dir>/GoogleService-Info.plist`. */
+    abstract val firebaseConfigFile: RegularFileProperty
 }
 
 /** Writes `Debug.generated.xcconfig` and `Release.generated.xcconfig` from the app's `app.properties`. */
@@ -26,15 +33,24 @@ abstract class GenerateIosConfig : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val androidApp: DirectoryProperty
 
+    /** The plist may be absent; only whether it exists changes the output, so only that is an input. */
+    @get:Internal
+    abstract val firebaseConfigFile: RegularFileProperty
+
+    @get:Input
+    val firebaseConfigFileExists: Provider<Boolean>
+        get() = firebaseConfigFile.map { it.asFile.isFile }.orElse(false)
+
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
 
     @TaskAction
     fun generate() {
         val app = AppConfigLoader.load(androidApp.get().asFile)
+        val exists = firebaseConfigFileExists.get()
         val out = outputDir.get().asFile
-        out.resolve("Debug.generated.xcconfig").writeText(iosXcconfig(app, "debug"))
-        out.resolve("Release.generated.xcconfig").writeText(iosXcconfig(app, "release"))
+        out.resolve("Debug.generated.xcconfig").writeText(iosXcconfig(app, "debug", exists))
+        out.resolve("Release.generated.xcconfig").writeText(iosXcconfig(app, "release", exists))
     }
 }
 
@@ -47,6 +63,11 @@ class IosAppConventionPlugin : Plugin<Project> {
             description = "Writes the iOS project's xcconfig files from the app's app.properties"
             androidApp.set(extension.androidApp)
             outputDir.set(extension.iosConfigDir)
+            firebaseConfigFile.set(
+                extension.firebaseConfigFile.orElse(
+                    extension.iosConfigDir.map { it.file("../${it.asFile.parentFile.name}/GoogleService-Info.plist") },
+                ),
+            )
         }
         Unit
     }
