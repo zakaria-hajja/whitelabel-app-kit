@@ -93,6 +93,9 @@ as well. The app's `google-services.json` goes in the app module's folder. See
 `app.properties`: the AdMob app IDs that Google's consent SDK requires. Add
 `GADApplicationIdentifier` = `$(WL_ADMOB_APP_ID)` to the iOS app's Info.plist.
 
+Ads (`ads.enabled` is `true` or `debug`) need no extra plugin line in this file. Their keys and the iOS
+setup are in [ads.md](ads.md).
+
 **Version catalog:** the app uses the foundation's (`libs`). A library only this app needs is
 declared directly in its module, e.g. `implementation("group:name:1.2.3")`. When a second app
 needs it, move it into the foundation's catalog.
