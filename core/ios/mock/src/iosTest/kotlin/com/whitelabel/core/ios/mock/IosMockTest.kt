@@ -18,6 +18,9 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.test.runTest
 import okio.FileSystem
 import okio.Path.Companion.toPath
@@ -51,8 +54,11 @@ class IosMockTest {
         val definition = DefinitionSpec(listOf(FeatureSpec("auth", null, null, false, true, false), FeatureSpec("settings", null, "settings", false, false, false)), null)
         SharedGraph.start(platform, definition, emptyList(), useMockApi = true)
         val session = KoinPlatform.getKoin().get<SessionRepository>()
-        session.signIn("alice@shared.test", FakeData.PASSWORD)
-        assertEquals(SessionState.SignedIn, session.state.first { it != SessionState.Unknown })
+        val result = session.signIn("alice@shared.test", FakeData.PASSWORD)
+        assertEquals(true, result is com.whitelabel.core.common.Result.Success, "sign-in failed: $result")
+        // Real time (not the test's virtual clock). The state follows the token store, so it may still show the SignedOut it read before the
+        // sign-in wrote the tokens: wait for SignedIn rather than taking the first known state.
+        assertEquals(SessionState.SignedIn, withContext(Dispatchers.Default) { withTimeout(5_000) { session.state.first { it == SessionState.SignedIn } } })
         assertEquals(true, IosMock.fakeBackend().requests.any { it.endsWith("/auth/login") })
     }
 }

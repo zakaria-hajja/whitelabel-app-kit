@@ -50,6 +50,10 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
 - **Messages:** `UiTextView(text)` or `await resolve(text)` give a ViewModel's `UiText` in the
   language the app launched in. `Texts` pins it at launch, because a language picked in the app
   applies at the next launch and the Swift strings wait until then too.
+- **`actionBanner($item)`:** a message with one action, for events a screen handles itself
+  ("Deleted · Undo"). Set a `BannerItem(text:actionTitle:action:)`. It shows for
+  `MessageBanner.seconds`, the button runs the action and hides it, and a newer item replaces it.
+  Identifiers for UI tests: `banner.text` and `banner.action`.
 - **Swift gotchas:**
   - Write `Swift.Error`: the module exports a Kotlin `Error` type.
   - SKIE turns Kotlin enums into Swift enums. Pass one back with `.toKotlinEnum()` where a Kotlin
@@ -179,6 +183,8 @@ Showcase on iOS has the same features, order and start tab as on Android:
 | `-fakeResetToken t1` | the fake issues reset token `t1`, already issued for `alice@shared.test` |
 | `-fakeFeatures catalog=false,profile=true` | the fake's remote flags |
 | `-fakeConfigDelayMs 5000` | the fake answers the config that late |
+| `-messageSeconds 15` | one-off messages and banners stay that long |
+| `-notificationAccess notAskedYet\|granted\|blocked` | the notification permission reports that status; asking grants without the system alert, which UI tests can't answer |
 | `<scheme>://_fake/offline`, `online`, `expire-tokens`, `revoke-sessions` | steer the running fake |
 | `<scheme>://_fake/log` | show the fake's recent requests in the `debug.fakeLog` probe |
 
@@ -207,3 +213,13 @@ settings, home, shell and design-catalog tests. Two UI-test traps:
 - **`IosLanguageRepository`:** the app's language choice, written to the app's `AppleLanguages`.
   iOS applies it at the next launch (`appliesImmediately` is false, so settings shows a note).
 - **Stores:** in Application Support, `datastore/<name>.json`.
+- **Reminders:** `iosRemindersModule()` (Kotlin, `:core:reminders:shared`) in the app's modules;
+  see [reminders.md](reminders.md#ios).
+- **`NotificationPermission`** (`@Observable`): `status` is `.granted`, `.notAskedYet` or
+  `.blocked` (iOS asks once). `request()` shows the system alert, `openSettings()` opens the app's
+  notification settings, and `.notificationPermissionRefresh(permission)` re-reads it when the app
+  returns to the foreground.
+- **`ReminderNotifications`:** shows reminders while the app is open, and opens a tapped reminder's
+  deep link through the shell (so it waits until content shows). `RootView` installs it. Call
+  `ReminderNotifications.shared.install()` in the app's `init()` too, so a tap that launches the
+  app isn't missed.
