@@ -19,6 +19,8 @@ public protocol AppService {
 public enum LaunchFlags {
     /** `-consentEEA`: the consent form behaves as in the EEA. */
     public internal(set) static var consentEEA = false
+    /** `-consentTestDevice <ids>`: UMP test devices (UMP honors the EEA geography only on these). */
+    public internal(set) static var consentTestDevices: [String] = []
     /** `-analyticsDebug`: collection runs in this debug build and events go to Firebase's DebugView. */
     public internal(set) static var analyticsDebug = false
 }

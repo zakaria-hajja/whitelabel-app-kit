@@ -18,6 +18,8 @@ import UserNotifications
  * - `-analyticsDebug`: analytics and crash collection run in this debug build, and events go to
  *   Firebase's DebugView (`LaunchFlags.analyticsDebug`);
  * - `-consentEEA`: the consent form behaves as in the EEA (`LaunchFlags.consentEEA`);
+ * - `-consentTestDevice <ids>`: UMP test devices, as UMP logs them; needed for `-consentEEA` on a
+ *   real device or simulator (`LaunchFlags.consentTestDevices`);
  * - `-fakeConsent obtained|declined|failed|notRequired`: what the fake consent answers (default obtained);
  * - `<scheme>://_fake/offline|online|expire-tokens|revoke-sessions`: steer the running fake;
  * - `<scheme>://_fake/log`: show the fake's recent requests in the `debug.fakeLog` probe.
@@ -62,6 +64,10 @@ struct DebugControls {
     /** The arguments a service reads (`LaunchFlags`). */
     func applyLaunchFlags() {
         LaunchFlags.consentEEA = arguments.contains("-consentEEA")
+        let deviceArgument = arguments.firstIndex(of: "-consentTestDevice").flatMap { index in
+            arguments.indices.contains(index + 1) && !arguments[index + 1].hasPrefix("-") ? arguments[index + 1] : nil
+        }
+        LaunchFlags.consentTestDevices = DebugConsent.shared.testDeviceIds(raw: deviceArgument)
         LaunchFlags.analyticsDebug = analyticsDebug
     }
 

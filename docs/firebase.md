@@ -182,6 +182,7 @@ Debug builds only. A release build ignores them.
 | Fake Firebase (in-memory values, logging analytics) | `fake-firebase` | `-fakeFirebase` |
 | Collection on in Debug, events to DebugView | `analytics-debug` | `-analyticsDebug` (also Firebase's debug mode) |
 | Behave as in the EEA and reset the stored consent (the form shows on every launch) | `consent-eea` | `-consentEEA` |
+| Register this device as a UMP test device (UMP honors the EEA switch only on test devices; it logs the hashed ID as `addTestDeviceHashedId("…")`) | write the ID into the `consent-eea` marker: `adb shell "run-as <applicationId> sh -c 'mkdir -p files/debug && echo <ID> > files/debug/consent-eea'"` | `-consentTestDevice <ID>` |
 | What the fake consent answers | `fake-consent-<obtained\|declined\|failed\|notRequired>` | `-fakeConsent <state>` |
 
 Fake mode never shows a real consent form: it answers from the `fake-consent` switch (default
