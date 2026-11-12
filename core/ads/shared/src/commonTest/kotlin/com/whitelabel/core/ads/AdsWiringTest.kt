@@ -34,7 +34,7 @@ class AdsWiringTest {
         }
     }
 
-    @Test fun `off in this build, or no ads at all, is off without needing the sdk`() {
+    @Test fun `off in this build or no ads at all is off without needing the sdk`() {
         assertThat(wiring(mode = "off", units = "", sdkLinked = false)).isEqualTo(AdsWiring.OFF)
         assertThat(wiring(usesAds = false, placements = emptyList(), declared = false, mode = "off", sdkLinked = false)).isEqualTo(AdsWiring.OFF)
     }
@@ -58,7 +58,7 @@ class AdsWiringTest {
         assertThat(AdsPlatform.ANDROID.testBannerUnit).isEqualTo("ca-app-pub-3940256099942544/9214589741")
     }
 
-    @Test fun `the units string parses, trimming and skipping blanks`() {
+    @Test fun `the units string parses trimming and skipping blanks`() {
         assertThat(parseAdsUnits("")).isEqualTo(emptyMap())
         assertThat(parseAdsUnits(" home = $unit ;;b-2=x")).isEqualTo(mapOf("home" to unit, "b-2" to "x"))
     }
@@ -74,7 +74,7 @@ class AdsWiringTest {
     private fun checkTabs(vararg placements: AdPlacement) =
         checkAdPlacementTabs(placements.toList(), ownerOf = { owners[it] }, routeName = { it.toString() })
 
-    @Test fun `a placement under a plain tab, or under none, passes`() {
+    @Test fun `a placement under a plain tab or under none passes`() {
         checkTabs(AdPlacement("top", "home"), AdPlacement("own", null))
     }
 
@@ -87,7 +87,7 @@ class AdsWiringTest {
             .hasMessage("No ads under auth: settings and sign-in screens stay ad-free")
     }
 
-    @Test fun `a route that isn't a tab, or a tab with two banners, is rejected`() {
+    @Test fun `a route that isn't a tab or a tab with two banners is rejected`() {
         assertFailure { checkTabs(AdPlacement("x", "nowhere")) }
             .isInstanceOf<IllegalArgumentException>()
             .hasMessage("placement 'x' is under nowhere, which isn't a tab")

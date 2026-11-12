@@ -12,7 +12,7 @@ class AdsDslTest {
 
     private data object HomeTab
 
-    @Test fun `placements keep their names, tabs and declaration order`() {
+    @Test fun `placements keep their names tabs and declaration order`() {
         val placements = AdsBuilder().apply {
             placement("home", underTab = HomeTab)
             placement("detail_screen-2")
