@@ -5,5 +5,9 @@ interface ConsentPort {
     /** Shows the form only if UMP requires it. Calls back with null on error. */
     fun gather(onDone: (UmpResult?) -> Unit)
     fun privacyOptionsRequired(): Boolean
-    fun showPrivacyOptions(onDone: () -> Unit)
+    /**
+     * Shows UMP's privacy options form. Calls back, once it closes, with the consent as UMP now has it,
+     * so a withdrawal applies at once; null (no screen to show it on, or an error) keeps the current state.
+     */
+    fun showPrivacyOptions(onDone: (UmpResult?) -> Unit)
 }

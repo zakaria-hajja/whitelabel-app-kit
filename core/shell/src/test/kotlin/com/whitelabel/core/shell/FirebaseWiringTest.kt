@@ -161,7 +161,7 @@ class FirebaseWiringTest {
                     object : com.whitelabel.core.consent.ConsentPort {
                         override fun gather(onDone: (UmpResult?) -> Unit) = onDone(null)
                         override fun privacyOptionsRequired() = false
-                        override fun showPrivacyOptions(onDone: () -> Unit) = onDone()
+                        override fun showPrivacyOptions(onDone: (UmpResult?) -> Unit) = onDone(null)
                     }
                 }
             },

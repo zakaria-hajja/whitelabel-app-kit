@@ -9,6 +9,7 @@ import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.consent.ConsentPort
+import com.whitelabel.core.consent.ConsentState
 import com.whitelabel.core.consent.FakeConsentPort
 import com.whitelabel.core.consent.UmpResult
 import com.whitelabel.core.consent.UmpStatus
@@ -72,13 +73,23 @@ class FirebaseKoinTest {
         assertThat(switch.applied.last()).isEqualTo(FirebaseCollection(true, true, true))
     }
 
-    @Test fun `a throwing switch does not break the consent state`() {
+    @Test fun `a withdrawal in the privacy options reaches the switch, even after a failing apply`() {
+        // The first apply throws; the collector must survive it and apply the later change.
         val switch = object : CollectionSwitch {
-            override fun apply(collection: FirebaseCollection) = error("boom")
+            var calls = 0
+            val applied = mutableListOf<FirebaseCollection>()
+            override fun apply(collection: FirebaseCollection) {
+                if (calls++ == 0) error("boom")
+                applied += collection
+            }
         }
-        val port = FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1011"))
-        val koin = app(FirebaseMode.ON, RecordingSwitch(), port, switch).koin
-        koin.get<Consent>().gatherOnLaunch()
-        assertThat(koin.get<Consent>().state.value).isEqualTo(com.whitelabel.core.consent.ConsentState.Resolved(true, true))
+        val port = FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1111111111"), optionsRequired = true)
+        val koin = app(FirebaseMode.ON, port = port, override = switch).koin
+        val consent = koin.get<Consent>()
+        consent.gatherOnLaunch()
+        assertThat(consent.state.value).isEqualTo(ConsentState.Resolved(true, true))
+        port.next = UmpResult(UmpStatus.OBTAINED, true, "0")
+        consent.showPrivacyOptions()
+        assertThat(switch.applied).containsExactly(FirebaseCollection(analytics = true, analyticsStorage = false, crashes = true))
     }
 }

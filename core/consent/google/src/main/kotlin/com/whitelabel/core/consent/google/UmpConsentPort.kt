@@ -64,12 +64,15 @@ class UmpConsentPort(
     override fun privacyOptionsRequired(): Boolean =
         info.privacyOptionsRequirementStatus == ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
 
-    override fun showPrivacyOptions(onDone: () -> Unit) {
+    override fun showPrivacyOptions(onDone: (UmpResult?) -> Unit) {
         val current = activity.get()
         if (current == null) {
-            onDone()
+            onDone(null)
         } else {
-            UserMessagingPlatform.showPrivacyOptionsForm(current) { onDone() }
+            // Re-read after the form closes: the user may have withdrawn consent.
+            UserMessagingPlatform.showPrivacyOptionsForm(current) { formError ->
+                onDone(if (formError == null) result() else null)
+            }
         }
     }
 

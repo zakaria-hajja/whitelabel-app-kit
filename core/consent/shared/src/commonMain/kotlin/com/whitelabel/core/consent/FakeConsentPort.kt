@@ -1,6 +1,6 @@
 package com.whitelabel.core.consent
 
-/** A [ConsentPort] for tests and previews: answers [next] at once and counts calls. */
+/** A [ConsentPort] for tests and previews: answers [next] at once (to a gather and after the options form) and counts calls. */
 class FakeConsentPort(var next: UmpResult?, var optionsRequired: Boolean = false) : ConsentPort {
     var gatherCalls = 0
         private set
@@ -14,8 +14,8 @@ class FakeConsentPort(var next: UmpResult?, var optionsRequired: Boolean = false
 
     override fun privacyOptionsRequired(): Boolean = optionsRequired
 
-    override fun showPrivacyOptions(onDone: () -> Unit) {
+    override fun showPrivacyOptions(onDone: (UmpResult?) -> Unit) {
         optionsShown++
-        onDone()
+        onDone(next)
     }
 }

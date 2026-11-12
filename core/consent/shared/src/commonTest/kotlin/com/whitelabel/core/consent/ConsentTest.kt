@@ -78,11 +78,30 @@ class ConsentTest {
         assertThat(c.privacyOptionsRequired.value).isEqualTo(false)
     }
 
+    @Test fun `a withdrawal in the privacy options applies at once`() {
+        val port = FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1111111111"), optionsRequired = true)
+        val c = consent(port)
+        c.gatherOnLaunch()
+        assertThat(c.state.value).isEqualTo(ConsentState.Resolved(true, true))
+        port.next = UmpResult(UmpStatus.OBTAINED, true, "0")
+        c.showPrivacyOptions()
+        assertThat(c.state.value).isEqualTo(ConsentState.Resolved(true, false))
+    }
+
+    @Test fun `options that can't report the consent keep the current state`() {
+        val port = FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1111111111"), optionsRequired = true)
+        val c = consent(port)
+        c.gatherOnLaunch()
+        port.next = null
+        c.showPrivacyOptions()
+        assertThat(c.state.value).isEqualTo(ConsentState.Resolved(true, true))
+    }
+
     private class HoldingPort : ConsentPort {
         var gatherCalls = 0
         var callback: ((UmpResult?) -> Unit)? = null
         override fun gather(onDone: (UmpResult?) -> Unit) { gatherCalls++; callback = onDone }
         override fun privacyOptionsRequired() = false
-        override fun showPrivacyOptions(onDone: () -> Unit) = onDone()
+        override fun showPrivacyOptions(onDone: (UmpResult?) -> Unit) = onDone(null)
     }
 }

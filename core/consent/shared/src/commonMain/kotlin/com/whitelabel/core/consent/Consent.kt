@@ -33,8 +33,12 @@ class Consent(private val port: ConsentPort?, @Suppress("unused") private val sc
         }
     }
 
+    /** Shows UMP's privacy options; a changed choice (a withdrawal too) applies as soon as the form closes. */
     fun showPrivacyOptions() {
         val port = port ?: return
-        port.showPrivacyOptions { _privacyOptionsRequired.value = port.privacyOptionsRequired() }
+        port.showPrivacyOptions { result ->
+            if (result != null) _state.value = consentStateOf(result)
+            _privacyOptionsRequired.value = port.privacyOptionsRequired()
+        }
     }
 }

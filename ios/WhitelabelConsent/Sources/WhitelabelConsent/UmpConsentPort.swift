@@ -44,9 +44,12 @@ public final class UmpConsentPort: NSObject, ConsentPort {
         info.privacyOptionsRequirementStatus == .required
     }
 
-    public func showPrivacyOptions(onDone: @escaping () -> Void) {
-        guard let presenter = Self.presenter() else { return onDone() }
-        ConsentForm.presentPrivacyOptionsForm(from: presenter) { _ in onDone() }
+    public func showPrivacyOptions(onDone: @escaping (UmpResult?) -> Void) {
+        guard let presenter = Self.presenter() else { return onDone(nil) }
+        // Re-read after the form closes: the user may have withdrawn consent.
+        ConsentForm.presentPrivacyOptionsForm(from: presenter) { error in
+            onDone(error == nil ? self.result() : nil)
+        }
     }
 
     private func result() -> UmpResult {
