@@ -7,7 +7,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.Provider
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.InputDirectory
@@ -38,8 +38,7 @@ abstract class GenerateIosConfig : DefaultTask() {
     abstract val firebaseConfigFile: RegularFileProperty
 
     @get:Input
-    val firebaseConfigFileExists: Provider<Boolean>
-        get() = firebaseConfigFile.map { it.asFile.isFile }.orElse(false)
+    abstract val firebaseConfigFileExists: Property<Boolean>
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -67,6 +66,10 @@ class IosAppConventionPlugin : Plugin<Project> {
                 extension.firebaseConfigFile.orElse(
                     extension.iosConfigDir.map { it.file("../${it.asFile.parentFile.name}/GoogleService-Info.plist") },
                 ),
+            )
+            // providers.fileContents makes the file a tracked configuration-cache input, unlike File.isFile.
+            firebaseConfigFileExists.set(
+                providers.fileContents(firebaseConfigFile).asBytes.map { true }.orElse(false),
             )
         }
         Unit
