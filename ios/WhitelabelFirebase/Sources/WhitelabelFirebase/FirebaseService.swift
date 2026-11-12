@@ -10,7 +10,8 @@ import WhitelabelKit
  * Android's `firebase()`: list it in `AppDefinition(services: [FirebaseService()])`.
  * - `on`: configures Firebase, installs the Kotlin crash hook and hands the shared graph the UMP
  *   consent port and the Firebase ports. Collection stays off until consent resolves: the app's
- *   Info.plist must start it off (see `collectionOffKeys`), or the app stops at launch.
+ *   Info.plist must start it off (see `collectionOffKeys`) and carry the AdMob app ID
+ *   (`GADApplicationIdentifier`), or the app stops at launch.
  * - `fake`: nothing; the shared graph binds the fakes (with `-fakeConsent`'s answer).
  * - `off`: nothing.
  */
@@ -19,7 +20,8 @@ public struct FirebaseService: AppService {
 
     @MainActor public func install(mode: String) {
         guard mode == "on" else { return }
-        if let problem = Self.collectionProblem(Bundle.main.infoDictionary ?? [:]) { fatalError(problem) }
+        let info = Bundle.main.infoDictionary ?? [:]
+        if let problem = Self.collectionProblem(info) ?? Self.adMobProblem(info) { fatalError(problem) }
         #if DEBUG
         Self.applyDebugView(LaunchFlags.analyticsDebug, to: .standard)
         #endif
@@ -65,6 +67,17 @@ public struct FirebaseService: AppService {
         "GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA",
         "GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS",
     ]
+
+    /**
+     * Why consent can't run, or nil: Google's consent SDK (UMP) is AdMob's and needs the app's AdMob
+     * app ID in Info.plist (`GADApplicationIdentifier`, from `WL_ADMOB_APP_ID` / `ads.ios.appId`);
+     * without it consent fails at every launch and nothing is ever collected.
+     */
+    static func adMobProblem(_ info: [String: Any]) -> String? {
+        let id = (info["GADApplicationIdentifier"] as? String)?.trimmingCharacters(in: .whitespaces) ?? ""
+        guard id.isEmpty else { return nil }
+        return "Firebase is on, but Info.plist has no GADApplicationIdentifier (the AdMob app ID that Google's consent SDK requires); set ads.ios.appId in app.properties and GADApplicationIdentifier = $(WL_ADMOB_APP_ID) in Info.plist"
+    }
 
     /** Why [info] would let Firebase collect before consent, or nil when every key is `false`. */
     static func collectionProblem(_ info: [String: Any]) -> String? {

@@ -25,6 +25,8 @@
 	<key>WLTermsUrl</key><string>$(WL_TERMS_URL)</string>
 	<key>WLDefaultFeatures</key><string>$(WL_DEFAULT_FEATURES)</string>
 	<key>WLFirebase</key><string>$(WL_FIREBASE)</string>
+	<!-- Google's consent SDK (UMP) needs the AdMob app ID; FirebaseService checks it at launch. -->
+	<key>GADApplicationIdentifier</key><string>$(WL_ADMOB_APP_ID)</string>
 	<!-- Firebase collects nothing until consent (FirebaseService checks these at launch). -->
 	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key><false/>
 	<key>FirebaseCrashlyticsCollectionEnabled</key><false/>

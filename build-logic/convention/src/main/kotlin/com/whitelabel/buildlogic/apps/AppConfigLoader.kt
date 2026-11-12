@@ -12,6 +12,7 @@ object AppConfigLoader {
 
     private val TENANT = Regex("^[a-z0-9][a-z0-9-]{1,62}$")
     private val APPLICATION_ID = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")
+    private val ADMOB_APP_ID = Regex("^ca-app-pub-\\d{16}~\\d{10}$")
     private val DEEP_LINK_SCHEME = Regex("^[a-z][a-z0-9+.-]*$")
     private val LOCAL_HOSTS = setOf("localhost", "127.0.0.1", "10.0.2.2")
     // Must match core/shell/src/debug/res/xml/network_security_config.xml.
@@ -133,6 +134,9 @@ object AppConfigLoader {
             else -> { fail("firebase.enabled", "'$raw' must be false, true or debug"); null }
         }
 
+        val adsAndroidAppId = check("ads.android.appId", value("ads.android.appId"), ADMOB_APP_ID)
+        val adsIosAppId = check("ads.ios.appId", value("ads.ios.appId"), ADMOB_APP_ID)
+
         val signing = parseSigning(dir, label, problems)
 
         if (problems.size != before) return null
@@ -149,6 +153,8 @@ object AppConfigLoader {
             termsUrl = termsUrl!!,
             defaultFeatures = features,
             firebase = firebase!!,
+            adsAndroidAppId = adsAndroidAppId,
+            adsIosAppId = adsIosAppId,
             signing = signing,
             appDir = dir,
         )

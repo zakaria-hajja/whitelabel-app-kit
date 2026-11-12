@@ -398,4 +398,35 @@ class AppConfigLoaderTest {
 
         assertThat(problems().single()).contains("apps/sample/app.properties: firebase.enabled")
     }
+
+    @Test
+    fun `ads app ids are optional and parsed per platform`() {
+        writeApp()
+        assertThat(AppConfigLoader.load(appDir).adsAndroidAppId).isNull()
+        assertThat(AppConfigLoader.load(appDir).adsIosAppId).isNull()
+
+        writeApp(mapOf("ads.android.appId" to "ca-app-pub-1234567890123456~1234567890", "ads.ios.appId" to "ca-app-pub-6543210987654321~0987654321"))
+
+        val config = AppConfigLoader.load(appDir)
+        assertThat(config.adsAndroidAppId).isEqualTo("ca-app-pub-1234567890123456~1234567890")
+        assertThat(config.adsIosAppId).isEqualTo("ca-app-pub-6543210987654321~0987654321")
+    }
+
+    @Test
+    fun `malformed ads app ids are rejected naming the key`() {
+        // A unit id (slash, not tilde) and a short publisher id.
+        writeApp(mapOf("ads.android.appId" to "ca-app-pub-1234567890123456/1234567890", "ads.ios.appId" to "ca-app-pub-123~1234567890"))
+
+        val all = problems()
+
+        assertThat(all.single { "ads.android.appId" in it }).contains("apps/sample/app.properties: ads.android.appId")
+        assertThat(all.single { "ads.ios.appId" in it }).contains("apps/sample/app.properties: ads.ios.appId")
+    }
+
+    @Test
+    fun `ads app ids are still validated when firebase is false`() {
+        writeApp(mapOf("firebase.enabled" to "false", "ads.ios.appId" to "nope"))
+
+        assertThat(problems().single()).contains("ads.ios.appId")
+    }
 }

@@ -24,6 +24,15 @@ final class FirebaseSetupTests: XCTestCase {
         )
     }
 
+    func testTheAdMobAppIdMustBePresent() {
+        XCTAssertNil(FirebaseService.adMobProblem(["GADApplicationIdentifier": "ca-app-pub-1234567890123456~1234567890"]))
+        for info in [[:], ["GADApplicationIdentifier": ""], ["GADApplicationIdentifier": "   "], ["GADApplicationIdentifier": 7]] as [[String: Any]] {
+            let problem = FirebaseService.adMobProblem(info)
+            XCTAssertNotNil(problem)
+            XCTAssertTrue(problem!.contains("GADApplicationIdentifier"))
+        }
+    }
+
     func testDebugBuildsFetchAtOnceAndReleaseBuildsEveryTwelveHours() {
         XCTAssertEqual(FetchInterval.seconds(debugBuild: true), 0)
         XCTAssertEqual(FetchInterval.seconds(debugBuild: false), 43_200)

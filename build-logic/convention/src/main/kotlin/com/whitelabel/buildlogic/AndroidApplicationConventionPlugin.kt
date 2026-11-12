@@ -8,6 +8,7 @@ import com.whitelabel.buildlogic.apps.AppConfigLoader
 import com.whitelabel.buildlogic.apps.androidStringResource
 import com.whitelabel.buildlogic.apps.ServiceMode
 import com.whitelabel.buildlogic.apps.appConfigFields
+import com.whitelabel.buildlogic.apps.admobManifestPlaceholder
 import com.whitelabel.buildlogic.apps.firebaseSetup
 import com.whitelabel.buildlogic.apps.resourceNameFor
 import org.gradle.api.Plugin
@@ -89,6 +90,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         val firebase = firebaseSetup(
             app.firebase,
             configFileExists = projectDir.resolve("google-services.json").isFile,
+            adsAppId = app.adsAndroidAppId,
             label = rootDir.toPath().relativize(projectDir.toPath()).toString(),
         )
         if (firebase.applyGradlePlugins) {
@@ -97,6 +99,10 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         }
         if (app.firebase != ServiceMode.OFF) {
             dependencies.add("implementation", project(":core:firebase:shared"))
+        }
+        // :core:consent:google's manifest reads this; always set so merging never fails.
+        extensions.configure<ApplicationExtension> {
+            defaultConfig.manifestPlaceholders["admobAppId"] = admobManifestPlaceholder(app.adsAndroidAppId)
         }
         firebase.dependencyConfiguration?.let { dependencies.add(it, project(":core:firebase:google")) }
         if (firebase.disabledTasks.isNotEmpty()) {

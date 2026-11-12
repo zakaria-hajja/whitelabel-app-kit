@@ -16,26 +16,40 @@ data class FirebaseSetup(
 )
 
 /**
- * Decides the Firebase setup from `firebase.enabled` and whether the platform's config file exists.
- * [configFileName] and [label] only shape the error for `true` without the file. In `debug` mode
- * without the file, debug builds use the fake so the app still runs.
+ * Decides the Firebase setup from `firebase.enabled`, whether the platform's config file exists and
+ * the platform's AdMob app ID [adsAppId] (Google's consent SDK needs it). [configFileName],
+ * [adsAppIdKey] and [label] only shape the errors for `true` without the file or the ID. In `debug`
+ * mode, debug builds are real only with both the file and the ID; otherwise they use the fake so
+ * the app still runs. `false` ignores both.
  */
 fun firebaseSetup(
     mode: ServiceMode,
     configFileExists: Boolean,
+    adsAppId: String? = null,
     label: String = "app",
     configFileName: String = "google-services.json",
-): FirebaseSetup = when (mode) {
-    ServiceMode.OFF -> FirebaseSetup(null, false, mapOf("debug" to "off", "release" to "off"))
-    ServiceMode.ON ->
-        if (configFileExists) FirebaseSetup("implementation", true, mapOf("debug" to "on", "release" to "on"))
-        else throw InvalidAppConfigException(listOf("$label: firebase.enabled=true needs $configFileName"))
-    ServiceMode.DEBUG ->
-        if (configFileExists) FirebaseSetup(
-            "debugImplementation", true, mapOf("debug" to "on", "release" to "off"), RELEASE_FIREBASE_TASKS,
-        )
-        else FirebaseSetup("debugImplementation", false, mapOf("debug" to "fake", "release" to "off"))
+    adsAppIdKey: String = "ads.android.appId",
+): FirebaseSetup {
+    val hasAppId = !adsAppId.isNullOrBlank()
+    return when (mode) {
+        ServiceMode.OFF -> FirebaseSetup(null, false, mapOf("debug" to "off", "release" to "off"))
+        ServiceMode.ON -> when {
+            !configFileExists -> throw InvalidAppConfigException(listOf("$label: firebase.enabled=true needs $configFileName"))
+            !hasAppId -> throw InvalidAppConfigException(
+                listOf("$label: firebase.enabled=true needs $adsAppIdKey (the AdMob app ID; Google's consent SDK requires it)"),
+            )
+            else -> FirebaseSetup("implementation", true, mapOf("debug" to "on", "release" to "on"))
+        }
+        ServiceMode.DEBUG ->
+            if (configFileExists && hasAppId) FirebaseSetup(
+                "debugImplementation", true, mapOf("debug" to "on", "release" to "off"), RELEASE_FIREBASE_TASKS,
+            )
+            else FirebaseSetup("debugImplementation", false, mapOf("debug" to "fake", "release" to "off"))
+    }
 }
+
+/** The `admobAppId` manifest placeholder: the app's AdMob app ID, or an empty string so merging never fails. */
+fun admobManifestPlaceholder(adsAppId: String?): String = adsAppId.orEmpty()
 
 /** The release variant's Firebase Gradle tasks (AGP 8.13, crashlytics-gradle 3.0.8). */
 private val RELEASE_FIREBASE_TASKS = listOf(
