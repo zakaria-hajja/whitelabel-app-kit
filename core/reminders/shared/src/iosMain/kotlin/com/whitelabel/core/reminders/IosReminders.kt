@@ -31,10 +31,22 @@ fun iosRemindersModule(directory: Path? = null): Module = module {
     single {
         openIosReminders(directory ?: defaultRemindersDirectory(), get(), CoroutineScope(SupervisorJob() + Dispatchers.Default))
     }
+    single { get<IosReminders>().reminders }
+}
+
+/**
+ * iOS's [Reminders], plus [rearmAll]. iOS rejects every notification request until the app is
+ * authorized, so what was planned before (the first add, before the permission sheet; a restored
+ * phone; notifications switched back on in Settings) isn't armed. Call [rearmAll] whenever
+ * notifications are allowed (on a grant and each return to the foreground): it hands every wanted
+ * reminder to the system again, which replaces what's already there.
+ */
+class IosReminders internal constructor(val reminders: Reminders, private val port: CenterReminderPort) {
+    suspend fun rearmAll() = port.rebalance(rearmAll = true)
 }
 
 /** Opens the stores in [directory] and, once, removes what the system already showed and re-arms the rest. */
-internal fun openIosReminders(directory: Path, center: NotificationCenter, scope: CoroutineScope): Reminders {
+internal fun openIosReminders(directory: Path, center: NotificationCenter, scope: CoroutineScope): IosReminders {
     FileSystem.SYSTEM.createDirectories(directory)
     excludeFromBackup(directory)
     val port = CenterReminderPort(
@@ -49,7 +61,7 @@ internal fun openIosReminders(directory: Path, center: NotificationCenter, scope
         engine.onSystemChange()
         port.rebalance(rearmAll = true)
     }
-    return Reminders(engine)
+    return IosReminders(Reminders(engine), port)
 }
 
 private fun localNow(): LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
