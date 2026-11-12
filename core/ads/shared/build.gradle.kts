@@ -1,6 +1,6 @@
 plugins {
     id("whitelabel.kmp.library")
-    // The ads module (added in a later task) is a Koin module.
+    // The ads rules module is a Koin module.
     id("whitelabel.koin")
 }
 

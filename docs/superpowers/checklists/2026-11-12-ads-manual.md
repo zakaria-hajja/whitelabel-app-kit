@@ -25,12 +25,12 @@ Background: [ads.md](../../ads.md). Spec: [the design](../specs/2026-11-12-fireb
 |---|---|---|---|
 | 1 | Android | Launch 1 (fresh data): signed in on Home, no "Ad" label under Home | pass (emulator-5590) |
 | 2 | Android | Force-stop, relaunch (launch 2), sign in: "Ad" and a "Test Ad" banner above the bottom bar, under Home, within about 15 s | pass (emulator-5590) |
-| 3 | Android | Open Settings: no banner. Back to Home: the banner is back | pass (none under Settings) |
+| 3 | Android | Open Settings: no banner. Back to Home: the banner is back | partial (none under Settings; back to Home not checked) |
 | 4 | Android | Ad-free: force-stop, `adb shell "run-as com.whitelabel.showcase.debug sh -c 'echo {\\\"untilEpochMillis\\\":4102444800000} > files/datastore/ads-free.json'"`, relaunch, sign in: no banner. Remove it with `adb shell run-as com.whitelabel.showcase.debug rm files/datastore/ads-free.json` | pass (emulator-5590) |
 | 5 | Android | Consent failed: `adb shell "run-as com.whitelabel.showcase.debug sh -c 'mkdir -p files/debug && touch files/debug/fake-consent-failed'"`, relaunch, sign in: no banner. `adb shell run-as com.whitelabel.showcase.debug rm files/debug/fake-consent-failed` afterwards | pass (emulator-5590) |
 | 6 | Android | With Firebase's real config and the AdMob app ID, in the EEA or with `consent-eea`: the form shows, and no banner loads before it is answered | |
 | 7 | Android | Settings > privacy choices row (`PrivacyChoicesRow`) reopens the form while UMP requires one | |
-| 8 | Android | Release build (`assembleRelease`): no ads code, no banner on any launch; `scripts/verify-apps.sh release` is green | pass (verify only) |
+| 8 | Android | Release build (`assembleRelease`): no ads code, no banner on any launch; `scripts/verify-apps.sh release` is green | partial (verify-apps only; Release launch not run) |
 | 9 | iOS | Launch 1 (fresh install): no "Ad" under Home | |
 | 10 | iOS | Launch 2: "Ad" and a "Test Ad" banner under Home, none under Settings | |
 | 11 | iOS | Ad-free: write `{"untilEpochMillis":4102444800000}` to `datastore/ads-free.json` in the app container's Application Support (`xcrun simctl get_app_container booted com.whitelabel.showcase.debug data`), relaunch: no banner | |

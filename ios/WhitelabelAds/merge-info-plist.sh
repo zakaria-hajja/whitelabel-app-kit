@@ -1,6 +1,6 @@
 #!/bin/sh
 # The WhitelabelAdsApp template's build phase: adds the ads keys to the built app's Info.plist, so an
-# app's own Info.plist needs only GADApplicationIdentifier (and WLAdsDeclared, which every app maps).
+# app's own Info.plist needs only GADApplicationIdentifier (and WLAdsDeclared, which only apps with ads map).
 # It runs after Xcode processed the Info.plist and before signing. Argument: the built Info.plist
 # (default: $TARGET_BUILD_DIR/$INFOPLIST_PATH).
 # - Always: the settings PlatformFactory and AdsService read, from the generated xcconfig: WLAds

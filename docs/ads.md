@@ -6,8 +6,9 @@ windows), so an app can't get them wrong. Design:
 [2026-11-12-firebase-and-ads-kmp-design.md](superpowers/specs/2026-11-12-firebase-and-ads-kmp-design.md).
 Consent (Google's UMP) is shared with Firebase: see [firebase.md](firebase.md).
 
-An app without ads gets nothing: no SDK in the Android build, no Gradle change, no Swift package on
-the app target, no Info.plist keys beyond the empty placeholders.
+An app without ads gets nothing: no SDK, no Gradle plugin, no Swift package on the app target, and no
+Info.plist keys beyond the empty placeholders. (The shared shell still links the SDK-free ads rules
+modules, which do nothing without `ads { }`.)
 
 ## Modules
 
@@ -40,8 +41,9 @@ imports the ads SDK.
 | `ads.ios.trackingMessage` | text | The ATT prompt's explanation. Required with `requestTracking=true`; must not contain `$(` or `${` |
 
 `<placement>` is a name (`^[A-Za-z][A-Za-z0-9_-]*$`) that the app also declares in code. A unit with
-no matching placement, or a placement with no unit (in `true` mode or any Release build), fails the
-build or the launch with a message naming the key. Showcase uses `ads.enabled=debug`, so its
+no matching placement, or a placement with no unit in a build that isn't Debug and has ads on (so
+`true` mode in Release), fails the build or the launch with a message naming the key. Debug always
+gets the test unit. Showcase uses `ads.enabled=debug`, so its
 properties hold no unit IDs.
 
 **Where the real units go:** AdMob console > Apps > the app > Ad units > Add ad unit > Banner. Copy

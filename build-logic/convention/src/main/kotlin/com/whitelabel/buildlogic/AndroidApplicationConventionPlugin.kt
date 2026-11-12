@@ -104,7 +104,8 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             dependencies.add("implementation", project(":core:firebase:shared"))
         }
         // Ads: the Google module per build type, and the shared ads modules whenever ads aren't off.
-        // An app with ads off gets none of this. The AdMob app ID is one manifest placeholder that
+        // An app with ads off gets no SDK and no Google module (core/shell already links :core:ads,
+        // which has none), and no ads rules module. The AdMob app ID is one manifest placeholder that
         // :core:consent:google's manifest and the ads SDK both read: the ads value when ads are on
         // for the build type (the real ID, or Google's test ID in Debug without one), else the
         // plain ads.android.appId Firebase's consent needs, else empty so merging never fails.

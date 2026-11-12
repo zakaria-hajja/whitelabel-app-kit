@@ -91,8 +91,8 @@ targets:
         BUNDLE_LOADER: $(TEST_HOST)
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
   WhitelabelAdsTests:
-    # Not hosted: the showcase app doesn't link the ads target, so the bundle links it (with its
-    # package and the SDK's binary), the kit, the consent target and Shared itself. Showcase's Shared
+    # Not hosted (the tests don't need the app): the bundle links the ads target itself, with its
+    # package and the SDK's binary, the kit, the consent target and Shared itself. Showcase's Shared
     # carries the Kotlin Crashlytics hook, so the Firebase target comes too. The tests touch no SDK state.
     type: bundle.unit-test
     platform: iOS
