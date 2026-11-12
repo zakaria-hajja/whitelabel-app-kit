@@ -47,7 +47,10 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
         single(named("firebaseCollectionApplier"), createdAtStart = true) {
             val switch = get<CollectionSwitch>()
             get<Consent>().state
-                .onEach { switch.apply(collectionFor(it, debugBuild, debugAnalytics)) }
+                .onEach {
+                    // One failing platform apply must not end the collector; later consent changes still apply.
+                    runCatching { switch.apply(collectionFor(it, debugBuild, debugAnalytics)) }
+                }
                 .launchIn(get<CoroutineScope>(applicationScope))
         }
     }

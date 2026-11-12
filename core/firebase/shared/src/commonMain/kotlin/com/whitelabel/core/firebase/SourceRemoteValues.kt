@@ -22,7 +22,8 @@ class SourceRemoteValues(
     /** One fetch-and-activate in the background; [changes] emits when it activated new values. */
     fun start() {
         scope.launch {
-            source.fetchAndActivate { changed -> if (changed) _changes.tryEmit(Unit) }
+            // A throwing platform source counts as "nothing changed".
+            runCatching { source.fetchAndActivate { changed -> if (changed) _changes.tryEmit(Unit) } }
         }
     }
 

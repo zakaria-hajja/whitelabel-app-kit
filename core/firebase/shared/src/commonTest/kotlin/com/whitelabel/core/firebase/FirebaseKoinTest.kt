@@ -33,13 +33,13 @@ class FirebaseKoinTest {
         override fun record(throwable: Throwable) = Unit
     }
 
-    private fun app(mode: FirebaseMode, switch: RecordingSwitch = RecordingSwitch(), port: ConsentPort? = null): KoinApplication =
+    private fun app(mode: FirebaseMode, switch: RecordingSwitch = RecordingSwitch(), port: ConsentPort? = null, override: CollectionSwitch? = null): KoinApplication =
         koinApplication {
             modules(
                 module {
                     single<CoroutineScope>(named("applicationScope")) { TestScope(UnconfinedTestDispatcher()) }
                     if (port != null) single<ConsentPort> { port }
-                    single<CollectionSwitch> { switch }
+                    single<CollectionSwitch> { override ?: switch }
                     single<RemoteConfigSource> { FakeRemoteConfigSource(mapOf("k" to "v")) }
                     single<Analytics>(named("firebase")) { NoopAnalytics() }
                     single<CrashReporter>(named("firebase")) { NoopAnalytics() }
@@ -69,5 +69,20 @@ class FirebaseKoinTest {
         assertThat(switch.applied).containsExactly(FirebaseCollection(false, false, false))
         koin.get<Consent>().gatherOnLaunch()
         assertThat(switch.applied.last()).isEqualTo(FirebaseCollection(true, true, true))
+    }
+
+    @Test fun `a throwing switch does not stop later consent changes from applying`() {
+        val applied = mutableListOf<FirebaseCollection>()
+        var first = true
+        val switch = object : CollectionSwitch {
+            override fun apply(collection: FirebaseCollection) {
+                if (first) { first = false; error("boom") }
+                applied += collection
+            }
+        }
+        val port = FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1011"))
+        val koin = app(FirebaseMode.ON, RecordingSwitch(), port, switch).koin
+        koin.get<Consent>().gatherOnLaunch()
+        assertThat(applied).containsExactly(FirebaseCollection(true, true, true))
     }
 }

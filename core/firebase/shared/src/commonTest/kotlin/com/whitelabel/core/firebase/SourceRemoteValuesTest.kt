@@ -56,15 +56,41 @@ class SourceRemoteValuesTest {
 
     @Test fun `changes emits after an activation that changed values and not otherwise`() = kotlinx.coroutines.test.runTest {
         val results = ArrayDeque(listOf(true, false))
+        var calls = 0
         val source = object : RemoteConfigSource {
             override fun raw(key: String): String? = null
-            override fun fetchAndActivate(onDone: (Boolean) -> Unit) = onDone(results.removeFirst())
+            override fun fetchAndActivate(onDone: (Boolean) -> Unit) {
+                calls++
+                onDone(results.removeFirst())
+            }
         }
         val v = SourceRemoteValues(source, this)
         v.changes.test {
             v.start()
+            testScheduler.advanceUntilIdle()
             awaitItem()
             v.start()
+            testScheduler.advanceUntilIdle()
+            assertThat(calls).isEqualTo(2)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test fun `a throwing source counts as unchanged and does not escape`() = kotlinx.coroutines.test.runTest {
+        var calls = 0
+        val source = object : RemoteConfigSource {
+            override fun raw(key: String): String? = null
+            override fun fetchAndActivate(onDone: (Boolean) -> Unit) {
+                calls++
+                error("boom")
+            }
+        }
+        val v = SourceRemoteValues(source, this)
+        v.changes.test {
+            v.start()
+            testScheduler.advanceUntilIdle()
+            assertThat(calls).isEqualTo(1)
             expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
