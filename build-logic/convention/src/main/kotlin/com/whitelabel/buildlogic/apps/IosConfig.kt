@@ -11,7 +11,9 @@ private const val ANDROID_EMULATOR_HOST = "10.0.2.2"
  * `WL_ADMOB_APP_ID` is the iOS AdMob app ID ([resolvedAdmobAppId]; empty when absent), which Info.plist reads as
  * `GADApplicationIdentifier`. `WL_ADS` (`on`/`off`), `WL_ADS_UNITS` (`placement=unit;...`), `WL_ADS_TRACKING`
  * (`yes`/`no`) and `WL_ADS_TRACKING_MESSAGE` come from [adsSetup]; tracking and its message are published
- * only for a build type where ads are on.
+ * only for a build type where ads are on. `WL_ADS_DECLARED` (`true`/`false`, the same in both build types)
+ * says whether `ads.enabled` is set at all, so the app can tell a missing setting from a build type with
+ * ads off (Android's `foundation_ads_declared`).
  */
 internal fun iosXcconfig(app: AppConfig, buildType: String, firebaseConfigFileExists: Boolean = false): String {
     val label = "apps/${app.appDir.name}"
@@ -31,6 +33,7 @@ internal fun iosXcconfig(app: AppConfig, buildType: String, firebaseConfigFileEx
     ) + fields +
         ("FIREBASE" to firebase.modeFor.getValue(buildType)) + ("ADMOB_APP_ID" to resolvedAdmobAppId(ads, app.adsIosAppId, buildType)) +
         ("ADS" to ads.modeFor.getValue(buildType)) +
+        ("ADS_DECLARED" to ads.declared.toString()) +
         ("ADS_UNITS" to adsUnitsString(ads.unitsFor.getValue(buildType))) +
         ("ADS_TRACKING" to if (tracking) "yes" else "no") +
         ("ADS_TRACKING_MESSAGE" to if (tracking) app.iosTrackingMessage.orEmpty() else "")
@@ -49,11 +52,12 @@ internal fun xcconfigValue(value: String): String =
     value.replace(Regex("[\\r\\n\\t]+"), " ").replace(Regex("/(?=/)")) { "/$()" }
 
 /**
- * What an app's iOS framework (`Shared`) adds for consent and Firebase. [modules] are added to the
- * framework and exported:
- * - every app: `:core:consent:shared` and `:core:firebase:shared`. They are pure Kotlin (no Apple
- *   SDK), and WhitelabelKit's Swift names their types (`Consent` in `PrivacyChoicesRow`), so the kit
- *   compiles only against a framework that exports them;
+ * What an app's iOS framework (`Shared`) adds for consent, Firebase and ads. [modules] are added to
+ * the framework and exported:
+ * - every app: `:core:consent:shared`, `:core:firebase:shared` and `:core:ads:shared`. They are pure
+ *   Kotlin (no Apple SDK), and WhitelabelKit's Swift names their types (`Consent` in
+ *   `PrivacyChoicesRow`, `AdsController` and `AdPlacement` for banners), so the kit compiles only
+ *   against a framework that exports them;
  * - an app with Firebase: also `:core:firebase:crashlytics`, the Kotlin crash hook over CrashKiOS,
  *   which the Swift `FirebaseService` calls.
  *
@@ -62,7 +66,7 @@ internal fun xcconfigValue(value: String): String =
  */
 data class IosFirebaseFramework(val crashLinkPlugin: Boolean, val modules: List<String>)
 
-private val EVERY_APP_MODULES = listOf(":core:consent:shared", ":core:firebase:shared")
+private val EVERY_APP_MODULES = listOf(":core:consent:shared", ":core:firebase:shared", ":core:ads:shared")
 
 fun iosFirebaseFramework(mode: ServiceMode): IosFirebaseFramework = when (mode) {
     ServiceMode.OFF -> IosFirebaseFramework(crashLinkPlugin = false, modules = EVERY_APP_MODULES)

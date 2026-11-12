@@ -103,14 +103,14 @@ class IosConfigTest {
 
     @Test fun `an app without firebase exports the consent and firebase types WhitelabelKit names, but no crashlytics`() {
         assertThat(iosFirebaseFramework(ServiceMode.OFF)).isEqualTo(
-            IosFirebaseFramework(crashLinkPlugin = false, modules = listOf(":core:consent:shared", ":core:firebase:shared")),
+            IosFirebaseFramework(crashLinkPlugin = false, modules = listOf(":core:consent:shared", ":core:firebase:shared", ":core:ads:shared")),
         )
     }
 
     @Test fun `an app with firebase on or in debug also gets the crashlytics module and the link plugin`() {
         val withFirebase = IosFirebaseFramework(
             crashLinkPlugin = true,
-            modules = listOf(":core:consent:shared", ":core:firebase:shared", ":core:firebase:crashlytics"),
+            modules = listOf(":core:consent:shared", ":core:firebase:shared", ":core:ads:shared", ":core:firebase:crashlytics"),
         )
         assertThat(iosFirebaseFramework(ServiceMode.ON)).isEqualTo(withFirebase)
         assertThat(iosFirebaseFramework(ServiceMode.DEBUG)).isEqualTo(withFirebase)
@@ -151,6 +151,15 @@ class IosConfigTest {
         assertThat(release).contains("WL_ADS_TRACKING_MESSAGE = \n")
         assertThat(iosXcconfig(config, "debug")).contains("WL_ADS = on\n")
         assertThat(iosXcconfig(config, "debug")).contains("WL_ADS_TRACKING = yes\n")
+    }
+
+    @Test fun `WL_ADS_DECLARED says whether ads enabled is set, the same in both build types`() {
+        listOf("debug", "release").forEach { buildType ->
+            assertThat(iosXcconfig(app(), buildType)).contains("WL_ADS_DECLARED = false\n")
+            assertThat(iosXcconfig(app().copy(ads = ServiceMode.DEBUG), buildType)).contains("WL_ADS_DECLARED = true\n")
+            val on = app().copy(ads = ServiceMode.ON, adsIosAppId = IOS_ID, adsIosUnits = mapOf("home" to unit))
+            assertThat(iosXcconfig(on, buildType)).contains("WL_ADS_DECLARED = true\n")
+        }
     }
 
     @Test fun `ads in debug mode without an app id writes the test app id in debug only`() {
