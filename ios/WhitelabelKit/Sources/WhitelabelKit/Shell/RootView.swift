@@ -144,7 +144,12 @@ final class AppRuntime {
         if let current { return current }
         if let problem = definition.validationError { fatalError("Invalid app definition: \(problem)") }
         let platform = PlatformFactory.make(bundle: .main)
-        if let problem = definition.serviceProblem(firebaseMode: platform.firebase) { fatalError("Invalid app definition: \(problem)") }
+        #if DEBUG
+        let debugBuild = true
+        #else
+        let debugBuild = false
+        #endif
+        if let problem = definition.serviceProblem(firebaseMode: platform.firebase, debugBuild: debugBuild) { fatalError("Invalid app definition: \(problem)") }
         var useMockApi = false
         var mode = platform.firebase
         #if DEBUG

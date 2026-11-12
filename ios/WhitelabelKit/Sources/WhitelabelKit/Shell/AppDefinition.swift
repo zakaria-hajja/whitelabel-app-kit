@@ -31,12 +31,20 @@ public struct AppDefinition {
 
     /**
      * What stops the app when the Firebase setting (`WL_FIREBASE`: on, fake or off) and the services
-     * disagree, with Android's message; nil when they agree. Firebase on or fake needs a service.
-     * A service with the setting off is fine: the app runs in off mode.
+     * disagree, with Android's message; nil when they agree.
+     * - Setting on or fake without a service: the definition doesn't call firebase().
+     * - A service with the setting off in a debug build: the generator only writes off there when
+     *   `firebase.enabled=false`, so the setting is missing (`debug` gives fake or on in Debug).
+     *   In a release build off is legitimate (`firebase.enabled=debug`): the app runs in off mode.
      */
-    func serviceProblem(firebaseMode: String) -> String? {
-        guard services.isEmpty, firebaseMode == "on" || firebaseMode == "fake" else { return nil }
-        return "firebase.enabled is set but the app definition doesn't call firebase()"
+    func serviceProblem(firebaseMode: String, debugBuild: Bool) -> String? {
+        if services.isEmpty, firebaseMode == "on" || firebaseMode == "fake" {
+            return "firebase.enabled is set but the app definition doesn't call firebase()"
+        }
+        if !services.isEmpty, firebaseMode == "off", debugBuild {
+            return "firebase() needs firebase.enabled=true or debug in app.properties"
+        }
+        return nil
     }
 
     var gate: (any Feature)? { features.first { $0.spec.isGate } }
