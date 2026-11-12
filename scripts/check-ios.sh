@@ -1,6 +1,6 @@
 #!/bin/sh
-# The iOS gate (macOS with Xcode): WhitelabelKit's Swift tests (and showcase's UI tests, as they
-# are added) on a simulator, and a Release build that must not contain the fake backend. The KMP
+# The iOS gate (macOS with Xcode): WhitelabelKit's Swift tests (showcase's UI tests are skipped
+# while the owner's UI-test pause lasts) on a simulator, and a Release build that must not contain the fake backend. The KMP
 # modules' iOS tests run in check.sh.
 # GitHub CI stays Android-only; the pre-push hook runs this on macOS.
 set -eu
@@ -26,8 +26,11 @@ DERIVED=ios/Showcase/build/dd
 (cd ios/Showcase && xcodegen --quiet)
 
 echo "check-ios: Swift tests on $SIMULATOR"
+# UI tests are paused by the owner (they take too long): showcase's XCUITests are skipped until
+# the pause ends. Remove -skip-testing:ShowcaseUITests then.
 xcodebuild -quiet -project ios/Showcase/Showcase.xcodeproj -scheme Showcase \
-  -destination "platform=iOS Simulator,name=$SIMULATOR" -derivedDataPath "$DERIVED" test
+  -destination "platform=iOS Simulator,name=$SIMULATOR" -derivedDataPath "$DERIVED" test \
+  -skip-testing:ShowcaseUITests
 
 echo "check-ios: Release build"
 xcodebuild -quiet -project ios/Showcase/Showcase.xcodeproj -scheme Showcase -configuration Release \
