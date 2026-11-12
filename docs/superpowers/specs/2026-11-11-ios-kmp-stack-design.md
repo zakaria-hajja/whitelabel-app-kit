@@ -172,7 +172,10 @@ KMP modules.
 
 > **Progress (2026-11-11):** step 0 done (#18). Steps 1–4 done as the plan's Parts A–D:
 > #23 (KMP build), #25 (Hilt → Koin), #26 (core modules), and `chore/kmp-features` (feature
-> ViewModels, showcase's iOS framework). Next: step 5, the iOS starter, with its own plan.
+> ViewModels, showcase's iOS framework). Step 5, the iOS starter
+> ([plan](../plans/2026-11-11-ios-starter.md)), in seven PRs: #30 (shell model), #31 (bridge),
+> #32 (design system), #33 (shell and settings), #35 (authentication), #36 (home and profile) and
+> `feat/ios-catalog` (catalog and the parity check), the last three stacked. Next: steps 6–7, Munch.
 
 Each step lands as its own PRs in the right repo, with Android green after every merge.
 

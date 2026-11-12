@@ -10,6 +10,11 @@ business features.
 One app lives here today: `apps/showcase`, the reference app (sign-in, home, catalog, profile and
 settings). New apps are added the same way; see [docs/creating-an-app.md](docs/creating-an-app.md).
 
+**iOS.** Every app also ships on iOS. Rules, data and ViewModels are shared Kotlin (KMP); the
+screens are SwiftUI, from `ios/WhitelabelKit` (the shell, the design system and the same five
+features). Showcase runs on the iOS simulator with the same flows as on Android. Setup, the
+pieces and the iOS gate (`scripts/check-ios.sh`, macOS only): [docs/ios.md](docs/ios.md).
+
 ## Prerequisites
 
 - JDK 17
