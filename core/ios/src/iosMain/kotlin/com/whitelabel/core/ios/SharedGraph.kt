@@ -19,6 +19,7 @@ import com.whitelabel.core.data.di.ApplicationScope
 import com.whitelabel.core.data.di.dataModule
 import com.whitelabel.core.datastore.StorePaths
 import com.whitelabel.core.datastore.TokenCipher
+import com.whitelabel.core.domain.DebugGuestAccount
 import com.whitelabel.core.domain.LanguageRepository
 import com.whitelabel.core.firebase.CollectionSwitch
 import com.whitelabel.core.firebase.FirebaseMode
@@ -95,6 +96,7 @@ object SharedGraph {
     private var debugAnalytics = false
     private var fakeConsent: UmpResult? = fakeConsentResult(DebugConsent.DEFAULT_FAKE_STATE)
     private var mode = FirebaseMode.OFF
+    private var debugGuest: DebugGuestAccount? = null
 
     val isStarted: Boolean get() = KoinPlatform.getKoinOrNull() != null
 
@@ -130,6 +132,20 @@ object SharedGraph {
         debugFake = fake
         debugAnalytics = analytics
         this.fakeConsent = fakeConsentResult(fakeConsent)
+    }
+
+    /**
+     * The account the sign-in screen's "Continue as guest (debug)" uses. Swift calls it before [start]
+     * from Debug-only code (`DebugControls`), so Release never binds one; the fake's own account
+     * replaces it when the fake is linked.
+     */
+    fun useDebugGuest(email: String, password: String) {
+        debugGuest = DebugGuestAccount(email, password)
+    }
+
+    /** Forgets the debug guest account (tests). */
+    fun clearDebugGuest() {
+        debugGuest = null
     }
 
     /** Forgets what Swift handed over (tests). */
@@ -178,6 +194,7 @@ object SharedGraph {
                     listOf(authenticationModule, settingsModule, profileModule, homeModule, catalogModule) +
                     appModules +
                     firebaseModules(firebaseMode) +
+                    listOfNotNull(debugGuest?.let { guest -> module { single { guest } } }) +
                     (if (useMockApi) contributors.flatMap { it.modules() } else emptyList()) +
                     fakeOverrides(firebaseMode),
             )
