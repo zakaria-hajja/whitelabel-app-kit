@@ -1,6 +1,7 @@
 #if DEBUG
 import SwiftUI
 import Shared
+import UserNotifications
 
 /**
  * Debug launch arguments and links for UI tests and manual checks, as Android's debug controls:
@@ -11,6 +12,8 @@ import Shared
  * - `-fakeFeatures catalog=false,profile=true`: the fake's remote flags;
  * - `-fakeConfigDelayMs 5000`: the fake answers the config that late;
  * - `-messageSeconds 10`: one-off messages stay that long (UI tests read them after a gesture);
+ * - `-notificationAccess notAskedYet|granted|blocked`: the notification permission reports that
+ *   status, and asking grants without the system alert (see `NotificationPermission`);
  * - `<scheme>://_fake/offline|online|expire-tokens|revoke-sessions`: steer the running fake;
  * - `<scheme>://_fake/log`: show the fake's recent requests in the `debug.fakeLog` probe.
  *
@@ -37,7 +40,11 @@ struct DebugControls {
         if let file = Self.sessionsFile { try? FileManager.default.removeItem(at: file) }
         if let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
             try? FileManager.default.removeItem(at: support.appendingPathComponent("datastore"))
+            try? FileManager.default.removeItem(at: support.appendingPathComponent("reminders"))
         }
+        // A new install has no scheduled or shown notifications either.
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         cipher.deleteKey()
         IosLanguageRepository().set(languageTag: nil)
     }

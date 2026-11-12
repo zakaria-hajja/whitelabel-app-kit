@@ -120,3 +120,34 @@ settings.
 With a `deepLink`, a tap opens it as an `ACTION_VIEW` intent limited to the app's own package, so
 the app's deep-link handling routes it (see the shell's deep-link scheme). Without one, a tap
 opens the app. The notification disappears when tapped.
+
+## iOS
+
+The same `Reminders` API and engine, on `UNUserNotificationCenter`. Add `iosRemindersModule()` to
+the app's Koin modules (on iOS, `AppDefinition(modules:)`). iOS shows each notification at its time
+without running the app, which changes three things:
+
+- **At most 64 armed.** iOS keeps 64 pending requests per app and silently drops the rest. The
+  module arms the 64 soonest reminders. Later ones wait in the store and are armed as slots free
+  up (any change) and at each launch. An app that plans more than 64 ahead should keep its total
+  under the cap (Munch caps creatures for this) or accept that far-off reminders arm only when the
+  app runs.
+- **Shown reminders.** A reminder whose time has passed and that was armed was shown by iOS: it's
+  no longer pending and is removed silently. One that was never armed (beyond the cap) follows the
+  12-hour late rule at the next launch.
+- **Time zones.** The trigger is the local date and time with no time zone, so 09:00 stays 09:00
+  after a flight, as on Android.
+
+The stores live in `Application Support/reminders/`, excluded from backups as on Android. After a
+restore nothing is pending, so replan with `setAll` at launch.
+
+**Permission:** WhitelabelKit's `NotificationPermission` (see [ios.md](ios.md#platform-pieces-swift)).
+iOS asks once: `.notAskedYet` → `request()` shows the system alert; after a refusal the status is
+`.blocked` and only `openSettings()` helps. There is no Android-style "denied, ask again". Debug
+builds take `-notificationAccess notAskedYet|granted|blocked` for UI tests.
+
+**Taps:** the deep link is in the request's `userInfo["deepLink"]`. WhitelabelKit's
+`ReminderNotifications` opens it through the shell's link handling and shows reminders while the
+app is in the foreground. `-freshInstall` (Debug) also clears the reminders and every scheduled
+notification.
+
