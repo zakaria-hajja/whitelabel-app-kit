@@ -16,6 +16,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.AnalyticsEvents
 import com.whitelabel.core.branding.BrandConfig
+import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.domain.SessionState
@@ -31,6 +32,7 @@ class FoundationActivity : AppCompatActivity() {
     private val definition: AppDefinition by inject()
     private val brand: BrandConfig by inject()
     private val analytics: Analytics by inject()
+    private val consent: Consent by inject()
 
     private val viewModel: ShellViewModel by viewModel()
 
@@ -42,6 +44,12 @@ class FoundationActivity : AppCompatActivity() {
         val hasGate = definition.gateEntry != null
         splash.setKeepOnScreenCondition { !viewModel.state.value.showsContent(hasGate) }
         enableEdgeToEdge()
+        // UMP must run on the main thread with a resumed activity. A post to the decor view runs on
+        // the main thread at the first traversal, after onResume has marked this activity current
+        // and the first frame is drawn, so the form never delays startup. A LaunchedEffect could run
+        // before the activity resumes. Consent runs the gather once per process, so a recreated
+        // activity calling this again does nothing.
+        if (definition.usesFirebase) window.decorView.post { consent.gatherOnLaunch() }
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
             val deepLink by viewModel.pendingDeepLink.collectAsStateWithLifecycle()

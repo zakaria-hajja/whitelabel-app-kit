@@ -21,6 +21,8 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:network"))
     implementation(project(":core:data"))
+    implementation(project(":core:firebase:shared"))
+    implementation(project(":core:consent:shared"))
 
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.okhttp)
