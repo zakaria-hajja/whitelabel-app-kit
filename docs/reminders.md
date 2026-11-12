@@ -138,6 +138,13 @@ without running the app, which changes three things:
 - **Time zones.** The trigger is the local date and time with no time zone, so 09:00 stays 09:00
   after a flight, as on Android.
 
+- **Before permission.** iOS rejects every request until the app is authorized
+  (`UNErrorDomain` 2003), so reminders planned before then (the first add, before the permission
+  ask; a restored phone; notifications switched back on in Settings) aren't armed. Get
+  `IosReminders` from Koin and call `rearmAll()` whenever notifications are allowed: on a grant and
+  each return to the foreground. It hands every wanted reminder to the system again, which replaces
+  what's already there.
+
 The stores live in `Application Support/reminders/`, excluded from backups as on Android. After a
 restore nothing is pending, so replan with `setAll` at launch.
 

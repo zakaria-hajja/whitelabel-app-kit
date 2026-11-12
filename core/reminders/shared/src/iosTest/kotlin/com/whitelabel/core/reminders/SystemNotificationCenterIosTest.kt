@@ -56,7 +56,7 @@ class SystemNotificationCenterIosTest {
         val dir = (NSTemporaryDirectory() + "reminders-" + NSUUID().UUIDString).toPath()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         try {
-            val reminders = openIosReminders(dir, SilentCenter(), scope)
+            val reminders = openIosReminders(dir, SilentCenter(), scope).reminders
             reminders.schedule(Reminder("a", LocalDateTime(2099, 1, 1, 9, 0), "c", "t", "x", null))
 
             assertThat(FileSystem.SYSTEM.exists(dir / "reminders.json")).isEqualTo(true)
@@ -77,3 +77,42 @@ private class SilentCenter : NotificationCenter {
     override fun removePending(ids: List<String>) = Unit
     override fun removeDelivered(ids: List<String>) = Unit
 }
+
+/**
+ * iOS rejects every request until the app is authorized (UNErrorDomain 2003): what was planned before
+ * (the first add, a restored phone, notifications switched back on in Settings) is armed again on
+ * `rearmAll()`, which the app calls once notifications are allowed.
+ */
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+class IosRemindersRearmTest {
+    @Test fun rearmAll_armsWhatIosRejectedBeforeAuthorization() = runTest {
+        val dir = (NSTemporaryDirectory() + "reminders-" + NSUUID().UUIDString).toPath()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val center = AuthorizingCenter()
+        try {
+            val ios = openIosReminders(dir, center, scope)
+            ios.reminders.schedule(Reminder("a", LocalDateTime(2099, 1, 1, 9, 0), "c", "t", "x", "app://a"))
+            assertThat(center.pending.keys.toList()).isEqualTo(emptyList<String>())
+
+            center.authorized = true
+            ios.rearmAll()
+
+            assertThat(center.pending.keys.toList()).isEqualTo(listOf("a"))
+        } finally {
+            scope.cancel()
+            FileSystem.SYSTEM.deleteRecursively(dir)
+        }
+    }
+}
+
+/** Like UNUserNotificationCenter: an add before authorization is dropped. */
+private class AuthorizingCenter : NotificationCenter {
+    var authorized = false
+    val pending = mutableMapOf<String, CenterRequest>()
+    override fun add(request: CenterRequest) {
+        if (authorized && request.at != null) pending[request.id] = request
+    }
+    override fun removePending(ids: List<String>) { ids.forEach { pending.remove(it) } }
+    override fun removeDelivered(ids: List<String>) = Unit
+}
+
