@@ -35,8 +35,8 @@ struct CrashRule {
 
 /**
  * The shared `CollectionSwitch`: turns Firebase's collection on or off. The app's Info.plist starts
- * everything off; Kotlin applies nothing while consent is Unknown, so the persisted flags carry the
- * last consent applied.
+ * everything off. While consent is Unknown, Kotlin applies nothing in Release (the persisted flags
+ * carry the last consent applied); a Debug build without `-analyticsDebug` applies all-off at start.
  */
 final class FirebaseCollectionSwitch: NSObject, CollectionSwitch {
     private let crashRule: CrashRule
