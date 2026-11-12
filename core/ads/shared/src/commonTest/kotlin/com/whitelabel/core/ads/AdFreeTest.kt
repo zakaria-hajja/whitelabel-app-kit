@@ -8,7 +8,9 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import okio.Path.Companion.toPath
@@ -85,6 +87,28 @@ class AdFreeTest {
         adFree(process1).grantUntil(at(4))
         process1.cancel()
         val reopened = adFree()
+        assertThat(reopened.state.value).isEqualTo(AdFreeState.Active(at(4)))
+    }
+
+    @Test
+    fun `state reflects a grant immediately`() = runTest {
+        val adFree = AdFree(path, clock, CoroutineScope(StandardTestDispatcher(testScheduler) + Job()), fileSystem)
+        adFree.grantUntil(at(2))
+        assertThat(adFree.state.value).isEqualTo(AdFreeState.Active(at(2)))
+        adFree.extend(1.hours)
+        assertThat(adFree.state.value).isEqualTo(AdFreeState.Active(at(3)))
+    }
+
+    @Test
+    fun `loaded turns true after the first read and state then shows the persisted window`() = runTest {
+        val process1 = Job()
+        adFree(process1).grantUntil(at(4))
+        process1.cancel()
+        val reopened = AdFree(path, clock, CoroutineScope(StandardTestDispatcher(testScheduler) + Job()), fileSystem)
+        assertThat(reopened.loaded.value).isEqualTo(false)
+        assertThat(reopened.state.value).isEqualTo(AdFreeState.Inactive)
+        advanceUntilIdle()
+        assertThat(reopened.loaded.value).isEqualTo(true)
         assertThat(reopened.state.value).isEqualTo(AdFreeState.Active(at(4)))
     }
 }

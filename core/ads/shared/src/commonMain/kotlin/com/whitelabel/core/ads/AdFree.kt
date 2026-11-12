@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
@@ -32,8 +34,23 @@ class AdFree(path: Path, private val clock: Clock, scope: CoroutineScope, fileSy
     private val store = JsonStore(path, StoredAdFree.serializer(), StoredAdFree(), scope, fileSystem)
     private val until = MutableStateFlow<Instant?>(null)
 
+    private val isLoaded = MutableStateFlow(false)
+
+    /** False until the stored window has been read once; treat "not loaded" as ads hidden. */
+    val loaded: StateFlow<Boolean> = isLoaded.asStateFlow()
+
     init {
-        scope.launch { store.data.collect { until.value = it.untilEpochMillis?.let(Instant::fromEpochMilliseconds) } }
+        scope.launch {
+            store.data.collect { doc ->
+                // Windows only grow, so never let a stale stored value undo a grant made in memory.
+                publish(doc.untilEpochMillis?.let(Instant::fromEpochMilliseconds))
+                isLoaded.value = true
+            }
+        }
+    }
+
+    private fun publish(end: Instant?) {
+        if (end != null) until.update { cur -> if (cur == null || end > cur) end else cur }
     }
 
     /** Re-evaluated against the clock on every read, and on collect also when the window ends. */
@@ -41,19 +58,27 @@ class AdFree(path: Path, private val clock: Clock, scope: CoroutineScope, fileSy
 
     /** Sets the window end to [until], but never shortens an active window. */
     suspend fun grantUntil(until: Instant) {
+        var written = until
         store.update { cur ->
             val keep = cur.untilEpochMillis?.let(Instant::fromEpochMilliseconds)
-            cur.copy(untilEpochMillis = maxOf(until, keep ?: until).toEpochMilliseconds())
+            written = maxOf(until, keep ?: until)
+            cur.copy(untilEpochMillis = written.toEpochMilliseconds())
         }
+        publish(written)
+        isLoaded.value = true
     }
 
     /** Adds [by] to the later of now and the current end. */
     suspend fun extend(by: Duration) {
+        var written = clock.now()
         store.update { cur ->
             val current = cur.untilEpochMillis?.let(Instant::fromEpochMilliseconds)
             val now = clock.now()
-            cur.copy(untilEpochMillis = (maxOf(now, current ?: now) + by).toEpochMilliseconds())
+            written = maxOf(now, current ?: now) + by
+            cur.copy(untilEpochMillis = written.toEpochMilliseconds())
         }
+        publish(written)
+        isLoaded.value = true
     }
 
     private fun evaluate(end: Instant?): AdFreeState =
