@@ -8,6 +8,8 @@ import SwiftUI
  */
 public struct DesignSystemCatalog: View {
     @State private var dark: Bool
+    @State private var banner: BannerItem?
+    @State private var undone = 0
 
     public init(dark: Bool = false) { _dark = State(initialValue: dark) }
 
@@ -18,6 +20,11 @@ public struct DesignSystemCatalog: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.xl) {
                     Toggle("Dark", isOn: $dark)
+                    // The action banner (Undo after a delete), shown over the catalog.
+                    Button("Show undo banner") {
+                        banner = BannerItem(text: "Item deleted", actionTitle: "Undo") { undone += 1 }
+                    }
+                    Text("Undone: \(undone)")
                     ForEach(styles, id: \.pack.name) { style in
                         PackSection(style: style).appStyle(style)
                     }
@@ -26,6 +33,7 @@ public struct DesignSystemCatalog: View {
             }
             .navigationTitle("Design system")
         }
+        .actionBanner($banner)
         .preferredColorScheme(dark ? .dark : .light)
     }
 }

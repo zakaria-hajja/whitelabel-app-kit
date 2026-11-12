@@ -22,6 +22,19 @@ final class DesignCatalogUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Primary action"].firstMatch.waitForExistence(timeout: 10))
     }
 
+    /** The action banner's button runs its action once and hides the banner. */
+    func testActionBannerUndoRunsItsAction() {
+        let show = app.buttons["Show undo banner"]
+        XCTAssertTrue(show.waitForExistence(timeout: 10))
+        show.tap()
+        let undo = app.buttons["banner.action"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["banner.text"].label, "Item deleted")
+        undo.tap()
+        XCTAssertTrue(app.staticTexts["Undone: 1"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["banner.action"].exists)
+    }
+
     /** VoiceOver reads what was typed as the field's value, and the error as its own element right after. */
     func testATextFieldKeepsItsTextAndAnnouncesItsError() {
         let email = app.textFields["Email"].firstMatch
