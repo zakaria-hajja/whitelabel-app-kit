@@ -44,6 +44,13 @@ internal fun firebaseModeFor(
 }
 
 /**
+ * Whether the shell's uncaught-exception handler records the crash through the app's CrashReporter.
+ * Not with Firebase on: Crashlytics' own handler, which the shell's chains to, reports it as the fatal
+ * crash, and recording it too would add a non-fatal copy of every crash.
+ */
+internal fun recordsUncaughtCrashes(mode: FirebaseMode): Boolean = mode != FirebaseMode.ON
+
+/**
  * What a `fake-consent-<state>` marker answers: `obtained` (default), `declined` (the form was
  * answered with every purpose refused), `failed` (the gather fails) or `notRequired`.
  */

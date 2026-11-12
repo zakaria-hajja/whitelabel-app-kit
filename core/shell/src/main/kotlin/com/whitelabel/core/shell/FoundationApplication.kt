@@ -6,6 +6,7 @@ import com.whitelabel.core.data.di.ApplicationScope
 import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.shell.brand.firebaseWiringFor
 import com.whitelabel.core.shell.brand.foundationModules
+import com.whitelabel.core.shell.brand.recordsUncaughtCrashes
 import java.util.ServiceLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.job
@@ -20,19 +21,22 @@ import org.koin.core.context.stopKoin
  * `class MyApp : FoundationApplication() { override fun definition() = myDefinition() }`.
  * Starts the app's Koin graph from that definition (plus any classpath [ModuleContributor], such
  * as the mock backend). Uncaught exceptions are recorded with the app's [CrashReporter] before
- * the default handler runs.
+ * the default handler runs, except with Firebase on, where Crashlytics' handler reports them.
  */
 abstract class FoundationApplication : Application() {
 
     /** Everything the app contains, built with `appDefinition { … }`. */
     abstract fun definition(): AppDefinition
 
+    /** Whether the uncaught-exception handler records through [CrashReporter]; set by [startFoundation]. */
+    @Volatile private var recordUncaught = true
+
     override fun onCreate() {
         super.onCreate()
         startFoundation()
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
-            runCatching { GlobalContext.get().get<CrashReporter>().record(throwable) }
+            if (recordUncaught) runCatching { GlobalContext.get().get<CrashReporter>().record(throwable) }
             previous?.uncaughtException(thread, throwable)
         }
     }
@@ -42,6 +46,7 @@ abstract class FoundationApplication : Application() {
         val contributors = ServiceLoader.load(ModuleContributor::class.java, javaClass.classLoader).toList()
         val definition = definition()
         val firebase = firebaseWiringFor(this, definition, contributors)
+        recordUncaught = recordsUncaughtCrashes(firebase.mode)
         startKoin {
             androidContext(this@FoundationApplication)
             modules(foundationModules(definition, contributors, firebase))

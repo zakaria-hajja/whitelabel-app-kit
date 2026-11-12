@@ -18,6 +18,7 @@ import com.whitelabel.core.firebase.FirebaseMode
 import com.whitelabel.core.shell.brand.FirebaseWiring
 import com.whitelabel.core.shell.brand.fakeConsentResult
 import com.whitelabel.core.shell.brand.firebaseContributorPresent
+import com.whitelabel.core.shell.brand.recordsUncaughtCrashes
 import com.whitelabel.core.firebase.FirebaseServicesContributor
 import com.whitelabel.core.shell.brand.firebaseModeFor
 import com.whitelabel.core.shell.brand.foundationModules
@@ -67,6 +68,17 @@ class FirebaseWiringTest {
         val mock = com.whitelabel.core.network.ModuleContributor { emptyList() }
         assertThat(firebaseContributorPresent(listOf(mock))).isEqualTo(false)
         assertThat(firebaseContributorPresent(emptyList())).isEqualTo(false)
+    }
+
+    // uncaught crashes
+
+    @Test fun `with firebase on, crashlytics' own handler reports an uncaught crash, so the shell doesn't`() {
+        assertThat(recordsUncaughtCrashes(FirebaseMode.ON)).isEqualTo(false)
+    }
+
+    @Test fun `off and fake record an uncaught crash through the app's reporter`() {
+        assertThat(recordsUncaughtCrashes(FirebaseMode.OFF)).isEqualTo(true)
+        assertThat(recordsUncaughtCrashes(FirebaseMode.FAKE)).isEqualTo(true)
     }
 
     // startup checks
