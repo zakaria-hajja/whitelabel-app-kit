@@ -159,6 +159,9 @@ final class AppRuntime {
         #endif
         let runtime = AppRuntime(definition: definition, brand: platform.brand, shellViewModel: SharedGraph.shared.shellViewModel())
         current = runtime
+        // A tapped reminder opens its link like any other incoming link.
+        ReminderNotifications.shared.install()
+        ReminderNotifications.shared.connect { [weak runtime] in runtime?.open($0) }
         return runtime
     }
 
