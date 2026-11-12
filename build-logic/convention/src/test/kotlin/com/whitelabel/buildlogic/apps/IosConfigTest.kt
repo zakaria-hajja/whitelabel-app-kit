@@ -162,11 +162,11 @@ class IosConfigTest {
         }
     }
 
-    @Test fun `ads in debug mode without an app id writes the test app id in debug only`() {
+    @Test fun `ads in debug mode without an app id writes the test app id in both build types`() {
         val config = app().copy(ads = ServiceMode.DEBUG)
 
         assertThat(iosXcconfig(config, "debug")).contains("WL_ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511\n")
-        assertThat(iosXcconfig(config, "release")).contains("WL_ADMOB_APP_ID = \n")
+        assertThat(iosXcconfig(config, "release")).contains("WL_ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511\n")
     }
 
     @Test fun `a real ios app id is kept in debug when ads are on`() {

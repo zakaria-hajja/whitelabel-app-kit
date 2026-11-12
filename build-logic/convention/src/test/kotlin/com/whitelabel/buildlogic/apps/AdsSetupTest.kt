@@ -103,7 +103,14 @@ class AdsSetupTest {
         assertThat(adsSetup(ServiceMode.DEBUG, null, units, Platform.ANDROID, "apps/sample").admobAppIdFor)
             .isEqualTo(mapOf("debug" to TEST_APP_ID))
         assertThat(adsSetup(ServiceMode.DEBUG, null, units, Platform.IOS, "apps/sample").admobAppIdFor)
-            .isEqualTo(mapOf("debug" to IOS_TEST_APP_ID))
+            .isEqualTo(mapOf("debug" to IOS_TEST_APP_ID, "release" to IOS_TEST_APP_ID))
+    }
+
+    @Test fun `debug mode on ios keeps a real app id in release too, android release has none`() {
+        assertThat(adsSetup(ServiceMode.DEBUG, APP_ID, units, Platform.IOS, "apps/sample").admobAppIdFor)
+            .isEqualTo(mapOf("debug" to APP_ID, "release" to APP_ID))
+        assertThat(adsSetup(ServiceMode.DEBUG, null, units, Platform.ANDROID, "apps/sample").admobAppIdFor.keys)
+            .isEqualTo(setOf("debug"))
     }
 
     @Test fun `debug with no units at all passes`() {

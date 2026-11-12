@@ -3,7 +3,8 @@ package com.whitelabel.core.ads
 /**
  * The platform an [adsWiring] runs on: it names the property keys in errors and gives Google's
  * public adaptive banner test unit (developers.google.com/admob/android/test-ads and
- * developers.google.com/admob/ios/test-ads, checked 2026-11-12).
+ * developers.google.com/admob/ios/test-ads, checked 2026-11-12). The build-time copy of these
+ * units (and the test app IDs) is `Platform` in build-logic's `AdsSetup.kt`; keep the two in sync.
  */
 enum class AdsPlatform(val bannerKeyPrefix: String, val testBannerUnit: String) {
     ANDROID("ads.android.banner.", "ca-app-pub-3940256099942544/9214589741"),

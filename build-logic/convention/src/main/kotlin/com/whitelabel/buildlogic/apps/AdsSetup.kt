@@ -3,6 +3,7 @@ package com.whitelabel.buildlogic.apps
 /** The platform an [adsSetup] is for: it picks the test IDs and the property keys named in errors. */
 enum class Platform(val appIdKey: String, val unitKeyPrefix: String, val testAppId: String, val testBannerUnit: String) {
     // Google's public test IDs (https://developers.google.com/admob/android/test-ads and .../ios/test-ads).
+    // The runtime copy of the banner units is AdsPlatform in core/ads; keep the two in sync.
     ANDROID("ads.android.appId", "ads.android.banner.", "ca-app-pub-3940256099942544~3347511713", "ca-app-pub-3940256099942544/9214589741"),
     IOS("ads.ios.appId", "ads.ios.banner.", "ca-app-pub-3940256099942544~1458002511", "ca-app-pub-3940256099942544/2435281174"),
 }
@@ -58,7 +59,12 @@ fun adsSetup(mode: ServiceMode, appId: String?, units: Map<String, String>, plat
         ServiceMode.DEBUG -> AdsSetup(
             "debugImplementation", mapOf("debug" to "on", "release" to "off"),
             mapOf("debug" to testUnits, "release" to none),
-            mapOf("debug" to (appId?.takeIf { it.isNotBlank() } ?: platform.testAppId)),
+            // iOS links GoogleMobileAds in every configuration (SPM can't drop it per configuration), and the SDK
+            // can stop the app at launch without an app ID, so Release carries the real ID or the test one there.
+            // Android Release has no SDK linked, so it publishes none.
+            (appId?.takeIf { it.isNotBlank() } ?: platform.testAppId).let { id ->
+                if (platform == Platform.IOS) mapOf("debug" to id, "release" to id) else mapOf("debug" to id)
+            },
         )
     }
 }
