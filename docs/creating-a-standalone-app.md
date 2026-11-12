@@ -30,7 +30,7 @@ myapp/
 
 ```sh
 git init -b main myapp && cd myapp
-git submodule add https://github.com/zakaria-hajja/android-starter.git foundation
+git submodule add https://github.com/zakaria-hajja/whitelabel-app-kit.git foundation
 mkdir -p gradle && cp foundation/gradlew . && cp -R foundation/gradle/wrapper gradle/
 cp foundation/gradle.properties .
 ```
@@ -118,31 +118,16 @@ with `JsonStore` under `jsonStoreFile(name)` to get this for free.
 ## 7. CI
 
 The app repo gets the same rules and checks as the foundation (Conventional Commits, `.githooks/`,
-a `scripts/check.sh`, the `ci` job). Check out the app repo with the job's own token, fetch the
-private foundation with a secret used for that one command, then build and verify the APK. This is
-the setup Munch runs:
+a `scripts/check.sh`, the `ci` job). The foundation is a public repo, so checkout fetches it with
+the submodule and no token is needed. Then build and verify the APK:
 
 ```yaml
-      # FOUNDATION_READ_TOKEN: a fine-grained token with Contents: read on the foundation repo only.
-      - name: Require FOUNDATION_READ_TOKEN
-        env:
-          T: ${{ secrets.FOUNDATION_READ_TOKEN }}
-        run: |
-          if [ -z "$T" ]; then
-            echo "::error::Secret FOUNDATION_READ_TOKEN is not set. Add a fine-grained token with read access to the foundation repo (repo Settings > Secrets > Actions)."
-            exit 1
-          fi
-      - name: Checkout
+      - name: Checkout (with the foundation submodule)
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          submodules: true
           persist-credentials: false      # nothing later needs the job token
-      - name: Fetch the foundation submodule
-        env:
-          T: ${{ secrets.FOUNDATION_READ_TOKEN }}
-        run: |
-          git -c "http.https://github.com/zakaria-hajja/android-starter.git/.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$T" | base64 -w0)" \
-            submodule update --init foundation
       # setup-java (17) and setup-gradle as in the foundation's ci.yml
       - run: scripts/check.sh
       - run: ./gradlew :app:assembleDebug :app:assembleRelease
@@ -154,10 +139,6 @@ the setup Munch runs:
 `verify-apps.sh --apk` checks package, label, version, deep-link scheme and the generated config
 resources against `app.properties`. The checks that compare apps with each other only run inside
 the foundation.
-
-The secret is used only on the submodule command, scoped to the foundation's URL, so it never
-lands in the saved git config. A token that can't read the foundation fails that step with
-`403 … Write access to repository not granted` (GitHub's wording for "no access").
 
 ## 8. Working on the foundation from an app
 
