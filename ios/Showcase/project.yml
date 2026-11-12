@@ -5,7 +5,6 @@ include:
   - ../WhitelabelKit/WhitelabelKit.yml
   - ../WhitelabelConsent/WhitelabelConsent.yml
   - ../WhitelabelFirebase/WhitelabelFirebase.yml
-  # Only for WhitelabelAdsTests: the showcase app itself doesn't link the ads target (no ads yet).
   - ../WhitelabelAds/WhitelabelAds.yml
 configFiles:
   Debug: Config/Debug.generated.xcconfig
@@ -25,8 +24,9 @@ targets:
   Showcase:
     type: application
     platform: iOS
-    # The Firebase and consent targets, their packages and the dSYM upload (WhitelabelFirebase.yml).
-    templates: [WhitelabelFirebaseApp]
+    # The Firebase and consent targets, their packages and the dSYM upload (WhitelabelFirebase.yml), and the
+    # ads target with the ads keys in the built Info.plist (WhitelabelAds.yml).
+    templates: [WhitelabelFirebaseApp, WhitelabelAdsApp]
     sources:
       - Showcase
       # The kit's screen labels: a static framework's resources ship through the app.
