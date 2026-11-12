@@ -4,10 +4,12 @@
 
 Applies to everyone working in this repo (the owner and Claude). These are the same rules as
 `backend-api`. They are enforced by `.githooks/` and CI (`.github/workflows/ci.yml`, job
-`ci`). Install the hooks once per clone with `git config core.hooksPath .githooks`. If the repo
-is private on a free plan, GitHub cannot enforce branch protection; merging only with a green
-`ci` check is then a rule we keep, not one GitHub blocks. `scripts/github-protect.sh owner/repo`
-applies the merge settings, and also branch protection where the plan allows it.
+`ci`). Install the hooks once per clone with `git config core.hooksPath .githooks`. The repo is
+public, so GitHub enforces branch protection on `main` too: changes land through a PR, the `ci`
+check must pass before merging (admins included), and force-pushes and deletion are blocked.
+`scripts/github-protect.sh owner/repo` applies these settings; re-run it if they drift. On a
+private repo on a free plan, GitHub only applies the merge settings, and a green `ci` before
+merging is a rule we keep rather than one GitHub blocks.
 
 1. **Commits**: Conventional Commits, `type(scope): summary`.
    - Types: `feat fix refactor test docs chore ci perf build revert`.
