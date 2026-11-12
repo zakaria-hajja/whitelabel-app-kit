@@ -32,6 +32,7 @@ public final class UmpConsentPort: NSObject, ConsentPort {
         if LaunchFlags.consentEEA {
             let debug = DebugSettings()
             debug.geography = .EEA
+            debug.testDeviceIdentifiers = LaunchFlags.consentTestDevices
             parameters.debugSettings = debug
         }
         info.requestConsentInfoUpdate(with: parameters) { error in

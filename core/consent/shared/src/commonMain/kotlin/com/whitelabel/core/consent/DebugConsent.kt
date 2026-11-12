@@ -4,9 +4,15 @@ package com.whitelabel.core.consent
 object DebugConsent {
     /**
      * Android's marker file (under `filesDir/debug`) that forces UMP's EEA geography and resets the
-     * stored consent before gathering. iOS uses the `-consentEEA` launch argument.
+     * stored consent before gathering. iOS uses the `-consentEEA` launch argument. UMP only honors
+     * the EEA geography on registered test devices: the marker's contents (Android) or
+     * `-consentTestDevice <ids>` (iOS) list them, as UMP logs them ("addTestDeviceHashedId(...)").
      */
     const val EEA_MARKER = "consent-eea"
+
+    /** UMP test-device hashed IDs from a marker's contents or a launch argument: comma or whitespace separated. */
+    fun testDeviceIds(raw: String?): List<String> =
+        raw.orEmpty().split(',', ' ', '\n', '\t', '\r').map { it.trim() }.filter { it.isNotEmpty() }
 
     /** What the fake consent answers when nothing says otherwise. */
     const val DEFAULT_FAKE_STATE = "obtained"

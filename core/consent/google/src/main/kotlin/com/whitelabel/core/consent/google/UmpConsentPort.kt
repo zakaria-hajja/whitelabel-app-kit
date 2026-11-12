@@ -25,6 +25,8 @@ class UmpConsentPort(
     context: Context,
     private val activity: CurrentActivity,
     private val debugGeographyEea: Boolean,
+    /** UMP test devices (Debug, from the marker): UMP honors the EEA geography only on these. */
+    private val testDeviceIds: List<String> = emptyList(),
 ) : ConsentPort {
     private val appContext = context.applicationContext
     private val info: ConsentInformation get() = UserMessagingPlatform.getConsentInformation(appContext)
@@ -42,6 +44,7 @@ class UmpConsentPort(
                 setConsentDebugSettings(
                     ConsentDebugSettings.Builder(appContext)
                         .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                        .apply { testDeviceIds.forEach(::addTestDeviceHashedId) }
                         .build(),
                 )
             }

@@ -82,7 +82,7 @@ Needs a fresh install (uninstall, or clear the app data) so the first launch is 
 
 | Step | Android | iOS |
 |---|---|---|
-| Fresh install with the switch: marker `consent-eea` (touch it before the first launch, after `adb install`; run-as needs the app installed) / argument `-consentEEA`, and `analytics-debug` / `-analyticsDebug` so events are visible | | |
+| Fresh install with the switch: marker `consent-eea` containing the device's UMP test ID (write it before the first launch, after `adb install`; run-as needs the app installed; UMP logs the ID) / arguments `-consentEEA -consentTestDevice <ID>`, and `analytics-debug` / `-analyticsDebug` so events are visible | | |
 | The form appears on the first launch, after the first screen (not over the splash) | | |
 | Before answering, no event reaches DebugView | | |
 | After answering (consent): events start; Settings > Firebase shows the "Privacy choices" row | | |

@@ -21,11 +21,13 @@ class ConsentContributor : ModuleContributor {
             single<ConsentPort> {
                 val context = androidContext()
                 val debuggable = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+                // Debug only: a release build never reads the marker. Its contents list UMP test devices.
+                val marker = File(context.filesDir, "debug/${DebugConsent.EEA_MARKER}").takeIf { debuggable && it.exists() }
                 UmpConsentPort(
                     context,
                     get(),
-                    // Debug only: a release build never reads the marker.
-                    debugGeographyEea = debuggable && File(context.filesDir, "debug/${DebugConsent.EEA_MARKER}").exists(),
+                    debugGeographyEea = marker != null,
+                    testDeviceIds = DebugConsent.testDeviceIds(marker?.readText()),
                 )
             }
         },
