@@ -10,6 +10,8 @@ import com.whitelabel.core.branding.BrandConfig
 import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.data.di.androidDataModule
 import com.whitelabel.core.data.di.dataModule
+import com.whitelabel.core.domain.remote.DefaultsOnlyRemoteValues
+import com.whitelabel.core.domain.remote.RemoteValues
 import com.whitelabel.core.network.EngineOverride
 import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.network.NetworkConfig
@@ -54,6 +56,7 @@ internal fun shellModule(definition: AppDefinition) = module {
     single<CrashReporter> {
         definition.crashReporter ?: LoggingCrashReporter { message, throwable -> Log.e("Crash", message, throwable) }
     }
+    single<RemoteValues> { DefaultsOnlyRemoteValues }
     single<HealthDataSource> { KtorHealthDataSource(get()) }
     viewModel { BrandPreviewViewModel(get(), get(), get(named(USING_MOCK_API))) }
 }

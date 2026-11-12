@@ -13,6 +13,8 @@ import com.whitelabel.core.data.di.dataModule
 import com.whitelabel.core.datastore.StorePaths
 import com.whitelabel.core.datastore.TokenCipher
 import com.whitelabel.core.domain.LanguageRepository
+import com.whitelabel.core.domain.remote.DefaultsOnlyRemoteValues
+import com.whitelabel.core.domain.remote.RemoteValues
 import com.whitelabel.core.network.EngineOverride
 import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.network.NetworkConfig
@@ -145,6 +147,7 @@ object SharedGraph {
             )
         }
         single<HttpClientEngine> { getOrNull<EngineOverride>()?.engine() ?: defaultHttpEngine() }
+        single<RemoteValues> { DefaultsOnlyRemoteValues }
         single<Analytics> { LoggingAnalytics(platform.logger) }
         single<CrashReporter> { LoggingCrashReporter { message, throwable -> platform.logger("$message: $throwable") } }
     }
