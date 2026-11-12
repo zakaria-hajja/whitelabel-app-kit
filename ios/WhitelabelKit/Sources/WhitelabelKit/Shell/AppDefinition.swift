@@ -11,11 +11,13 @@ public struct AppDefinition {
     public let startTab: String?
     public let modules: [Koin_coreModule]
     public let features: [any Feature]
+    public let services: [any AppService]
 
-    public init(style: StylePack, startTab: String? = nil, modules: [Koin_coreModule] = [], @FeatureBuilder _ features: () -> [any Feature]) {
+    public init(style: StylePack, startTab: String? = nil, modules: [Koin_coreModule] = [], services: [any AppService] = [], @FeatureBuilder _ features: () -> [any Feature]) {
         self.style = style
         self.startTab = startTab
         self.modules = modules
+        self.services = services
         self.features = features()
     }
 
@@ -26,6 +28,16 @@ public struct AppDefinition {
 
     /** What the shared rules reject in this definition, or nil when it's valid. */
     public var validationError: String? { spec.validationError() }
+
+    /**
+     * What stops the app when the Firebase setting (`WL_FIREBASE`: on, fake or off) and the services
+     * disagree, with Android's message; nil when they agree. Firebase on or fake needs a service.
+     * A service with the setting off is fine: the app runs in off mode.
+     */
+    func serviceProblem(firebaseMode: String) -> String? {
+        guard services.isEmpty, firebaseMode == "on" || firebaseMode == "fake" else { return nil }
+        return "firebase.enabled is set but the app definition doesn't call firebase()"
+    }
 
     var gate: (any Feature)? { features.first { $0.spec.isGate } }
 

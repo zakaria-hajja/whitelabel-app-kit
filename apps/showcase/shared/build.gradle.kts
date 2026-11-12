@@ -13,7 +13,8 @@ plugins {
 // reusable Swift kit (ios/WhitelabelKit) imports the same module whatever the app.
 val exported = listOf(
     ":core:common", ":core:domain", ":core:presentation", ":core:data", ":core:network", ":core:datastore",
-    ":core:branding", ":core:analytics", ":core:shell:shared", ":core:ios",
+    ":core:branding", ":core:analytics", ":core:consent:shared",
+    ":core:firebase:shared", ":core:shell:shared", ":core:ios",
     ":feature:authentication:shared", ":feature:settings:shared", ":feature:profile:shared",
     ":feature:home:shared", ":feature:catalog:shared",
 )

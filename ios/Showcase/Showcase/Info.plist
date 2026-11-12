@@ -24,5 +24,6 @@
 	<key>WLPrivacyPolicyUrl</key><string>$(WL_PRIVACY_POLICY_URL)</string>
 	<key>WLTermsUrl</key><string>$(WL_TERMS_URL)</string>
 	<key>WLDefaultFeatures</key><string>$(WL_DEFAULT_FEATURES)</string>
+	<key>WLFirebase</key><string>$(WL_FIREBASE)</string>
 </dict>
 </plist>

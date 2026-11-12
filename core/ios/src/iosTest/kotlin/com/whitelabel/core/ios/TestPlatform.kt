@@ -15,7 +15,7 @@ import platform.Foundation.NSUUID
 
 fun testDir(): Path = (NSTemporaryDirectory() + "core-ios-" + NSUUID().UUIDString).toPath().also { FileSystem.SYSTEM.createDirectories(it) }
 
-fun testPlatform(dir: Path, apiBaseUrl: String? = "https://example.invalid/api/v1/") = IosPlatform(
+fun testPlatform(dir: Path, apiBaseUrl: String? = "https://example.invalid/api/v1/", firebase: String = "off") = IosPlatform(
     tokenCipher = object : TokenCipher {
         override fun encrypt(plain: ByteArray) = Sealed(ByteArray(12), plain)
         override fun decrypt(sealed: Sealed) = sealed.ciphertext
@@ -31,4 +31,5 @@ fun testPlatform(dir: Path, apiBaseUrl: String? = "https://example.invalid/api/v
         runtimeDefaults = RuntimeDefaults(supportEmail = null, privacyPolicyUrl = "", termsUrl = "", enabledFeatures = emptySet()),
     ),
     logger = {},
+    firebase = firebase,
 )
