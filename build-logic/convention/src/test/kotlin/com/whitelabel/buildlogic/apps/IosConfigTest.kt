@@ -3,6 +3,7 @@ package com.whitelabel.buildlogic.apps
 import assertk.assertThat
 import assertk.assertions.contains
 import assertk.assertions.doesNotContain
+import assertk.assertions.isEqualTo
 import java.io.File
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -65,5 +66,15 @@ class IosConfigTest {
         }
 
         assertThat(e.message!!).contains("apps/showcase: firebase.enabled=true needs GoogleService-Info.plist")
+    }
+
+    @Test fun `an app without firebase gets no crash hook and no firebase exports`() {
+        assertThat(iosFirebaseFramework(ServiceMode.OFF)).isEqualTo(IosFirebaseFramework(crashLinkPlugin = false, exports = emptyList()))
+    }
+
+    @Test fun `an app with firebase on or in debug gets the crash hook and the firebase exports`() {
+        val withFirebase = IosFirebaseFramework(crashLinkPlugin = true, exports = listOf(":core:firebase:shared", ":core:consent:shared"))
+        assertThat(iosFirebaseFramework(ServiceMode.ON)).isEqualTo(withFirebase)
+        assertThat(iosFirebaseFramework(ServiceMode.DEBUG)).isEqualTo(withFirebase)
     }
 }

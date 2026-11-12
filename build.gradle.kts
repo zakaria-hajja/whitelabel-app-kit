@@ -14,4 +14,5 @@ plugins {
     alias(libs.plugins.android.junit5) apply false
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.firebase.crashlytics) apply false
+    alias(libs.plugins.crashkios.crashlyticslink) apply false
 }

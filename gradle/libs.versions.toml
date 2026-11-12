@@ -34,6 +34,8 @@ skie = "0.10.16"
 firebaseBom = "34.19.0"
 googleServices = "4.6.0"
 firebaseCrashlyticsGradle = "3.0.8"
+# Kotlin crashes on iOS reach Crashlytics with Kotlin frames (apps with Firebase only)
+crashkios = "0.10.1"
 
 [libraries]
 # Gradle plugins used by build-logic
@@ -107,6 +109,9 @@ firebase-config = { module = "com.google.firebase:firebase-config" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 
+# CrashKiOS: the Kotlin crash hook for Crashlytics on iOS
+crashkios-crashlytics = { module = "co.touchlab.crashkios:crashlytics", version.ref = "crashkios" }
+
 # Koin
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
@@ -140,3 +145,4 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 android-junit5 = { id = "de.mannodermaus.android-junit5", version.ref = "androidJunit5" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsGradle" }
+crashkios-crashlyticslink = { id = "co.touchlab.crashkios.crashlyticslink", version.ref = "crashkios" }

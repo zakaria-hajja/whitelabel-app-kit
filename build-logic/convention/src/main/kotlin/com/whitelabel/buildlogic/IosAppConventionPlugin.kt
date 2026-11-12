@@ -1,6 +1,7 @@
 package com.whitelabel.buildlogic
 
 import com.whitelabel.buildlogic.apps.AppConfigLoader
+import com.whitelabel.buildlogic.apps.iosFirebaseFramework
 import com.whitelabel.buildlogic.apps.iosXcconfig
 import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
@@ -16,7 +17,12 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.mpp.Framework
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 /** Where an app's Android module (with its `app.properties`) and its iOS project's `Config/` dir are. */
 abstract class IosAppExtension {
@@ -53,7 +59,11 @@ abstract class GenerateIosConfig : DefaultTask() {
     }
 }
 
-/** For an app's iOS framework module (`:apps:<name>:shared`): `generateIosConfig` from the app's identity. */
+/**
+ * For an app's iOS framework module (`:apps:<name>:shared`): `generateIosConfig` from the app's
+ * identity, and, when the app has Firebase (`firebase.enabled` true or debug), CrashKiOS' link plugin
+ * and the Firebase and consent modules in the framework's exports ([iosFirebaseFramework]).
+ */
 class IosAppConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
         val extension = extensions.create<IosAppExtension>("iosApp")
@@ -71,6 +81,21 @@ class IosAppConventionPlugin : Plugin<Project> {
             firebaseConfigFileExists.set(
                 providers.fileContents(firebaseConfigFile).asBytes.map { true }.orElse(false),
             )
+        }
+        // The app's directory is set in the module's build script, so its properties are read after it.
+        afterEvaluate {
+            val app = AppConfigLoader.load(extension.androidApp.get().asFile)
+            val firebase = iosFirebaseFramework(app.firebase)
+            if (firebase.crashLinkPlugin) pluginManager.apply(libs.pluginId("crashkios-crashlyticslink"))
+            if (firebase.exports.isNotEmpty()) {
+                val kotlin = extensions.getByType<KotlinMultiplatformExtension>()
+                kotlin.sourceSets.getByName("commonMain").dependencies {
+                    firebase.exports.forEach { api(project(it)) }
+                }
+                kotlin.targets.withType<KotlinNativeTarget>().configureEach {
+                    binaries.withType<Framework>().configureEach { firebase.exports.forEach { export(project(it)) } }
+                }
+            }
         }
         Unit
     }
