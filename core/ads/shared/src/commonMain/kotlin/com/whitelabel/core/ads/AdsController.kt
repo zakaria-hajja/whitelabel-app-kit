@@ -7,6 +7,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -38,13 +39,20 @@ class AdsController(
     private val trackingStarted = MutableStateFlow(false)
     private val trackingDone = MutableStateFlow(false)
 
+    private val undeclared = MutableStateFlow<BannerState>(BannerState.Hidden(HideReason.UNDECLARED)).asStateFlow()
+    private val adsOff = MutableStateFlow<BannerState>(BannerState.Hidden(HideReason.ADS_OFF)).asStateFlow()
+
     init {
-        scope.launch { launches.countThisLaunch() }
+        // A failing store leaves the launch uncounted, which keeps banners hidden (launch 0 is FIRST_LAUNCH).
+        scope.launch { runCatching { launches.countThisLaunch() } }
     }
 
     /** One shared state per placement: every caller of the same placement sees the same flow. */
     fun bannerState(placement: String): StateFlow<BannerState> =
-        run {
+        if (placement !in units) {
+            // One constant per reason, so arbitrary names never cache or launch anything.
+            if (enabled) undeclared else adsOff
+        } else run {
             banners.value[placement]?.let { return@run it }
             val mine = lazy { createBanner(placement) }
             banners.update { if (placement in it) it else it + (placement to mine) }

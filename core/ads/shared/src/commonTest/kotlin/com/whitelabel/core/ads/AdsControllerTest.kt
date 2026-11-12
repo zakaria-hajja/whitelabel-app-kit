@@ -19,7 +19,12 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import okio.ForwardingFileSystem
+import okio.IOException
+import okio.Path
 import okio.Path.Companion.toPath
+import okio.Sink
+import okio.Source
 import okio.fakefilesystem.FakeFileSystem
 
 // DataStore keeps a process-wide registry by path, so every test gets its own path.
@@ -188,5 +193,29 @@ class AdsControllerTest {
         val banner = rig.controller.bannerState("nowhere")
         assertThat(banner.value).isEqualTo(hidden(HideReason.UNDECLARED))
         assertThat(rig.tracking.calls).isEqualTo(0)
+    }
+
+    @Test
+    fun `two undeclared names share one constant flow`() = runTest {
+        val rig = rig(earlierLaunches = 1)
+        val a = rig.controller.bannerState("x")
+        assertThat(a).isSameInstanceAs(rig.controller.bannerState("y"))
+        assertThat(a.value).isEqualTo(hidden(HideReason.UNDECLARED))
+    }
+
+    @Test
+    fun `a failing launch store does not crash and banners stay hidden`() = runTest {
+        val failing = object : ForwardingFileSystem(fileSystem) {
+            override fun sink(file: Path, mustCreate: Boolean): Sink = throw IOException("disk")
+            override fun source(file: Path): Source = throw IOException("disk")
+            override fun appendingSink(file: Path, mustExist: Boolean): Sink = throw IOException("disk")
+            override fun atomicMove(source: Path, target: Path) = throw IOException("disk")
+        }
+        val consent = Consent(FakeConsentPort(granted)).also { it.gatherOnLaunch() }
+        val controller = AdsController(
+            true, units, consent, LaunchCounter("$dir/ads-launches.json".toPath(), scope(), failing),
+            AdFree("$dir/ads-free.json".toPath(), clock, scope(), fileSystem), RecordingTracking(), clock, scope(),
+        )
+        assertThat(controller.bannerState("home").value).isEqualTo(hidden(HideReason.FIRST_LAUNCH))
     }
 }

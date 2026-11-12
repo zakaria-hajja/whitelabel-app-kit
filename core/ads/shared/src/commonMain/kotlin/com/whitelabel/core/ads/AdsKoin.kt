@@ -17,7 +17,8 @@ private val applicationScope = named("applicationScope")
 fun adsModule(enabled: Boolean, units: Map<String, String>): Module = module {
     single { LaunchCounter(get<StorePaths>().path("ads-launches"), get(applicationScope)) }
     single { AdFree(get<StorePaths>().path("ads-free"), Clock.System, get(applicationScope)) }
-    single {
+    // Created at start so the launch is counted even if no banner is ever composed.
+    single(createdAtStart = true) {
         AdsController(
             enabled, units, get<Consent>(), get(), get(),
             getOrNull<TrackingPort>() ?: NoTracking, Clock.System, get(applicationScope),
