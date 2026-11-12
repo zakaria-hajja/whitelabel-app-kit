@@ -19,8 +19,14 @@ import WhitelabelKit
     }
 
     private var root: some View {
-        RootView(definition: AppDefinition(style: .material) {
+        RootView(definition: AppDefinition(style: .material, startTab: HomeRoutes.shared.ROOT) {
             Auth()
+            Home(shortcuts: [
+                HomeShortcut(title: String(localized: "Browse the catalog"), systemImage: "list.bullet", route: CatalogRoutes.shared.LIST),
+                HomeShortcut(title: String(localized: "Your profile"), systemImage: "person", route: ProfileRoutes.shared.ROOT),
+                HomeShortcut(title: String(localized: "Settings"), systemImage: "gearshape", route: SettingsRoutes.shared.ROOT),
+            ])
+            Profile()
             Settings()
         })
     }

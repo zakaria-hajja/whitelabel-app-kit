@@ -30,6 +30,7 @@ struct TabsView: View {
 
     /** The definition's start tab (or the first), unless a visible tab is already selected. */
     private func selectStartTab() {
+        navigator.visibleTabs = routes
         if let selected = navigator.selectedTab, routes.contains(selected) { return }
         navigator.selectedTab = definition.spec.resolveStartTab(visible: routes)
     }

@@ -10,6 +10,7 @@ import Shared
  * - `-fakeResetToken t1`: the fake issues reset token `t1`, already issued for alice@shared.test;
  * - `-fakeFeatures catalog=false,profile=true`: the fake's remote flags;
  * - `-fakeConfigDelayMs 5000`: the fake answers the config that late;
+ * - `-messageSeconds 10`: one-off messages stay that long (UI tests read them after a gesture);
  * - `<scheme>://_fake/offline|online|expire-tokens|revoke-sessions`: steer the running fake;
  * - `<scheme>://_fake/log`: show the fake's recent requests in the `debug.fakeLog` probe.
  *
@@ -28,6 +29,8 @@ struct DebugControls {
 
     /** Before the graph starts: what a fresh install (or a lost key) would not have. */
     func beforeStart(bundle: Bundle) {
+        let messageSeconds = defaults.double(forKey: "messageSeconds")
+        if messageSeconds > 0 { MessageBanner.seconds = messageSeconds }
         let cipher = KeychainTokenCipher(service: bundle.bundleIdentifier ?? "whitelabel")
         if arguments.contains("-dropTokenKey") { cipher.deleteKey() }
         guard arguments.contains("-freshInstall") else { return }
