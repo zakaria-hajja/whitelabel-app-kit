@@ -20,6 +20,9 @@ public struct FirebaseService: AppService {
     @MainActor public func install(mode: String) {
         guard mode == "on" else { return }
         if let problem = Self.collectionProblem(Bundle.main.infoDictionary ?? [:]) { fatalError(problem) }
+        #if DEBUG
+        Self.applyDebugView(LaunchFlags.analyticsDebug, to: .standard)
+        #endif
         FirebaseApp.configure()
         KotlinCrashesKt.installKotlinCrashHook()
         #if DEBUG
@@ -34,6 +37,20 @@ public struct FirebaseService: AppService {
             crashReporter: FirebaseCrashReporter(),
             collection: FirebaseCollectionSwitch()
         )
+    }
+
+    /** The defaults Firebase reads at configure time, as the `-FIRDebugEnabled` launch argument sets them. */
+    static let debugModeKeys = ["/google/firebase/debug_mode", "/google/measurement/debug_mode"]
+
+    /**
+     * Debug only, before `FirebaseApp.configure()`: with `-analyticsDebug`, Firebase's debug mode
+     * (events go to DebugView), as `-FIRDebugEnabled` would; without it, a debug mode left by an
+     * earlier run is cleared, so it lasts one launch, like the argument.
+     */
+    static func applyDebugView(_ analyticsDebug: Bool, to defaults: UserDefaults) {
+        for key in debugModeKeys {
+            if analyticsDebug { defaults.set(true, forKey: key) } else { defaults.removeObject(forKey: key) }
+        }
     }
 
     /**

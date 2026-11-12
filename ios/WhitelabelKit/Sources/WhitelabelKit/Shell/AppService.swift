@@ -19,4 +19,6 @@ public protocol AppService {
 public enum LaunchFlags {
     /** `-consentEEA`: the consent form behaves as in the EEA. */
     public internal(set) static var consentEEA = false
+    /** `-analyticsDebug`: collection runs in this debug build and events go to Firebase's DebugView. */
+    public internal(set) static var analyticsDebug = false
 }

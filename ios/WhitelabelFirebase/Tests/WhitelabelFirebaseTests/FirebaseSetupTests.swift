@@ -42,3 +42,26 @@ final class FirebaseSetupTests: XCTestCase {
         FirebaseService().install(mode: "fake")
     }
 }
+
+/** `-analyticsDebug` turns on Firebase's DebugView, as the `-FIRDebugEnabled` argument does. */
+final class DebugViewTests: XCTestCase {
+
+    private let suite = "wl.firebase.debugview.tests"
+
+    override func tearDown() { UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite) }
+
+    func testAnalyticsDebugTurnsOnFirebasesDebugMode() {
+        let defaults = UserDefaults(suiteName: suite)!
+        FirebaseService.applyDebugView(true, to: defaults)
+        XCTAssertTrue(defaults.bool(forKey: "/google/firebase/debug_mode"))
+        XCTAssertTrue(defaults.bool(forKey: "/google/measurement/debug_mode"))
+    }
+
+    func testWithoutTheArgumentAnEarlierRunsDebugModeIsCleared() {
+        let defaults = UserDefaults(suiteName: suite)!
+        FirebaseService.applyDebugView(true, to: defaults)
+        FirebaseService.applyDebugView(false, to: defaults)
+        XCTAssertNil(defaults.object(forKey: "/google/firebase/debug_mode"))
+        XCTAssertNil(defaults.object(forKey: "/google/measurement/debug_mode"))
+    }
+}

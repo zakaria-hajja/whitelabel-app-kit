@@ -15,7 +15,8 @@ import UserNotifications
  * - `-notificationAccess notAskedYet|granted|blocked`: the notification permission reports that
  *   status, and asking grants without the system alert (see `NotificationPermission`);
  * - `-fakeFirebase`: Firebase runs as the in-memory fake (needs a Firebase service in the definition);
- * - `-analyticsDebug`: analytics and crash collection run in this debug build;
+ * - `-analyticsDebug`: analytics and crash collection run in this debug build, and events go to
+ *   Firebase's DebugView (`LaunchFlags.analyticsDebug`);
  * - `-consentEEA`: the consent form behaves as in the EEA (`LaunchFlags.consentEEA`);
  * - `-fakeConsent obtained|declined|failed|notRequired`: what the fake consent answers (default obtained);
  * - `<scheme>://_fake/offline|online|expire-tokens|revoke-sessions`: steer the running fake;
@@ -41,7 +42,7 @@ struct DebugControls {
     func beforeStart(bundle: Bundle) {
         let messageSeconds = defaults.double(forKey: "messageSeconds")
         if messageSeconds > 0 { MessageBanner.seconds = messageSeconds }
-        LaunchFlags.consentEEA = arguments.contains("-consentEEA")
+        applyLaunchFlags()
         SharedGraph.shared.useFirebaseDebug(fake: fakeFirebase, analytics: analyticsDebug, fakeConsent: fakeConsent)
         let cipher = KeychainTokenCipher(service: bundle.bundleIdentifier ?? "whitelabel")
         if arguments.contains("-dropTokenKey") { cipher.deleteKey() }
@@ -56,6 +57,12 @@ struct DebugControls {
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         cipher.deleteKey()
         IosLanguageRepository().set(languageTag: nil)
+    }
+
+    /** The arguments a service reads (`LaunchFlags`). */
+    func applyLaunchFlags() {
+        LaunchFlags.consentEEA = arguments.contains("-consentEEA")
+        LaunchFlags.analyticsDebug = analyticsDebug
     }
 
     /** After the graph starts, before the shell asks for the config: set up the fake. */
