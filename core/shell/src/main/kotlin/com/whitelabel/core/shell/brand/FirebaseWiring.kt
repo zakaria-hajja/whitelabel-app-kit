@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo
 import com.whitelabel.core.consent.UmpResult
 import com.whitelabel.core.consent.UmpStatus
 import com.whitelabel.core.firebase.FirebaseMode
+import com.whitelabel.core.firebase.FirebaseServicesContributor
 import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.shell.AppDefinition
 import com.whitelabel.core.shell.checkFirebaseDeclared
@@ -23,8 +24,12 @@ internal data class FirebaseWiring(
     }
 }
 
-/** Class name of `:core:firebase:google`'s contributor, which the shell can't reference (release builds may not link it). */
-private const val FIREBASE_CONTRIBUTOR = "com.whitelabel.core.firebase.google.FirebaseContributor"
+/**
+ * Whether `:core:firebase:google`'s contributor is among [contributors]. The shell can't reference
+ * that class (release builds may not link it), and R8 renames it, so it is found by its marker type.
+ */
+internal fun firebaseContributorPresent(contributors: List<ModuleContributor>): Boolean =
+    contributors.any { it is FirebaseServicesContributor }
 
 internal fun firebaseModeFor(
     resource: String,
@@ -65,7 +70,7 @@ internal fun firebaseWiringFor(context: Context, definition: AppDefinition, cont
     val markers = DebugMarkers.of(context, debugBuild)
     val mode = firebaseModeFor(
         resource = string("foundation_firebase", "off"),
-        contributorPresent = contributors.any { it::class.java.name == FIREBASE_CONTRIBUTOR },
+        contributorPresent = firebaseContributorPresent(contributors),
         fakeMarker = markers.has(DebugMarkers.FAKE_FIREBASE),
         debugBuild = debugBuild,
     )

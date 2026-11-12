@@ -7,8 +7,8 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.firebase.CollectionSwitch
+import com.whitelabel.core.firebase.FirebaseServicesContributor
 import com.whitelabel.core.firebase.RemoteConfigSource
-import com.whitelabel.core.network.ModuleContributor
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -21,8 +21,11 @@ internal const val RELEASE_FETCH_INTERVAL_SECONDS = 43_200L
 internal fun fetchIntervalSeconds(debuggable: Boolean): Long =
     if (debuggable) DEBUG_FETCH_INTERVAL_SECONDS else RELEASE_FETCH_INTERVAL_SECONDS
 
-/** Binds the Firebase-backed sources when this module is on the classpath (found by `ServiceLoader`). */
-class FirebaseContributor : ModuleContributor {
+/**
+ * Binds the Firebase-backed sources when this module is on the classpath (found by `ServiceLoader`).
+ * The shell recognizes it by [FirebaseServicesContributor], which survives R8 renaming.
+ */
+class FirebaseContributor : FirebaseServicesContributor {
     override fun modules(): List<Module> = listOf(
         module {
             val firebase = named("firebase")

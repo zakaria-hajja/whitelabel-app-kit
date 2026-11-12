@@ -10,6 +10,8 @@ kotlin {
             api(project(":core:domain"))
             api(project(":core:analytics"))
             api(project(":core:consent:shared"))
+            // FirebaseServicesContributor extends ModuleContributor.
+            api(project(":core:network"))
             implementation(libs.kotlinx.serialization.json)
         }
     }

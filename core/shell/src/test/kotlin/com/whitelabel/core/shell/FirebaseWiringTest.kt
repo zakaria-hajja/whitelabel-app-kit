@@ -17,6 +17,8 @@ import com.whitelabel.core.domain.remote.RemoteValues
 import com.whitelabel.core.firebase.FirebaseMode
 import com.whitelabel.core.shell.brand.FirebaseWiring
 import com.whitelabel.core.shell.brand.fakeConsentResult
+import com.whitelabel.core.shell.brand.firebaseContributorPresent
+import com.whitelabel.core.firebase.FirebaseServicesContributor
 import com.whitelabel.core.shell.brand.firebaseModeFor
 import com.whitelabel.core.shell.brand.foundationModules
 import org.junit.jupiter.api.Test
@@ -50,6 +52,21 @@ class FirebaseWiringTest {
     @Test fun `anything else is off`() {
         assertThat(firebaseModeFor("off", contributorPresent = true, fakeMarker = false, debugBuild = true)).isEqualTo(FirebaseMode.OFF)
         assertThat(firebaseModeFor("", contributorPresent = false, fakeMarker = false, debugBuild = false)).isEqualTo(FirebaseMode.OFF)
+    }
+
+    // The contributor is found by type: R8 renames FirebaseContributor in release builds.
+
+    @Test fun `a contributor marked as the firebase services is found whatever its class name`() {
+        val renamed = object : FirebaseServicesContributor {
+            override fun modules() = emptyList<org.koin.core.module.Module>()
+        }
+        assertThat(firebaseContributorPresent(listOf(renamed))).isEqualTo(true)
+    }
+
+    @Test fun `an unmarked contributor is not the firebase services`() {
+        val mock = com.whitelabel.core.network.ModuleContributor { emptyList() }
+        assertThat(firebaseContributorPresent(listOf(mock))).isEqualTo(false)
+        assertThat(firebaseContributorPresent(emptyList())).isEqualTo(false)
     }
 
     // startup checks
