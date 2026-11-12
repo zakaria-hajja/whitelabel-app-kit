@@ -52,6 +52,8 @@ struct CatalogListContent: View {
             content
         }
         .listStyle(.plain)
+        // The pack's background, not the list's own (Gallery apps use their own colours).
+        .scrollContentBackground(.hidden)
         .background(style.colors.background)
     }
 
@@ -91,7 +93,10 @@ struct CatalogListContent: View {
                     chip(KitStrings.text("All"), selected: state.category == nil) { send(CatalogListActionOnCategorySelect(category: nil)) }
                 }
                 ForEach(categories, id: \.self) { category in
-                    chip(category, selected: state.category == category) { send(CatalogListActionOnCategorySelect(category: category)) }
+                    // Tapping the selected category clears the filter, as on Android.
+                    chip(category, selected: state.category == category) {
+                        send(CatalogListActionOnCategorySelect(category: state.category == category ? nil : category))
+                    }
                 }
             }
             .padding(.horizontal, style.pack.sizing.screenGutter)
@@ -146,6 +151,7 @@ private struct SortMenu: View {
             }
         } label: {
             Label(KitStrings.text("Sort"), systemImage: "arrow.up.arrow.down")
+                .accessibilityValue(Self.label(selected))
                 .font(.footnote.weight(.semibold))
                 .padding(.horizontal, Spacing.md)
                 .frame(minHeight: 36)
@@ -156,11 +162,12 @@ private struct SortMenu: View {
     static let sorts: [CatalogSort] = [.newest, .oldest, .titleAsc, .titleDesc]
 
     static func label(_ sort: CatalogSort) -> String {
+        // No default: a sort added in Kotlin must get its label here (the build says so).
         switch sort {
+        case .newest: KitStrings.text("Newest first")
         case .oldest: KitStrings.text("Oldest first")
         case .titleAsc: KitStrings.text("Title A–Z")
         case .titleDesc: KitStrings.text("Title Z–A")
-        default: KitStrings.text("Newest first")
         }
     }
 }
@@ -174,5 +181,34 @@ struct SharedErrorState: View {
     var body: some View {
         ErrorStateView(message: text, onRetry: onRetry)
             .task(id: ObjectIdentifier(message)) { text = await resolve(message) }
+    }
+}
+
+private let previewItems = (17...21).reversed().map { n in
+    CatalogItem(id: "\(n)", title: "Item \(n)", description: "Sample item \(n)", category: ["Books", "Games", "Music", "Travel"][(n - 1) % 4], imageUrl: nil)
+}
+
+private func previewList(items: [CatalogItem] = [], loadingFirst: Bool = false, loadingMore: Bool = false, firstError: UiText? = nil, moreError: UiText? = nil, unavailable: Bool = false) -> CatalogListState {
+    CatalogListState(
+        text: "", category: "Music", sort: .newest, items: items, page: 1, isLoadingFirst: loadingFirst, isLoadingMore: loadingMore,
+        isRefreshing: false, endReached: false, firstPageError: firstError, moreError: moreError, unavailable: unavailable, message: nil
+    )
+}
+
+private let previewCategories = ["Books", "Games", "Music", "Travel"]
+
+#Preview("List") {
+    PackPreviews {
+        CatalogListContent(state: previewList(items: previewItems, loadingMore: true), categories: previewCategories, send: { _ in }).frame(height: 460)
+    }
+}
+
+#Preview("List states") {
+    PackPreviews {
+        CatalogListContent(state: previewList(loadingFirst: true), categories: previewCategories, send: { _ in }).frame(height: 160)
+        CatalogListContent(state: previewList(), categories: previewCategories, send: { _ in }).frame(height: 200)
+        CatalogListContent(state: previewList(firstError: UiTextDynamic(value: "No internet connection. Check your connection and try again.")), categories: previewCategories, send: { _ in }).frame(height: 220)
+        CatalogListContent(state: previewList(unavailable: true), categories: [], send: { _ in }).frame(height: 200)
+        CatalogListContent(state: previewList(items: Array(previewItems.prefix(2)), moreError: UiTextDynamic(value: "Couldn't reach the server.")), categories: previewCategories, send: { _ in }).frame(height: 360)
     }
 }

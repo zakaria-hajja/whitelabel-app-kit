@@ -190,8 +190,10 @@ relaunch stays signed in. Accounts registered during a run are not kept.
 
 UI tests launch with `-mockApi -freshInstall -AppleLanguages (en)`. iOS reads `AppleLanguages`
 before any app code runs, so `-freshInstall` alone can't undo a language an earlier test picked.
-Robots (`ShowcaseUITests/Robots`) say what the user does, as on Android. Showcase's UI tests
-mirror Android's showcase E2E test for test (the parity table is in the catalog PR). Two UI-test traps:
+Robots (`ShowcaseUITests/Robots`) say what the user does, as on Android. Every test in
+Android's `ShowcaseE2ETest` and `CleanStartTest` has an iOS counterpart in `ShowcaseUITests`
+(`AuthUITests`, `CatalogUITests`, `ProfileUITests`, `CleanStartUITests`); the iOS suite adds
+settings, home, shell and design-catalog tests. Two UI-test traps:
 - open a link with `openLink` (`XCUIDevice.shared.system.open`). `XCUIApplication.open(url)`
   relaunches the app with the same arguments, `-freshInstall` included;
 - after a successful sign-in, iOS offers to save the password. The sign-in robot answers

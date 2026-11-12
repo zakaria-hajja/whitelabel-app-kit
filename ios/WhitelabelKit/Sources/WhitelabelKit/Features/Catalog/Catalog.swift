@@ -30,9 +30,11 @@ public struct Catalog: Feature {
         }
     }
 
-    /** `<scheme>://catalog/<id>`. */
+    /** `<scheme>://catalog/<id>`, exactly one path segment (as Android's `catalog/{id}` pattern). */
     public func destination(forLink url: URL) -> Destination? {
-        guard url.host?.lowercased() == "catalog", let id = url.pathComponents.dropFirst().first, !id.isEmpty else { return nil }
+        guard url.host?.lowercased() == "catalog" else { return nil }
+        let segments = url.pathComponents.filter { $0 != "/" }
+        guard segments.count == 1, let id = segments.first, !id.isEmpty else { return nil }
         return Destination(CatalogRoutes.shared.DETAIL, args: ["id": id])
     }
 }

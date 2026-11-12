@@ -18,7 +18,7 @@ struct CatalogDetailScreen: View {
     var body: some View {
         let model = screen.model
         CatalogDetailContent(state: model.state) { model.send(CatalogDetailActionOnRetry.shared) }
-            .navigationTitle(model.state.item?.title ?? "")
+            .navigationTitle(model.state.item?.title ?? KitStrings.text("Catalog"))
             .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -50,5 +50,20 @@ struct CatalogDetailContent: View {
         } else {
             LoadingView()
         }
+    }
+}
+
+#Preview("Detail") {
+    PackPreviews {
+        CatalogDetailContent(state: CatalogDetailState(item: CatalogItem(id: "11", title: "Item 11", description: "Sample item 11", category: "Music", imageUrl: nil), isLoading: false, notFound: false, error: nil), onRetry: {})
+            .frame(height: 420)
+    }
+}
+
+#Preview("Detail states") {
+    PackPreviews {
+        CatalogDetailContent(state: CatalogDetailState(item: nil, isLoading: true, notFound: false, error: nil), onRetry: {}).frame(height: 120)
+        CatalogDetailContent(state: CatalogDetailState(item: nil, isLoading: false, notFound: true, error: nil), onRetry: {}).frame(height: 160)
+        CatalogDetailContent(state: CatalogDetailState(item: nil, isLoading: false, notFound: false, error: UiTextDynamic(value: "No internet connection. Check your connection and try again.")), onRetry: {}).frame(height: 200)
     }
 }
