@@ -23,7 +23,7 @@ jobs:
       github.event_name == 'push'
       || (github.event.action == 'labeled' && github.event.label.name == 'release-build')
       || (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'release-build'))
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -33,6 +33,9 @@ jobs:
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@v5
+        with:
+          # Self-hosted runners keep their Gradle home between runs.
+          cache-disabled: ${{ runner.environment == 'self-hosted' }}
 
       - name: Build every app (unsigned release)
         run: ./gradlew assembleRelease

@@ -16,7 +16,7 @@ concurrency:
 # Release builds (R8) run in release.yml: on main, and on a PR labelled `release-build`.
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     outputs:
       build: ${{ steps.changes.outputs.build }}
     steps:
@@ -46,7 +46,7 @@ jobs:
   tests:
     needs: changes
     if: needs.changes.outputs.build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -56,6 +56,9 @@ jobs:
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@v5
+        with:
+          # Self-hosted runners keep their Gradle home between runs.
+          cache-disabled: ${{ runner.environment == 'self-hosted' }}
 
       - name: API contract is the vendored backend tag
         run: |
@@ -68,7 +71,7 @@ jobs:
   build:
     needs: changes
     if: needs.changes.outputs.build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
 
@@ -78,6 +81,9 @@ jobs:
           java-version: "17"
 
       - uses: gradle/actions/setup-gradle@v5
+        with:
+          # Self-hosted runners keep their Gradle home between runs.
+          cache-disabled: ${{ runner.environment == 'self-hosted' }}
 
       - name: Build every app (debug; release runs in release.yml)
         run: ./gradlew assembleDebug
@@ -96,7 +102,7 @@ jobs:
   ci:
     needs: [changes, tests, build]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - name: Every job passed (skipped counts as passed on a docs-only PR)
         env:
