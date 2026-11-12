@@ -81,16 +81,22 @@ internal fun foundationModules(
         definition.koinModules +
         firebaseModules(definition, firebase) +
         contributors.flatMap { it.modules() } +
-        // Fake mode answers consent itself, after the contributors, so no real form is ever shown.
-        fakeConsentModules(definition, firebase)
+        fakeOverrides(definition, firebase)
 
 private fun firebaseModules(definition: AppDefinition, wiring: FirebaseWiring): List<Module> =
     if (!definition.usesFirebase) emptyList()
     else listOf(consentModule(), firebaseModule(wiring.mode, wiring.debugBuild, wiring.debugAnalytics))
 
-private fun fakeConsentModules(definition: AppDefinition, wiring: FirebaseWiring): List<Module> =
+/**
+ * Fake mode's bindings (fake remote values, fake consent that shows no real form) go last, after the
+ * contributors, so a linked Firebase or UMP contributor can never replace them.
+ */
+private fun fakeOverrides(definition: AppDefinition, wiring: FirebaseWiring): List<Module> =
     if (definition.usesFirebase && wiring.mode == FirebaseMode.FAKE) {
-        listOf(module { single<ConsentPort> { FakeConsentPort(wiring.fakeConsent) } })
+        listOf(
+            firebaseModule(FirebaseMode.FAKE, wiring.debugBuild, wiring.debugAnalytics),
+            module { single<ConsentPort> { FakeConsentPort(wiring.fakeConsent) } },
+        )
     } else {
         emptyList()
     }

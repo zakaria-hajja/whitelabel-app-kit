@@ -35,6 +35,7 @@ class FoundationActivity : AppCompatActivity() {
     private val consent: Consent by inject()
 
     private val viewModel: ShellViewModel by viewModel()
+    private var consentRequested = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -42,14 +43,19 @@ class FoundationActivity : AppCompatActivity() {
         // A recreated activity (rotation, process death) already handed its link over.
         takeDeepLink(intent, deliver = savedInstanceState == null)
         val hasGate = definition.gateEntry != null
-        splash.setKeepOnScreenCondition { !viewModel.state.value.showsContent(hasGate) }
+        splash.setKeepOnScreenCondition {
+            val keep = !viewModel.state.value.showsContent(hasGate)
+            // UMP must run on the main thread, after the first screen shows (not behind the splash).
+            // This condition is read on the main thread before each draw; the first time it lets the
+            // splash go, the post runs after that frame, when this activity is resumed. Consent
+            // gathers once per process, so a recreated activity asking again does nothing.
+            if (shouldGatherConsent(definition.usesFirebase, keep, consentRequested)) {
+                consentRequested = true
+                window.decorView.post { consent.gatherOnLaunch() }
+            }
+            keep
+        }
         enableEdgeToEdge()
-        // UMP must run on the main thread with a resumed activity. A post to the decor view runs on
-        // the main thread at the first traversal, after onResume has marked this activity current
-        // and the first frame is drawn, so the form never delays startup. A LaunchedEffect could run
-        // before the activity resumes. Consent runs the gather once per process, so a recreated
-        // activity calling this again does nothing.
-        if (definition.usesFirebase) window.decorView.post { consent.gatherOnLaunch() }
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
             val deepLink by viewModel.pendingDeepLink.collectAsStateWithLifecycle()
@@ -92,3 +98,7 @@ class FoundationActivity : AppCompatActivity() {
         setIntent(Intent(intent).setData(null))
     }
 }
+
+/** Consent is gathered once the splash lets go, and only by an app that uses Firebase. */
+internal fun shouldGatherConsent(usesFirebase: Boolean, splashKept: Boolean, alreadyRequested: Boolean): Boolean =
+    usesFirebase && !splashKept && !alreadyRequested

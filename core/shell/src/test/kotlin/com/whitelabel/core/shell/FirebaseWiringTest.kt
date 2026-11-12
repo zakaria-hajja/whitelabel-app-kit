@@ -127,4 +127,68 @@ class FirebaseWiringTest {
         val koin = koinApplication { modules(com.whitelabel.core.data.di.dataModule, com.whitelabel.core.consent.consentModule()) }.koin
         assertThat(koin.get<Consent>().state.value).isEqualTo(ConsentState.Unknown)
     }
+
+    private fun stub(vararg modules: org.koin.core.module.Module) = object : com.whitelabel.core.network.ModuleContributor {
+        override fun modules() = modules.toList()
+    }
+
+    @Test fun `a linked contributor can't replace the fake`() {
+        val real = object : com.whitelabel.core.firebase.RemoteConfigSource {
+            override fun raw(key: String) = "real"
+            override fun fetchAndActivate(onDone: (Boolean) -> Unit) = onDone(false)
+        }
+        val contributor = stub(
+            org.koin.dsl.module {
+                single<com.whitelabel.core.firebase.RemoteConfigSource> { real }
+                single<com.whitelabel.core.consent.ConsentPort> {
+                    object : com.whitelabel.core.consent.ConsentPort {
+                        override fun gather(onDone: (UmpResult?) -> Unit) = onDone(null)
+                        override fun privacyOptionsRequired() = false
+                        override fun showPrivacyOptions(onDone: () -> Unit) = onDone()
+                    }
+                }
+            },
+        )
+        val wiring = FirebaseWiring(FirebaseMode.FAKE, debugBuild = true, debugAnalytics = false, fakeConsent = fakeConsentResult("obtained"))
+        val koin = koinApplication { modules(foundationModules(withFirebase, listOf(contributor), wiring)) }.koin
+        assertThat(koin.get<RemoteValues>().string("showcase_remote_note", "default")).isEqualTo("from the fake")
+        assertThat(koin.get<com.whitelabel.core.consent.ConsentPort>()).isInstanceOf<com.whitelabel.core.consent.FakeConsentPort>()
+    }
+
+    @Test fun `mode on gates the contributor's analytics and crashes behind consent`() {
+        val firebase = org.koin.core.qualifier.named("firebase")
+        val raw = object : com.whitelabel.core.analytics.Analytics {
+            override fun track(event: com.whitelabel.core.analytics.AnalyticsEvent) = Unit
+        }
+        val contributor = stub(
+            org.koin.dsl.module {
+                single<com.whitelabel.core.firebase.RemoteConfigSource> {
+                    object : com.whitelabel.core.firebase.RemoteConfigSource {
+                        override fun raw(key: String): String? = null
+                        override fun fetchAndActivate(onDone: (Boolean) -> Unit) = onDone(false)
+                    }
+                }
+                single<com.whitelabel.core.analytics.Analytics>(firebase) { raw }
+                single<com.whitelabel.core.analytics.CrashReporter>(firebase) { LoggingCrashReporter { _, _ -> } }
+                single<com.whitelabel.core.firebase.CollectionSwitch> {
+                    object : com.whitelabel.core.firebase.CollectionSwitch {
+                        override fun apply(collection: com.whitelabel.core.firebase.FirebaseCollection) = Unit
+                    }
+                }
+            },
+        )
+        val wiring = FirebaseWiring(FirebaseMode.ON, debugBuild = false, debugAnalytics = false)
+        val koin = koinApplication { modules(foundationModules(withFirebase, listOf(contributor), wiring)) }.koin
+        assertThat(koin.get<com.whitelabel.core.analytics.Analytics>())
+            .isInstanceOf<com.whitelabel.core.firebase.ConsentGatedAnalytics>()
+        assertThat(koin.get<com.whitelabel.core.analytics.CrashReporter>())
+            .isInstanceOf<com.whitelabel.core.firebase.ConsentGatedCrashReporter>()
+    }
+
+    @Test fun `consent is gathered once, after the splash, only with firebase`() {
+        assertThat(shouldGatherConsent(usesFirebase = true, splashKept = true, alreadyRequested = false)).isEqualTo(false)
+        assertThat(shouldGatherConsent(usesFirebase = true, splashKept = false, alreadyRequested = false)).isEqualTo(true)
+        assertThat(shouldGatherConsent(usesFirebase = true, splashKept = false, alreadyRequested = true)).isEqualTo(false)
+        assertThat(shouldGatherConsent(usesFirebase = false, splashKept = false, alreadyRequested = false)).isEqualTo(false)
+    }
 }
