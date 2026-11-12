@@ -13,27 +13,30 @@ the ads branch and aren't here.
 1. **Firebase project** (the owner's), with two apps:
    - Android, application ID `com.whitelabel.showcase.debug`
    - iOS, bundle ID `com.whitelabel.showcase.debug`
-2. **Config files** (both are gitignored, never commit them):
+2. **AdMob** (consent needs it): create an AdMob account, add the Android and iOS apps, copy their
+   app IDs into `ads.android.appId` and `ads.ios.appId` in `apps/showcase/app.properties`, and publish a GDPR message under
+   Privacy & messaging. Without the IDs showcase Debug stays on the fake Firebase.
+3. **Config files** (both are gitignored, never commit them):
 
    | Platform | Download | Put it at |
    |---|---|---|
    | Android | `google-services.json` | `apps/showcase/google-services.json` |
    | iOS | `GoogleService-Info.plist` | `ios/Showcase/Showcase/GoogleService-Info.plist` |
 
-3. **Firebase console:**
+4. **Firebase console:**
    - Remote Config: add the parameter `showcase_remote_note` (string, e.g. `from the console`) and
      publish it.
    - Analytics and Crashlytics are enabled for the project (Crashlytics: open the dashboard once so it
      starts listening).
    - DebugView: Analytics > DebugView (the device appears once debug mode is on).
-4. **Build and run** (Debug, with the config files in place the app runs on the real Firebase, not the
+5. **Build and run** (Debug, with the config files in place the app runs on the real Firebase, not the
    fake):
    - Android: `./gradlew :apps:showcase:assembleDebug -Pwhitelabel.mockApi=true`, install the APK and
      launch it (the mock backend lets you sign in without a server).
    - iOS: `./gradlew :apps:showcase:shared:generateIosConfig`, then
      `(cd ios/Showcase && xcodegen) && open ios/Showcase/Showcase.xcodeproj`, and run on the
      "iPhone 18 Pro Max" simulator. Add `-mockApi` to the scheme's arguments to sign in.
-5. Android debug switches are written with
+6. Android debug switches are written with
    `adb shell "run-as com.whitelabel.showcase.debug sh -c 'mkdir -p files/debug && touch files/debug/<marker>'"`
    and removed with `adb shell run-as com.whitelabel.showcase.debug rm files/debug/<marker>`.
    iOS ones are launch arguments. Restart the app after each change.

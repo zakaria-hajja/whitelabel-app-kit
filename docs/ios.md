@@ -223,7 +223,10 @@ when it uses Firebase: `WhitelabelConsent` (UMP) and `WhitelabelFirebase` (Remot
 Crashlytics, `FirebaseService`). `WhitelabelKit` never imports Firebase. The app target uses the
 `WhitelabelFirebaseApp` template, which links both and adds the Crashlytics dSYM upload. The
 Swift packages link in Release too (SPM can't drop them per configuration), but Firebase only starts
-where `WL_FIREBASE` is `on`. The setup steps and the Info.plist keys are in [firebase.md](firebase.md).
+where `WL_FIREBASE` is `on`. The setup steps and the Info.plist keys are in [firebase.md](firebase.md). The app's Info.plist
+also needs `GADApplicationIdentifier` = `$(WL_ADMOB_APP_ID)` (`generateIosConfig` writes
+`WL_ADMOB_APP_ID` from `ads.ios.appId`): Google's consent SDK needs the AdMob app ID, and
+`FirebaseService` stops the app at launch without it.
 
 The `whitelabel.ios.app` plugin exports `:core:consent:shared` and `:core:firebase:shared` from every
 app's `Shared` framework, with or without Firebase: they are pure Kotlin, and WhitelabelKit's Swift

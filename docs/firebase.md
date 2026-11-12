@@ -31,8 +31,33 @@ Kotlin 2.4 metadata, which this build's Kotlin 2.2.20 can't read. Upgrade both t
 | `firebase.enabled` | Effect |
 |---|---|
 | `false` (default) | No Firebase: no SDK in the Android build, no CrashKiOS in the iOS framework |
-| `true` | Every build type. A missing config file **fails the build** |
-| `debug` | Debug builds only. A missing config file is fine: Debug runs on a fake Firebase. A Release build has no Firebase on Android and never starts it on iOS |
+| `true` | Every build type. A missing config file or AdMob app ID **fails the build** |
+| `debug` | Debug builds only. Debug is real only with the platform's config file **and** its AdMob app ID; if either is missing, Debug runs on a fake Firebase. A Release build has no Firebase on Android and never starts it on iOS |
+
+The AdMob app IDs are also keys in `app.properties` (the ads plan reuses them):
+
+| Key | Format | Rule |
+|---|---|---|
+| `ads.android.appId` | `ca-app-pub-<16 digits>~<10 digits>` | Required with `firebase.enabled=true`; checked for format whenever present (even with `false`) |
+| `ads.ios.appId` | same | Same, for iOS |
+
+Why: Google's consent SDK (UMP) belongs to AdMob. It needs the app's AdMob app ID, and the consent
+form is configured in AdMob. Without the ID, consent fails at every launch and nothing is ever
+collected. Failures read `apps/<name>: firebase.enabled=true needs ads.android.appId (the AdMob app ID;
+Google's consent SDK requires it)` (Android build) and the same with `ads.ios.appId` (from
+`generateIosConfig`). Android: the application plugin sets the `admobAppId` manifest placeholder
+(empty without an ID), which `:core:consent:google`'s manifest turns into the
+`com.google.android.gms.ads.APPLICATION_ID` meta-data. iOS: `generateIosConfig` writes
+`WL_ADMOB_APP_ID`, and Info.plist maps it to `GADApplicationIdentifier`.
+
+**AdMob console steps** (the owner's, once per app):
+1. Create an AdMob account (admob.google.com).
+2. Add the Android app and the iOS app (an app that isn't published yet can be added by name).
+3. Copy each app ID (`ca-app-pub-...~...`, with a tilde) into `ads.android.appId` / `ads.ios.appId`.
+4. Privacy & messaging > GDPR: create and **publish** a message for the apps. Without a published
+   message UMP never shows a form.
+5. To test the form outside the EEA, UMP's debug geography needs the test device's hashed ID, which
+   UMP logs when it runs (look for it in logcat or the Xcode console).
 
 **2. Config files** from the Firebase console (one Android app and one iOS app per application ID;
 Debug IDs end in `.debug`, so register that ID for a `debug` app):
@@ -41,6 +66,9 @@ Debug IDs end in `.debug`, so register that ID for a `debug` app):
 |---|---|---|
 | Android | `apps/<name>/google-services.json` | `apps/<name>: firebase.enabled=true needs google-services.json` |
 | iOS | `ios/<App>/<App>/GoogleService-Info.plist` | `apps/<name>: firebase.enabled=true needs GoogleService-Info.plist` (from `generateIosConfig`) |
+
+Showcase has no AdMob IDs yet (the owner adds them), so showcase Debug runs on the fake Firebase even
+with both files present, until `ads.android.appId` and `ads.ios.appId` are set.
 
 Showcase's two files are gitignored, because this repo is public. Without them showcase Debug runs on
 the fake Firebase (its remote note reads "from the fake"). To check against the real Firebase, drop
@@ -78,8 +106,10 @@ RootView(definition: AppDefinition(style: .material, services: [FirebaseService(
   `GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE`, `GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE`,
   `GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA`,
   `GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS`. Also map `WLFirebase` to
-  `$(WL_FIREBASE)`. Without the keys, the app stops at launch with
+  `$(WL_FIREBASE)`, and add `GADApplicationIdentifier` = `$(WL_ADMOB_APP_ID)`. Without the keys, the app stops at launch with
   `Firebase is on, but Info.plist doesn't start collection off until consent; set these to NO (Boolean): <the keys>`.
+- Without `GADApplicationIdentifier` (missing or empty), `FirebaseService` in `on` mode also stops the
+  app at launch, naming the key.
 - A `FirebaseService` in an app whose `WL_FIREBASE` is `off` in Debug fails at launch (Android's
   rule). With `firebase.enabled=debug` a Release build is legitimately off.
 - The framework module gets `:core:firebase:crashlytics` and the CrashKiOS link plugin from

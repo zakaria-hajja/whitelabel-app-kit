@@ -147,6 +147,12 @@ ios/WhitelabelAds            Swift target (GoogleMobileAds package), AdBanner vi
 
 ## 3a. Consent (shared by Firebase and ads)
 
+> **Amendment (owner, 2026-11-12):** UMP is AdMob's, so it needs the app's AdMob app ID (Android
+> manifest `com.google.android.gms.ads.APPLICATION_ID`, iOS `GADApplicationIdentifier`); without it
+> consent fails at every launch and nothing is collected. Any app with Firebase must therefore set
+> `ads.android.appId` and `ads.ios.appId` (section 4.1). These are the same keys section 5.1 defines;
+> the ads plan reuses them, it does not add new ones.
+
 - **When:** on every launch of an app with Firebase or ads, after the first screen appears (never
   blocking the splash), call UMP's consent-info update and, if UMP says a form is required, show it.
   UMP only requires it where the law does (EEA/UK), so most users never see anything. A user who
@@ -182,6 +188,12 @@ ios/WhitelabelAds            Swift target (GoogleMobileAds package), AdBanner vi
 | Key | Values | Effect |
 |---|---|---|
 | `firebase.enabled` | `false` (default), `true`, `debug` | `debug`: Debug builds only. Exists for showcase; any app may use it while testing |
+
+> **Amendment (owner, 2026-11-12):** `ads.android.appId` and `ads.ios.appId`
+> (`^ca-app-pub-\d{16}~\d{10}$`) are required with `firebase.enabled=true` (the build fails
+> without them, naming the key) and ignored but format-checked with `false`. With `debug`, Debug is
+> real only when the platform's config file **and** its app ID exist, else fake. Android gets the ID as
+> the `admobAppId` manifest placeholder; iOS as `WL_ADMOB_APP_ID` for `GADApplicationIdentifier`.
 
 **Missing config files (decision 7).**
 - With `true`, a missing config file **fails the build** on that platform.

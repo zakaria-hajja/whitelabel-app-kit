@@ -70,7 +70,8 @@ The build validates this file and reports every problem at once, naming the file
 | `defaults.legal.privacyPolicyUrl` | `https://globex.example/privacy` | `https` |
 | `defaults.legal.termsUrl` | `https://globex.example/terms` | `https` |
 | `defaults.features` | `catalog,profile` | Optional. Flagged features that are on when remote config is unavailable |
-| `firebase.enabled` | `debug` | Optional: `false` (default), `true` or `debug`. `true` needs `apps/<name>/google-services.json`; `debug` runs a fake Firebase in Debug without it. See [firebase.md](firebase.md) |
+| `firebase.enabled` | `debug` | Optional: `false` (default), `true` or `debug`. `true` needs `apps/<name>/google-services.json` and the two AdMob app IDs below; `debug` runs a fake Firebase in Debug unless the file and the ID exist. See [firebase.md](firebase.md) |
+| `ads.android.appId`, `ads.ios.appId` | `ca-app-pub-1234567890123456~1234567890` | The app's AdMob app IDs (Google's consent SDK needs them). Required with `firebase.enabled=true`; validated when present |
 
 - **Base URLs** are the versioned API root. A missing trailing `/` is added for you.
 - **No backend:** leave out both base URLs (and `api.tenant`) for a local-only app. The shell then
