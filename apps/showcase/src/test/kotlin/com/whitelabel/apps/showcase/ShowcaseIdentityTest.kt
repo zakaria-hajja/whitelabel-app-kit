@@ -12,7 +12,7 @@ class ShowcaseIdentityTest {
         assertThat(BuildConfig.APP_NAME).isEqualTo("Showcase")
         assertThat(BuildConfig.DEEP_LINK_SCHEME).isEqualTo("showcase")
         assertThat(BuildConfig.SUPPORT_EMAIL).isEqualTo("support@showcase.example")
-        assertThat(BuildConfig.PRIVACY_POLICY_URL).isEqualTo("https://showcase.example/privacy")
+        assertThat(BuildConfig.PRIVACY_POLICY_URL).isEqualTo("https://zakaria-hajja.github.io/whitelabel-app-kit/privacy/showcase/")
         assertThat(BuildConfig.TERMS_URL).isEqualTo("https://showcase.example/terms")
         assertThat(BuildConfig.DEFAULT_FEATURES).isEqualTo("catalog,profile")
         assertThat(BuildConfig.VERSION_CODE).isEqualTo(1)
