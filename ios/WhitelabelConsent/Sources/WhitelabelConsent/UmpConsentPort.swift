@@ -18,13 +18,16 @@ func umpStatus(of status: ConsentStatus) -> UmpStatus {
  * `UmpConsentPort`. UMP shows its form only where the law requires one (EEA, UK). The form is
  * presented from the key window's root view controller (the topmost one it presents); without one
  * `gather` calls back nil (a failed gather, retried next launch). `-consentEEA` (Debug) makes UMP
- * behave as in the EEA. UMP's behavior itself is checked on a device.
+ * behave as in the EEA and resets the stored consent first, so the form shows again. UMP's behavior
+ * itself is checked on a device.
  */
 public final class UmpConsentPort: NSObject, ConsentPort {
     private var info: ConsentInformation { ConsentInformation.shared }
 
     public func gather(onDone: @escaping (UmpResult?) -> Void) {
         guard Self.presenter() != nil else { return onDone(nil) }
+        // LaunchFlags are set only in Debug builds.
+        if LaunchFlags.consentEEA { info.reset() }
         let parameters = RequestParameters()
         if LaunchFlags.consentEEA {
             let debug = DebugSettings()

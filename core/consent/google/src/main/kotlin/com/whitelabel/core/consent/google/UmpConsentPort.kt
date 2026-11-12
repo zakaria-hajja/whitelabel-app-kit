@@ -9,9 +9,6 @@ import com.whitelabel.core.consent.ConsentPort
 import com.whitelabel.core.consent.UmpResult
 import com.whitelabel.core.consent.UmpStatus
 
-/** Name of the Debug marker file (under `filesDir/debug`) that forces the EEA geography. */
-const val DEBUG_EEA_MARKER = "consent-eea"
-
 internal fun umpStatusOf(code: Int): UmpStatus = when (code) {
     ConsentInformation.ConsentStatus.REQUIRED -> UmpStatus.REQUIRED
     ConsentInformation.ConsentStatus.NOT_REQUIRED -> UmpStatus.NOT_REQUIRED
@@ -19,7 +16,11 @@ internal fun umpStatusOf(code: Int): UmpStatus = when (code) {
     else -> UmpStatus.UNKNOWN
 }
 
-/** [ConsentPort] backed by Google's User Messaging Platform. SDK behavior is checked on a device. */
+/**
+ * [ConsentPort] backed by Google's User Messaging Platform. [debugGeographyEea] (Debug builds only,
+ * the [com.whitelabel.core.consent.DebugConsent.EEA_MARKER] marker) forces the EEA geography and
+ * resets the stored consent before each gather. SDK behavior is checked on a device.
+ */
 class UmpConsentPort(
     context: Context,
     private val activity: CurrentActivity,
@@ -34,6 +35,8 @@ class UmpConsentPort(
             onDone(null)
             return
         }
+        // The Debug EEA switch also forgets the stored answer, so the form shows again for a manual check.
+        if (debugGeographyEea) info.reset()
         val params = ConsentRequestParameters.Builder().apply {
             if (debugGeographyEea) {
                 setConsentDebugSettings(
