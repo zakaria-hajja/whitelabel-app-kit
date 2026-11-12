@@ -28,15 +28,16 @@ internal fun iosXcconfig(app: AppConfig, buildType: String, firebaseConfigFileEx
 }
 
 /**
- * What an app's iOS framework (`Shared`) adds for Firebase. [crashLinkPlugin]: CrashKiOS' link
- * plugin, which the Kotlin crash hook needs; [exports]: the modules whose API the Swift Firebase and
- * consent targets call. An app without Firebase gets neither, so its framework keeps no CrashKiOS
- * code (the hook is unreachable once its module isn't exported) and links without Crashlytics.
+ * What an app's iOS framework (`Shared`) adds for Firebase. [modules] are added to the framework and
+ * exported: `:core:firebase:crashlytics`, the Kotlin crash hook over CrashKiOS, which the Swift
+ * `FirebaseService` calls. [crashLinkPlugin]: CrashKiOS' link plugin. An app without Firebase gets
+ * neither, so its framework holds no CrashKiOS code and links without Crashlytics. (The consent and
+ * Firebase modules are pure Kotlin and exported by every app: WhitelabelKit uses their types.)
  */
-data class IosFirebaseFramework(val crashLinkPlugin: Boolean, val exports: List<String>)
+data class IosFirebaseFramework(val crashLinkPlugin: Boolean, val modules: List<String>)
 
 fun iosFirebaseFramework(mode: ServiceMode): IosFirebaseFramework = when (mode) {
-    ServiceMode.OFF -> IosFirebaseFramework(crashLinkPlugin = false, exports = emptyList())
+    ServiceMode.OFF -> IosFirebaseFramework(crashLinkPlugin = false, modules = emptyList())
     ServiceMode.ON, ServiceMode.DEBUG ->
-        IosFirebaseFramework(crashLinkPlugin = true, exports = listOf(":core:firebase:shared", ":core:consent:shared"))
+        IosFirebaseFramework(crashLinkPlugin = true, modules = listOf(":core:firebase:crashlytics"))
 }

@@ -62,7 +62,8 @@ abstract class GenerateIosConfig : DefaultTask() {
 /**
  * For an app's iOS framework module (`:apps:<name>:shared`): `generateIosConfig` from the app's
  * identity, and, when the app has Firebase (`firebase.enabled` true or debug), CrashKiOS' link plugin
- * and the Firebase and consent modules in the framework's exports ([iosFirebaseFramework]).
+ * and the Kotlin crash hook module, added and exported ([iosFirebaseFramework]). An app without
+ * Firebase gets neither.
  */
 class IosAppConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
@@ -87,13 +88,13 @@ class IosAppConventionPlugin : Plugin<Project> {
             val app = AppConfigLoader.load(extension.androidApp.get().asFile)
             val firebase = iosFirebaseFramework(app.firebase)
             if (firebase.crashLinkPlugin) pluginManager.apply(libs.pluginId("crashkios-crashlyticslink"))
-            if (firebase.exports.isNotEmpty()) {
+            if (firebase.modules.isNotEmpty()) {
                 val kotlin = extensions.getByType<KotlinMultiplatformExtension>()
                 kotlin.sourceSets.getByName("commonMain").dependencies {
-                    firebase.exports.forEach { api(project(it)) }
+                    firebase.modules.forEach { api(project(it)) }
                 }
                 kotlin.targets.withType<KotlinNativeTarget>().configureEach {
-                    binaries.withType<Framework>().configureEach { firebase.exports.forEach { export(project(it)) } }
+                    binaries.withType<Framework>().configureEach { firebase.modules.forEach { export(project(it)) } }
                 }
             }
         }

@@ -28,6 +28,7 @@ val sharedModules = listOf(
     ":core:consent:google",
     ":core:firebase:shared",
     ":core:firebase:google",
+    ":core:firebase:crashlytics",
     ":core:domain",
     ":core:data",
     ":feature:authentication",

@@ -68,12 +68,12 @@ class IosConfigTest {
         assertThat(e.message!!).contains("apps/showcase: firebase.enabled=true needs GoogleService-Info.plist")
     }
 
-    @Test fun `an app without firebase gets no crash hook and no firebase exports`() {
-        assertThat(iosFirebaseFramework(ServiceMode.OFF)).isEqualTo(IosFirebaseFramework(crashLinkPlugin = false, exports = emptyList()))
+    @Test fun `an app without firebase gets no crashlytics module and no link plugin`() {
+        assertThat(iosFirebaseFramework(ServiceMode.OFF)).isEqualTo(IosFirebaseFramework(crashLinkPlugin = false, modules = emptyList()))
     }
 
-    @Test fun `an app with firebase on or in debug gets the crash hook and the firebase exports`() {
-        val withFirebase = IosFirebaseFramework(crashLinkPlugin = true, exports = listOf(":core:firebase:shared", ":core:consent:shared"))
+    @Test fun `an app with firebase on or in debug gets the crashlytics module and the link plugin`() {
+        val withFirebase = IosFirebaseFramework(crashLinkPlugin = true, modules = listOf(":core:firebase:crashlytics"))
         assertThat(iosFirebaseFramework(ServiceMode.ON)).isEqualTo(withFirebase)
         assertThat(iosFirebaseFramework(ServiceMode.DEBUG)).isEqualTo(withFirebase)
     }

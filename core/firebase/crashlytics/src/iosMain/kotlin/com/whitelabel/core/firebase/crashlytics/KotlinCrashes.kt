@@ -1,4 +1,4 @@
-package com.whitelabel.core.firebase
+package com.whitelabel.core.firebase.crashlytics
 
 import co.touchlab.crashkios.crashlytics.CrashlyticsKotlin
 import co.touchlab.crashkios.crashlytics.enableCrashlytics
