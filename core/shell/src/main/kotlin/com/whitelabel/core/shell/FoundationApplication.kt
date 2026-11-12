@@ -4,6 +4,7 @@ import android.app.Application
 import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.data.di.ApplicationScope
 import com.whitelabel.core.network.ModuleContributor
+import com.whitelabel.core.shell.brand.adsWiringFor
 import com.whitelabel.core.shell.brand.firebaseWiringFor
 import com.whitelabel.core.shell.brand.foundationModules
 import com.whitelabel.core.shell.brand.recordsUncaughtCrashes
@@ -46,10 +47,11 @@ abstract class FoundationApplication : Application() {
         val contributors = ServiceLoader.load(ModuleContributor::class.java, javaClass.classLoader).toList()
         val definition = definition()
         val firebase = firebaseWiringFor(this, definition, contributors)
+        val ads = adsWiringFor(this, definition, contributors)
         recordUncaught = recordsUncaughtCrashes(firebase.mode)
         startKoin {
             androidContext(this@FoundationApplication)
-            modules(foundationModules(definition, contributors, firebase))
+            modules(foundationModules(definition, contributors, firebase, ads))
         }
     }
 

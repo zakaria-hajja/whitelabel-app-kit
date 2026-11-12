@@ -49,7 +49,7 @@ class FoundationActivity : AppCompatActivity() {
             // This condition is read on the main thread before each draw; the first time it lets the
             // splash go, the post runs after that frame, when this activity is resumed. Consent
             // gathers once per process, so a recreated activity asking again does nothing.
-            if (shouldGatherConsent(definition.usesFirebase, keep, consentRequested)) {
+            if (shouldGatherConsent(definition.needsConsent, keep, consentRequested)) {
                 consentRequested = true
                 window.decorView.post { consent.gatherOnLaunch() }
             }
@@ -99,6 +99,6 @@ class FoundationActivity : AppCompatActivity() {
     }
 }
 
-/** Consent is gathered once the splash lets go, and only by an app that uses Firebase. */
-internal fun shouldGatherConsent(usesFirebase: Boolean, splashKept: Boolean, alreadyRequested: Boolean): Boolean =
-    usesFirebase && !splashKept && !alreadyRequested
+/** Consent is gathered once the splash lets go, and only by an app that needs it (Firebase or ads). */
+internal fun shouldGatherConsent(needsConsent: Boolean, splashKept: Boolean, alreadyRequested: Boolean): Boolean =
+    needsConsent && !splashKept && !alreadyRequested

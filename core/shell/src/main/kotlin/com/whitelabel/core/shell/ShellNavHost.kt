@@ -3,6 +3,8 @@ package com.whitelabel.core.shell
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.navigationBarsPadding
+import com.whitelabel.core.ads.AdBanner
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
@@ -65,6 +67,9 @@ internal data object MainGraph
  *
  * [diagnostics] registers the diagnostics screen ([DiagnosticsRoute]) with the app's tabs, for
  * DEVELOPMENT builds.
+ *
+ * A placement declared with `underTab` (`ads { placement("home", underTab = HomeRoute) }`) is drawn
+ * between that tab's root screen and the bottom bar, only while the root screen is showing.
  */
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -118,7 +123,13 @@ internal fun ShellNavHost(
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            if (showMain && visibleTabs.size >= 2) BottomBar(visibleTabs, navController)
+            if (showMain) {
+                val withBar = visibleTabs.size >= 2
+                Column {
+                    TabBanner(definition, navController, withBar)
+                    if (withBar) BottomBar(visibleTabs, navController)
+                }
+            }
         },
     ) { innerPadding ->
         val hostModifier = Modifier
@@ -191,6 +202,19 @@ private fun NavHostController.showGraph(graph: Any) {
     navigate(graph) {
         popUpTo(this@showGraph.graph.id) { inclusive = true }
     }
+}
+
+/**
+ * The banner of the placement under the current tab root, if any. Without a bottom bar below it, it
+ * keeps clear of the system navigation bar itself.
+ */
+@Composable
+private fun TabBanner(definition: AppDefinition, navController: NavHostController, withBar: Boolean) {
+    if (definition.adPlacements.none { it.underTab != null }) return
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val destination = backStackEntry?.destination ?: return
+    val placement = definition.tabPlacementFor { route -> destination.hasRoute(route::class) } ?: return
+    AdBanner(placement, if (withBar) Modifier else Modifier.navigationBarsPadding())
 }
 
 @Composable

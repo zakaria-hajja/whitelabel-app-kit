@@ -102,6 +102,9 @@ jetbrains-compose-components-resources = { module = "org.jetbrains.compose.compo
 
 # Google User Messaging Platform (consent); 4.0.0 is the latest release on Google Maven
 google-ump = { module = "com.google.android.ump:user-messaging-platform", version = "4.0.0" }
+# Google Mobile Ads (AdMob), in :core:ads:google only. Pinned: 25.5.0 is the newest release, and its
+# Kotlin metadata is 2.3, which Kotlin 2.2.20 still reads (a 2.4 one would not; see the Firebase BoM)
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version = "25.5.0" }
 
 # Firebase (versions come from the BoM)
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }

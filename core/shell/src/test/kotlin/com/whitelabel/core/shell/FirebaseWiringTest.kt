@@ -205,10 +205,15 @@ class FirebaseWiringTest {
             .isInstanceOf<com.whitelabel.core.firebase.ConsentGatedCrashReporter>()
     }
 
-    @Test fun `consent is gathered once, after the splash, only with firebase`() {
-        assertThat(shouldGatherConsent(usesFirebase = true, splashKept = true, alreadyRequested = false)).isEqualTo(false)
-        assertThat(shouldGatherConsent(usesFirebase = true, splashKept = false, alreadyRequested = false)).isEqualTo(true)
-        assertThat(shouldGatherConsent(usesFirebase = true, splashKept = false, alreadyRequested = true)).isEqualTo(false)
-        assertThat(shouldGatherConsent(usesFirebase = false, splashKept = false, alreadyRequested = false)).isEqualTo(false)
+    @Test fun `consent is gathered once, after the splash, only when the app needs it`() {
+        assertThat(shouldGatherConsent(needsConsent = true, splashKept = true, alreadyRequested = false)).isEqualTo(false)
+        assertThat(shouldGatherConsent(needsConsent = true, splashKept = false, alreadyRequested = false)).isEqualTo(true)
+        assertThat(shouldGatherConsent(needsConsent = true, splashKept = false, alreadyRequested = true)).isEqualTo(false)
+        assertThat(shouldGatherConsent(needsConsent = false, splashKept = false, alreadyRequested = false)).isEqualTo(false)
+    }
+
+    @Test fun `an app with firebase needs consent`() {
+        assertThat(withFirebase.needsConsent).isEqualTo(true)
+        assertThat(appDefinition { add(entry("a", RouteA)) }.needsConsent).isEqualTo(false)
     }
 }
