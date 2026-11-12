@@ -6,6 +6,7 @@ struct CatalogListScreen: View {
     let options: CatalogOptions
 
     @State private var screen: ScreenModel<CatalogListState, CatalogListAction>
+    @State private var query = ""
 
     init(options: CatalogOptions) {
         self.options = options
@@ -19,19 +20,16 @@ struct CatalogListScreen: View {
         let model = screen.model
         CatalogListContent(state: model.state, categories: options.categories, send: model.send)
             .searchable(
-                text: Binding(get: { model.state.text }, set: { model.send(CatalogListActionOnQueryChange(text: $0)) }),
+                text: $query,
+                placement: .navigationBarDrawer(displayMode: .always),
                 prompt: KitStrings.text("Search")
             )
+            .bufferedText(model.state.text, local: $query) { model.send(CatalogListActionOnQueryChange(text: $0)) }
             .refreshable {
                 model.send(CatalogListActionOnRefresh.shared)
                 while true {
                     try? await Task.sleep(nanoseconds: 100_000_000)
                     if !model.state.isRefreshing || Task.isCancelled { break }
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    SortMenu(selected: model.state.sort) { model.send(CatalogListActionOnSortSelect(sort: $0)) }
                 }
             }
             .navigationTitle(KitStrings.text("Catalog"))
@@ -46,44 +44,52 @@ struct CatalogListContent: View {
     @SwiftUI.Environment(\.appStyle) private var style
 
     var body: some View {
-        VStack(spacing: 0) {
-            if !categories.isEmpty { chips }
+        // One list: the sort and chips row stays on top whatever the state, and the states are its rows.
+        List {
+            chips
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
             content
         }
+        .listStyle(.plain)
         .background(style.colors.background)
     }
 
     @ViewBuilder private var content: some View {
         if state.unavailable {
             EmptyStateView(title: KitStrings.text("Catalog unavailable"), message: KitStrings.text("The catalog isn't available right now."))
+                .listRowSeparator(.hidden)
         } else if let error = state.firstPageError, state.items.isEmpty {
             SharedErrorState(message: error) { send(CatalogListActionOnRetry.shared) }
+                .listRowSeparator(.hidden)
         } else if state.items.isEmpty && state.isLoadingFirst {
-            LoadingView()
+            LoadingView().listRowSeparator(.hidden)
         } else if state.items.isEmpty {
             EmptyStateView(title: KitStrings.text("No results"), message: KitStrings.text("Try another search or filter."))
+                .listRowSeparator(.hidden)
         } else {
-            List {
-                ForEach(state.items, id: \.id) { item in
-                    NavigationLink(value: Destination(CatalogRoutes.shared.DETAIL, args: ["id": item.id])) {
-                        CatalogRow(item: item)
-                    }
-                    .onAppear { if item.id == state.items.last?.id { send(CatalogListActionOnNearEnd.shared) } }
+            ForEach(state.items, id: \.id) { item in
+                NavigationLink(value: Destination(CatalogRoutes.shared.DETAIL, args: ["id": item.id])) {
+                    CatalogRow(item: item)
                 }
-                if state.isLoadingMore {
-                    ProgressView().frame(maxWidth: .infinity)
-                } else if let error = state.moreError {
-                    SharedErrorState(message: error) { send(CatalogListActionOnRetry.shared) }
-                }
+                .onAppear { if item.id == state.items.last?.id { send(CatalogListActionOnNearEnd.shared) } }
             }
-            .listStyle(.plain)
+            if state.isLoadingMore {
+                ProgressView().frame(maxWidth: .infinity)
+            } else if let error = state.moreError {
+                SharedErrorState(message: error) { send(CatalogListActionOnRetry.shared) }
+            }
         }
     }
 
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
-                chip(KitStrings.text("All"), selected: state.category == nil) { send(CatalogListActionOnCategorySelect(category: nil)) }
+                // Here rather than in the toolbar, which iOS hides while the search is active.
+                SortMenu(selected: state.sort) { send(CatalogListActionOnSortSelect(sort: $0)) }
+                if !categories.isEmpty {
+                    chip(KitStrings.text("All"), selected: state.category == nil) { send(CatalogListActionOnCategorySelect(category: nil)) }
+                }
                 ForEach(categories, id: \.self) { category in
                     chip(category, selected: state.category == category) { send(CatalogListActionOnCategorySelect(category: category)) }
                 }
@@ -140,6 +146,10 @@ private struct SortMenu: View {
             }
         } label: {
             Label(KitStrings.text("Sort"), systemImage: "arrow.up.arrow.down")
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, Spacing.md)
+                .frame(minHeight: 36)
+                .overlay(Capsule().strokeBorder(.secondary.opacity(0.4)))
         }
     }
 
