@@ -147,6 +147,9 @@ object SharedGraph {
     /** The app's consent state; only an app with a Firebase service has one to gather. */
     fun consent(): Consent = koin.get()
 
+    /** The app's consent, or null when the app has no Firebase service (nothing to ask). */
+    fun consentOrNull(): Consent? = koin.getOrNull()
+
     /**
      * Starts the graph for [definition], once; later calls are ignored. Fails, with the rule's
      * message, on an invalid definition, on backend features without a backend URL, and on

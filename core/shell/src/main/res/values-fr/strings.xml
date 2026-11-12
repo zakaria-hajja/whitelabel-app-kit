@@ -20,4 +20,5 @@
     <string name="shell_no_features_message">Aucune fonctionnalité de cette app n’est activée pour le moment.</string>
     <string name="preview_label_backend">Backend</string>
     <string name="preview_backend_mock">Simulé (en mémoire)</string>
+    <string name="privacy_choices">Choix de confidentialité</string>
 </resources>
