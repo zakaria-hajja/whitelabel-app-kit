@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug only: the account "Continue as guest (debug)" signs in with. The default is the one
+     the backend's db:seed (and the fake) create; local.properties debug.guest.* replace it. -->
+<resources>
+    <string name="foundation_debug_guest_email" translatable="false">alice@shared.test</string>
+    <string name="foundation_debug_guest_password" translatable="false">Password123!</string>
+</resources>

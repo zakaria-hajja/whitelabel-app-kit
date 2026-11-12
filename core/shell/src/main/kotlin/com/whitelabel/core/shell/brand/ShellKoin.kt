@@ -68,18 +68,21 @@ internal fun shellModule(definition: AppDefinition) = module {
 
 /**
  * Every Koin module an Android app starts with: the core layers, the shell, the definition's
- * modules (features, then the app's own), then each classpath [contributors]' (the mock backend).
- * Koin keeps the last binding of a type: an app can replace a shared binding, and a contributor's
- * wins over everything.
+ * modules (features, then the app's own), then the build type's [buildTypeModules] (Debug: the guest
+ * account), then each classpath [contributors]' (the mock backend). Koin keeps the last binding of a
+ * type: an app can replace a shared binding, and a contributor's wins over everything (the fake's
+ * guest account over the Debug one).
  */
 internal fun foundationModules(
     definition: AppDefinition,
     contributors: List<ModuleContributor>,
     firebase: FirebaseWiring = FirebaseWiring.OFF,
+    buildTypeModules: List<Module> = emptyList(),
 ): List<Module> =
     listOf(networkModule, dataModule, androidDataModule, shellModule(definition), shellModelModule(definition.toSpec())) +
         definition.koinModules +
         firebaseModules(definition, firebase) +
+        buildTypeModules +
         contributors.flatMap { it.modules() } +
         fakeOverrides(definition, firebase)
 

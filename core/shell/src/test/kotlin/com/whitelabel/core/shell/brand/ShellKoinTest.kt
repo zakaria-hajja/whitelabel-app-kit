@@ -3,14 +3,18 @@ package com.whitelabel.core.shell.brand
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isNull
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.branding.RuntimeDefaults
+import com.whitelabel.core.domain.DebugGuestAccount
 import com.whitelabel.core.domain.remote.DefaultsOnlyRemoteValues
 import com.whitelabel.core.domain.remote.RemoteValues
+import com.whitelabel.core.mockapi.FakeData
 import com.whitelabel.core.mockapi.MockApiContributor
 import com.whitelabel.core.shell.RouteA
 import com.whitelabel.core.shell.appDefinition
@@ -59,5 +63,23 @@ class ShellKoinTest {
     @Test fun `remote values default to the defaults-only implementation`() {
         val koin = koinApplication { modules(foundationModules(definition, emptyList())) }.koin
         assertThat(koin.get<RemoteValues>()).isSameInstanceAs(DefaultsOnlyRemoteValues)
+    }
+    @Test fun `a debug guest module binds the guest account`() {
+        val koin = koinApplication {
+            modules(foundationModules(definition, emptyList(), buildTypeModules = listOf(debugGuestModule("me@x.test", "pw"))))
+        }.koin
+        assertThat(koin.get<DebugGuestAccount>()).isEqualTo(DebugGuestAccount("me@x.test", "pw"))
+    }
+
+    @Test fun `a linked contributor's guest account replaces the debug one`() {
+        val koin = koinApplication {
+            modules(foundationModules(definition, listOf(MockApiContributor()), buildTypeModules = listOf(debugGuestModule("me@x.test", "pw"))))
+        }.koin
+        assertThat(koin.get<DebugGuestAccount>()).isEqualTo(DebugGuestAccount(FakeData.GUEST_EMAIL, FakeData.PASSWORD))
+    }
+
+    @Test fun `without build type modules or the fake there is no guest account`() {
+        val koin = koinApplication { modules(foundationModules(definition, emptyList())) }.koin
+        assertThat(koin.getOrNull<DebugGuestAccount>()).isNull()
     }
 }
