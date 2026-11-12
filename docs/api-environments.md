@@ -55,6 +55,23 @@ Showcase (tenant `acme`) points its debug build at
 `http://10.0.2.2:3000/api/v1/`. In debug builds, Settings › About › Diagnostics has a **Ping** that calls `GET health` and shows
 whether the backend and its database are up.
 
+### Debug guest sign-in
+
+Every debug build (on this backend or on the fake below) shows **Continue as guest (debug)** on
+the sign-in screen. It signs in with one tap as `alice@shared.test` / `Password123!`, the account
+`npm run db:seed` creates, so seed the database first; otherwise the tap shows the usual
+wrong-password error. Release builds never contain the button or the account.
+
+To use another account on Android, set both keys in the build's root `local.properties` (never
+committed); setting only one fails the build:
+
+```properties
+debug.guest.email=bob@shared.test
+debug.guest.password=Password123!
+```
+
+On the fake, the button always uses the fake's own `alice@shared.test`. iOS always uses alice.
+
 ## Working without the backend
 
 Pass `-Pwhitelabel.mockApi=true` to build debug variants against `:core:mockapi`, an in-memory
@@ -68,7 +85,7 @@ To keep it on in Android Studio, add `whitelabel.mockApi=true` to `~/.gradle/gra
 (not the repo's file, so nobody commits it). The fake has:
 
 - the seeded users `alice@shared.test` and `bob@shared.test`, password `Password123!`, plus any you register;
-- a **Continue as guest (debug)** button on the sign-in screen, which signs in as `alice@shared.test` in one tap (it appears only when the fake is linked, so never in release builds);
+- the **Continue as guest (debug)** button signing in as its own `alice@shared.test` ([Debug guest sign-in](#debug-guest-sign-in));
 - 25 catalog items (`Item 1`…`Item 25`, categories Books, Games, Music and Travel), with paging, search, filters and sorts;
 - 15-minute access tokens and single-use refresh tokens, like the real backend;
 - the documented error codes (wrong password, short password, a taken email, unknown items).
