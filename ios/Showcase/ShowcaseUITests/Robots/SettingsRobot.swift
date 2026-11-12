@@ -26,6 +26,16 @@ struct SettingsRobot {
         return self
     }
 
+    /** Signs out from the account section, confirming. */
+    func signOut() {
+        let button = app.buttons["Sign out"].firstMatch
+        for _ in 0..<4 where !(button.exists && button.isHittable) { app.swipeUp() }
+        button.tap()
+        let confirm = app.alerts.buttons["Sign out"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+    }
+
     func openLink(_ label: String) {
         let link = app.buttons[label]
         if !link.waitForExistence(timeout: 2) || !link.isHittable { app.swipeUp() }

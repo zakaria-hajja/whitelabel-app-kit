@@ -25,7 +25,9 @@ data class ResetPasswordState(
     /** The link is expired or used: offer a new one instead of the form. */
     val tokenExpired: Boolean = false,
     val done: Boolean = false,
-)
+) {
+    val canSubmit: Boolean get() = password.isNotEmpty() && !isSubmitting
+}
 
 sealed interface ResetPasswordAction {
     data class OnPasswordChange(val password: String) : ResetPasswordAction

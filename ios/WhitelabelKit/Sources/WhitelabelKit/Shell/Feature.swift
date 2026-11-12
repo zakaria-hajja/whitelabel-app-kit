@@ -61,3 +61,15 @@ public enum FeatureBuilder {
     public static func buildEither(second part: [any Feature]) -> [any Feature] { part }
     public static func buildArray(_ parts: [[any Feature]]) -> [any Feature] { parts.flatMap { $0 } }
 }
+
+private struct AppBrandKey: EnvironmentKey {
+    static let defaultValue: BrandConfig? = nil
+}
+
+public extension EnvironmentValues {
+    /** The app's identity (name, scheme, links), set by `RootView`. */
+    var appBrand: BrandConfig? {
+        get { self[AppBrandKey.self] }
+        set { self[AppBrandKey.self] = newValue }
+    }
+}

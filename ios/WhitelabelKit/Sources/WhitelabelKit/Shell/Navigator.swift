@@ -11,17 +11,27 @@ public final class Navigator {
     public var selectedTab: String?
     var paths: [String: [Destination]] = [:]
     var gatePath: [Destination] = []
+    /** The gate's screens are showing (signed out): push and pop work on its stack. */
+    var isGateShowing = false
 
     public init() {}
 
-    /** Pushes [destination] onto the selected tab's stack. */
+    /** Pushes [destination] onto the gate's stack while it shows, else the selected tab's. */
     public func push(_ destination: Destination) {
+        if isGateShowing {
+            gatePath.append(destination)
+            return
+        }
         guard let tab = selectedTab else { return }
         paths[tab, default: []].append(destination)
     }
 
-    /** Goes back one screen in the selected tab. */
+    /** Goes back one screen. */
     public func pop() {
+        if isGateShowing {
+            if !gatePath.isEmpty { gatePath.removeLast() }
+            return
+        }
         guard let tab = selectedTab, paths[tab]?.isEmpty == false else { return }
         paths[tab]?.removeLast()
     }
@@ -42,7 +52,8 @@ public final class Navigator {
         }
         if let tab, visibleTabs.contains(tab) { selectedTab = tab }
         if selectedTab == nil { selectedTab = visibleTabs.first }
-        push(destination)
+        guard let selected = selectedTab else { return }
+        paths[selected, default: []].append(destination)
     }
 
     /** Back to the start, for the next user: on sign-in and sign-out, as Android pops the whole back stack. */

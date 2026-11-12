@@ -7,6 +7,8 @@ import com.whitelabel.feature.authentication.shared.resources.auth_error_invalid
 import com.whitelabel.feature.authentication.shared.resources.auth_error_name_long
 import com.whitelabel.feature.authentication.shared.resources.auth_error_password_short
 import androidx.lifecycle.SavedStateHandle
+import com.whitelabel.feature.authentication.presentation.forgot.ForgotPasswordState
+import com.whitelabel.feature.authentication.presentation.reset.ResetPasswordState
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.doesNotContain
@@ -130,6 +132,16 @@ class AuthViewModelsTest {
         viewModel.onAction(RegisterAction.OnSubmit)
         assertThat(session.registrations.single().lastName).isNull()
         assertThat(analytics.events).containsExactly(AnalyticsEvent(AnalyticsEvents.SIGN_UP, mapOf("method" to "password")))
+    }
+
+    // Both platforms enable the buttons from the shared state (iOS must not judge blankness itself).
+    @Test fun `forgot and reset can submit only with input and while idle`() {
+        assertThat(ForgotPasswordState(email = " \n\u2028").canSubmit).isFalse()
+        assertThat(ForgotPasswordState(email = "a@b.c").canSubmit).isTrue()
+        assertThat(ForgotPasswordState(email = "a@b.c", isSubmitting = true).canSubmit).isFalse()
+        assertThat(ResetPasswordState(password = "").canSubmit).isFalse()
+        assertThat(ResetPasswordState(password = " ").canSubmit).isTrue()
+        assertThat(ResetPasswordState(password = "x", isSubmitting = true).canSubmit).isFalse()
     }
 
     @Test fun `forgot password confirms without saying whether the account exists`() = runTest {

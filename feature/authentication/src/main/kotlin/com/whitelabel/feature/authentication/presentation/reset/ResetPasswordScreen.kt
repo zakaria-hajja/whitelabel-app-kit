@@ -75,7 +75,7 @@ internal fun ResetPasswordScreen(
                 AppPrimaryButton(
                     text = stringResource(R.string.auth_reset_submit),
                     onClick = { onAction(ResetPasswordAction.OnSubmit) },
-                    enabled = state.password.isNotEmpty() && !state.isSubmitting,
+                    enabled = state.canSubmit,
                     loading = state.isSubmitting,
                     modifier = Modifier.fillMaxWidth(),
                 )

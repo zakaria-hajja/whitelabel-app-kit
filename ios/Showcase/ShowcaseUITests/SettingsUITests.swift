@@ -9,6 +9,7 @@ final class SettingsUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app.launchFresh()
+        SignInRobot(app: app).signInToTabs()
     }
 
     func testThemeChangeAppliesAtOnce() {

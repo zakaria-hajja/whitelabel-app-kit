@@ -2,6 +2,7 @@ package com.whitelabel.core.mockapi
 
 import assertk.assertThat
 import assertk.assertions.containsExactly
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import com.whitelabel.core.common.ApiErrorCode
@@ -43,6 +44,38 @@ class FakeBackendTest {
             tokens.tokens = SessionTokens(pair["accessToken"]!!.jsonPrimitive.content, pair["refreshToken"]!!.jsonPrimitive.content)
         }
         return result
+    }
+
+    // UI tests open a reset link with a known token (Debug -fakeResetToken).
+    @Test fun `a fixed reset token is the one issued`() {
+        backend.fixedResetToken = "t1"
+        assertThat(backend.issueResetToken("alice@shared.test")).isEqualTo("t1")
+        assertThat(backend.lastResetToken).isEqualTo("t1")
+    }
+
+    // The Debug app keeps the fake's sessions across launches, as a real server would.
+    @Test fun `exported sessions sign in on a new backend`() = runTest {
+        val tokens = MemoryTokens()
+        signIn(tokens)
+        val next = FakeBackend()
+        next.importSessions(backend.exportSessions())
+        assertThat(next.client(tokens).getResult<JsonObject>("users/me")).isInstanceOf(Result.Success::class)
+        val refreshed = next.client().postPublicResult<JsonObject, JsonObject>("auth/refresh", buildJsonObject { put("refreshToken", tokens.tokens!!.refreshToken) })
+        assertThat(refreshed).isInstanceOf(Result.Success::class)
+    }
+
+    @Test fun `a sessions change is reported with the new export`() = runTest {
+        val reported = mutableListOf<String>()
+        backend.onSessionsChanged = { reported += it }
+        backend.client().getResult<JsonObject>("app/config")
+        assertThat(reported).isEmpty()
+        signIn(MemoryTokens())
+        assertThat(reported).containsExactly(backend.exportSessions())
+    }
+
+    @Test fun `an unreadable export starts with no sessions`() = runTest {
+        backend.importSessions("not json")
+        assertThat(backend.client(MemoryTokens(SessionTokens("a", "r"))).getResult<JsonObject>("users/me")).isInstanceOf(Result.Error::class)
     }
 
     @Test fun `seeded user signs in and the wrong password is refused`() = runTest {

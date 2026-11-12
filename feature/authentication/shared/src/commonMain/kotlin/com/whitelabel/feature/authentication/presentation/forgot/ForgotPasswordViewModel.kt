@@ -22,7 +22,9 @@ data class ForgotPasswordState(
     val isSubmitting: Boolean = false,
     /** The request went through. The text never says whether the account exists. */
     val sent: Boolean = false,
-)
+) {
+    val canSubmit: Boolean get() = email.isNotBlank() && !isSubmitting
+}
 
 sealed interface ForgotPasswordAction {
     data class OnEmailChange(val email: String) : ForgotPasswordAction

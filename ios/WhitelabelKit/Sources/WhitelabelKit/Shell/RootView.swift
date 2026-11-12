@@ -34,6 +34,7 @@ private struct ShellContent: View {
             .appStyle(AppStyle(pack: runtime.definition.style))
             .preferredColorScheme(colorScheme(state.theme))
             .environment(runtime.navigator)
+            .environment(\.appBrand, runtime.brand)
             .onOpenURL { runtime.open($0) }
             .onAppear { runtime.processPendingLink() }
             .onChange(of: linkTrigger) { old, new in
@@ -42,7 +43,7 @@ private struct ShellContent: View {
                 runtime.processPendingLink()
             }
             #if DEBUG
-            .overlay(alignment: .topLeading) { ColorSchemeProbe() }
+            .overlay(alignment: .topLeading) { DebugProbes(lastLink: runtime.lastLinkReceived, fakeLog: runtime.fakeLog) }
             #endif
     }
 
@@ -89,6 +90,8 @@ private struct GateView: View {
                 definition.view(for: destination) ?? AnyView(EmptyView())
             }
         }
+        .onAppear { navigator.isGateShowing = true }
+        .onDisappear { navigator.isGateShowing = false }
     }
 }
 
@@ -123,6 +126,9 @@ final class AppRuntime {
     let navigator = Navigator()
     /** Counts incoming links, so the shell re-checks the pending one. */
     private(set) var linksReceived = 0
+    /** Debug: the last link that reached the app, and the fake's recent requests (`_fake/log`), for UI tests. */
+    private(set) var lastLinkReceived = ""
+    private(set) var fakeLog = ""
 
     private init(definition: AppDefinition, brand: BrandConfig, shellViewModel: ShellViewModel) {
         self.definition = definition
@@ -160,9 +166,12 @@ final class AppRuntime {
 
     /** An incoming link is kept in the shell model (as on Android) and decided when the shell can. */
     func open(_ url: URL) {
+        #if DEBUG
+        lastLinkReceived = url.absoluteString
+        #endif
         if case let .control(command) = DeepLinks.route(url, scheme: brand.deepLinkScheme, features: [], enabled: [], signedIn: false) {
             #if DEBUG
-            DebugControls.run(command)
+            if command == "log" { fakeLog = DebugControls.recentRequests() } else { DebugControls.run(command) }
             #else
             _ = command
             #endif
