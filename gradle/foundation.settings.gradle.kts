@@ -25,6 +25,7 @@ val sharedModules = listOf(
     ":core:ui",
     ":core:analytics",
     ":core:consent:shared",
+    ":core:consent:google",
     ":core:firebase:shared",
     ":core:domain",
     ":core:data",
