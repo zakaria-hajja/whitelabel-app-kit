@@ -209,6 +209,22 @@
         }
       }
     },
+    "Continue as guest (debug)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue as guest (debug)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuer en invité (debug)"
+          }
+        }
+      }
+    },
     "Create account": {
       "localizations": {
         "en": {

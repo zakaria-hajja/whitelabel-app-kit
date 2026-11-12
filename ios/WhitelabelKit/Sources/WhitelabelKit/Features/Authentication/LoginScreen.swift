@@ -47,6 +47,13 @@ struct LoginForm: View {
             if options.allowRegistration {
                 Button(KitStrings.text("Create an account"), action: onCreateAccount).buttonStyle(TextButtonStyle())
             }
+            // Debug builds on the fake backend only: signs in as its seeded test account.
+            if state.guestAvailable {
+                Button(KitStrings.text("Continue as guest (debug)")) { send(LoginActionOnContinueAsGuest.shared) }
+                    .buttonStyle(TextButtonStyle())
+                    .disabled(state.isSubmitting)
+                    .accessibilityIdentifier("auth.guest")
+            }
         }
     }
 }
@@ -54,7 +61,7 @@ struct LoginForm: View {
 #Preview("Sign in") {
     PackPreviews {
         LoginForm(
-            state: LoginState(email: "ada@example.com", password: "", emailError: nil, error: nil, isSubmitting: false),
+            state: LoginState(email: "ada@example.com", password: "", emailError: nil, error: nil, isSubmitting: false, guestAvailable: false),
             appName: "Sample", options: .init(), send: { _ in }, onCreateAccount: {}, onForgotPassword: {}
         )
         .frame(height: 520)

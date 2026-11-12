@@ -184,7 +184,7 @@ Showcase on iOS has the same features, order and start tab as on Android:
 
 | Launch argument / link | Effect |
 |---|---|
-| `-mockApi` | run on the in-memory fake backend |
+| `-mockApi` | run on the in-memory fake backend; the sign-in screen then shows **Continue as guest (debug)**, which signs in as `alice@shared.test` |
 | `-freshInstall` | start as a new install: no stores, no Keychain key, device language, no fake sessions |
 | `-dropTokenKey` | delete only the Keychain key, as after a reinstall or a restored backup: the session reads as signed out |
 | `-fakeResetToken t1` | the fake issues reset token `t1`, already issued for `alice@shared.test` |

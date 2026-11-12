@@ -68,6 +68,7 @@ To keep it on in Android Studio, add `whitelabel.mockApi=true` to `~/.gradle/gra
 (not the repo's file, so nobody commits it). The fake has:
 
 - the seeded users `alice@shared.test` and `bob@shared.test`, password `Password123!`, plus any you register;
+- a **Continue as guest (debug)** button on the sign-in screen, which signs in as `alice@shared.test` in one tap (it appears only when the fake is linked, so never in release builds);
 - 25 catalog items (`Item 1`…`Item 25`, categories Books, Games, Music and Travel), with paging, search, filters and sorts;
 - 15-minute access tokens and single-use refresh tokens, like the real backend;
 - the documented error codes (wrong password, short password, a taken email, unknown items).
