@@ -5,9 +5,12 @@ import androidx.lifecycle.SavedStateHandle
 import assertk.assertThat
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isSameInstanceAs
 import assertk.assertions.isTrue
 import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.branding.RuntimeDefaults
+import com.whitelabel.core.domain.remote.DefaultsOnlyRemoteValues
+import com.whitelabel.core.domain.remote.RemoteValues
 import com.whitelabel.core.mockapi.MockApiContributor
 import com.whitelabel.core.shell.RouteA
 import com.whitelabel.core.shell.appDefinition
@@ -51,5 +54,10 @@ class ShellKoinTest {
         val koin = koinApplication { modules(foundationModules(definition, emptyList())) }.koin
         assertThat(koin.get<HttpClientEngine>()).isInstanceOf(OkHttpEngine::class)
         assertThat(koin.get<Boolean>(named(USING_MOCK_API))).isFalse()
+    }
+
+    @Test fun `remote values default to the defaults-only implementation`() {
+        val koin = koinApplication { modules(foundationModules(definition, emptyList())) }.koin
+        assertThat(koin.get<RemoteValues>()).isSameInstanceAs(DefaultsOnlyRemoteValues)
     }
 }

@@ -16,6 +16,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.AnalyticsEvents
 import com.whitelabel.core.branding.BrandConfig
+import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.domain.SessionState
@@ -31,8 +32,10 @@ class FoundationActivity : AppCompatActivity() {
     private val definition: AppDefinition by inject()
     private val brand: BrandConfig by inject()
     private val analytics: Analytics by inject()
+    private val consent: Consent by inject()
 
     private val viewModel: ShellViewModel by viewModel()
+    private var consentRequested = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
@@ -40,7 +43,18 @@ class FoundationActivity : AppCompatActivity() {
         // A recreated activity (rotation, process death) already handed its link over.
         takeDeepLink(intent, deliver = savedInstanceState == null)
         val hasGate = definition.gateEntry != null
-        splash.setKeepOnScreenCondition { !viewModel.state.value.showsContent(hasGate) }
+        splash.setKeepOnScreenCondition {
+            val keep = !viewModel.state.value.showsContent(hasGate)
+            // UMP must run on the main thread, after the first screen shows (not behind the splash).
+            // This condition is read on the main thread before each draw; the first time it lets the
+            // splash go, the post runs after that frame, when this activity is resumed. Consent
+            // gathers once per process, so a recreated activity asking again does nothing.
+            if (shouldGatherConsent(definition.usesFirebase, keep, consentRequested)) {
+                consentRequested = true
+                window.decorView.post { consent.gatherOnLaunch() }
+            }
+            keep
+        }
         enableEdgeToEdge()
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle()
@@ -84,3 +98,7 @@ class FoundationActivity : AppCompatActivity() {
         setIntent(Intent(intent).setData(null))
     }
 }
+
+/** Consent is gathered once the splash lets go, and only by an app that uses Firebase. */
+internal fun shouldGatherConsent(usesFirebase: Boolean, splashKept: Boolean, alreadyRequested: Boolean): Boolean =
+    usesFirebase && !splashKept && !alreadyRequested

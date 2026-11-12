@@ -609,6 +609,22 @@
         }
       }
     },
+    "Privacy choices": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy choices"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choix de confidentialité"
+          }
+        }
+      }
+    },
     "Privacy policy": {
       "localizations": {
         "en": {

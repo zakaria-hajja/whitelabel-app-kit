@@ -14,6 +14,11 @@ import UserNotifications
  * - `-messageSeconds 10`: one-off messages stay that long (UI tests read them after a gesture);
  * - `-notificationAccess notAskedYet|granted|blocked`: the notification permission reports that
  *   status, and asking grants without the system alert (see `NotificationPermission`);
+ * - `-fakeFirebase`: Firebase runs as the in-memory fake (needs a Firebase service in the definition);
+ * - `-analyticsDebug`: analytics and crash collection run in this debug build, and events go to
+ *   Firebase's DebugView (`LaunchFlags.analyticsDebug`);
+ * - `-consentEEA`: the consent form behaves as in the EEA (`LaunchFlags.consentEEA`);
+ * - `-fakeConsent obtained|declined|failed|notRequired`: what the fake consent answers (default obtained);
  * - `<scheme>://_fake/offline|online|expire-tokens|revoke-sessions`: steer the running fake;
  * - `<scheme>://_fake/log`: show the fake's recent requests in the `debug.fakeLog` probe.
  *
@@ -25,6 +30,9 @@ struct DebugControls {
     private let defaults = UserDefaults.standard
 
     var useMockApi: Bool { arguments.contains("-mockApi") }
+    var fakeFirebase: Bool { arguments.contains("-fakeFirebase") }
+    var analyticsDebug: Bool { arguments.contains("-analyticsDebug") }
+    var fakeConsent: String { defaults.string(forKey: "fakeConsent") ?? "obtained" }
 
     private static var sessionsFile: URL? {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?.appendingPathComponent("whitelabel-fake-sessions.json")
@@ -34,6 +42,8 @@ struct DebugControls {
     func beforeStart(bundle: Bundle) {
         let messageSeconds = defaults.double(forKey: "messageSeconds")
         if messageSeconds > 0 { MessageBanner.seconds = messageSeconds }
+        applyLaunchFlags()
+        SharedGraph.shared.useFirebaseDebug(fake: fakeFirebase, analytics: analyticsDebug, fakeConsent: fakeConsent)
         let cipher = KeychainTokenCipher(service: bundle.bundleIdentifier ?? "whitelabel")
         if arguments.contains("-dropTokenKey") { cipher.deleteKey() }
         guard arguments.contains("-freshInstall") else { return }
@@ -47,6 +57,12 @@ struct DebugControls {
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
         cipher.deleteKey()
         IosLanguageRepository().set(languageTag: nil)
+    }
+
+    /** The arguments a service reads (`LaunchFlags`). */
+    func applyLaunchFlags() {
+        LaunchFlags.consentEEA = arguments.contains("-consentEEA")
+        LaunchFlags.analyticsDebug = analyticsDebug
     }
 
     /** After the graph starts, before the shell asks for the config: set up the fake. */

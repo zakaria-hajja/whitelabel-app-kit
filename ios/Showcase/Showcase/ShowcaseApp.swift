@@ -1,5 +1,6 @@
 import SwiftUI
 import Shared
+import WhitelabelFirebase
 import WhitelabelKit
 
 /** Showcase on iOS: the foundation's features on the Material pack. In Debug, `-designCatalog` opens the design-system catalog instead. */
@@ -19,7 +20,7 @@ import WhitelabelKit
     }
 
     private var root: some View {
-        RootView(definition: AppDefinition(style: .material, startTab: HomeRoutes.shared.ROOT) {
+        RootView(definition: AppDefinition(style: .material, startTab: HomeRoutes.shared.ROOT, services: [FirebaseService()]) {
             Auth()
             Home(shortcuts: [
                 HomeShortcut(title: String(localized: "Browse the catalog"), systemImage: "list.bullet", route: CatalogRoutes.shared.LIST),
@@ -29,7 +30,29 @@ import WhitelabelKit
             // The categories of the backend's seed catalog, as on Android.
             Catalog(categories: ["Books", "Games", "Music", "Travel"])
             Profile()
-            Settings()
+            Settings(options: SettingsOptions(sections: [
+                SettingsSection(title: String(localized: "Firebase")) {
+                    PrivacyChoicesRow()
+                    RemoteNoteRow()
+                },
+            ]))
         })
+    }
+}
+
+/** The note Remote Config carries for Showcase ("default" until a value is fetched, or without Firebase), as on Android. */
+private struct RemoteNoteRow: View {
+    @State private var note = Self.read()
+
+    var body: some View {
+        AppValueRow(String(localized: "Remote note"), value: note) {}
+            .accessibilityIdentifier("showcase.remoteNote")
+            .task {
+                for await _ in SharedGraph.shared.remoteValues().changes { note = Self.read() }
+            }
+    }
+
+    private static func read() -> String {
+        SharedGraph.shared.remoteValues().string(key: "showcase_remote_note", default: "default")
     }
 }

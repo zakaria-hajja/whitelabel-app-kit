@@ -8,8 +8,15 @@ import com.whitelabel.core.analytics.LoggingAnalytics
 import com.whitelabel.core.analytics.LoggingCrashReporter
 import com.whitelabel.core.branding.BrandConfig
 import com.whitelabel.core.branding.Environment
+import com.whitelabel.core.consent.ConsentPort
+import com.whitelabel.core.consent.FakeConsentPort
+import com.whitelabel.core.consent.consentModule
 import com.whitelabel.core.data.di.androidDataModule
 import com.whitelabel.core.data.di.dataModule
+import com.whitelabel.core.domain.remote.DefaultsOnlyRemoteValues
+import com.whitelabel.core.domain.remote.RemoteValues
+import com.whitelabel.core.firebase.FirebaseMode
+import com.whitelabel.core.firebase.firebaseModule
 import com.whitelabel.core.network.EngineOverride
 import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.network.NetworkConfig
@@ -54,6 +61,7 @@ internal fun shellModule(definition: AppDefinition) = module {
     single<CrashReporter> {
         definition.crashReporter ?: LoggingCrashReporter { message, throwable -> Log.e("Crash", message, throwable) }
     }
+    single<RemoteValues> { DefaultsOnlyRemoteValues }
     single<HealthDataSource> { KtorHealthDataSource(get()) }
     viewModel { BrandPreviewViewModel(get(), get(), get(named(USING_MOCK_API))) }
 }
@@ -64,7 +72,34 @@ internal fun shellModule(definition: AppDefinition) = module {
  * Koin keeps the last binding of a type: an app can replace a shared binding, and a contributor's
  * wins over everything.
  */
-internal fun foundationModules(definition: AppDefinition, contributors: List<ModuleContributor>): List<Module> =
+internal fun foundationModules(
+    definition: AppDefinition,
+    contributors: List<ModuleContributor>,
+    firebase: FirebaseWiring = FirebaseWiring.OFF,
+): List<Module> =
     listOf(networkModule, dataModule, androidDataModule, shellModule(definition), shellModelModule(definition.toSpec())) +
         definition.koinModules +
-        contributors.flatMap { it.modules() }
+        firebaseModules(definition, firebase) +
+        contributors.flatMap { it.modules() } +
+        fakeOverrides(definition, firebase)
+
+/** Fake mode's Firebase module isn't here: it goes last ([fakeOverrides]). */
+private fun firebaseModules(definition: AppDefinition, wiring: FirebaseWiring): List<Module> = when {
+    !definition.usesFirebase -> emptyList()
+    wiring.mode == FirebaseMode.FAKE -> listOf(consentModule())
+    else -> listOf(consentModule(), firebaseModule(wiring.mode, wiring.debugBuild, wiring.debugAnalytics))
+}
+
+/**
+ * Fake mode's bindings (fake remote values, fake consent that shows no real form) go last, after the
+ * contributors, so a linked Firebase or UMP contributor can never replace them.
+ */
+private fun fakeOverrides(definition: AppDefinition, wiring: FirebaseWiring): List<Module> =
+    if (definition.usesFirebase && wiring.mode == FirebaseMode.FAKE) {
+        listOf(
+            firebaseModule(FirebaseMode.FAKE, wiring.debugBuild, wiring.debugAnalytics),
+            module { single<ConsentPort> { FakeConsentPort(wiring.fakeConsent) } },
+        )
+    } else {
+        emptyList()
+    }

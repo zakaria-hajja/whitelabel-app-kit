@@ -1,0 +1,81 @@
+# WhitelabelFirebase: Firebase (Remote Config, Analytics, Crashlytics) as the Kotlin ports, and the
+# FirebaseService an app lists in AppDefinition(services:). Only an app with Firebase includes it,
+# with WhitelabelConsent.yml; WhitelabelKit itself never imports Firebase:
+#
+#   include: [path/to/foundation/ios/WhitelabelKit/WhitelabelKit.yml,
+#             path/to/foundation/ios/WhitelabelConsent/WhitelabelConsent.yml,
+#             path/to/foundation/ios/WhitelabelFirebase/WhitelabelFirebase.yml]
+#
+# and the app target uses the template, which links both targets (with their packages) and adds
+# the Crashlytics dSYM upload. The app must be the only target linking them: a hosted test bundle
+# depends on them with `link: false` (see ios/Showcase/project.yml), or Xcode hands the packages'
+# code to the test bundle and the app misses it.
+#
+#   targets:
+#     MyApp:
+#       templates: [WhitelabelFirebaseApp]
+#       settings: { base: { OTHER_LDFLAGS: [$(inherited), -ObjC, -framework, Shared] } }
+#
+# -ObjC is Firebase's requirement for the app target (its Objective-C categories). The app's
+# Info.plist turns collection off until consent (FirebaseService checks the keys; see its docs).
+# The packages link in Release too (SPM can't drop them per configuration); FirebaseService only
+# configures Firebase when WL_FIREBASE is on.
+packages:
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    exactVersion: 13.1.1
+targets:
+  WhitelabelFirebase:
+    type: framework.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources/WhitelabelFirebase
+    dependencies:
+      # AppService; WhitelabelKit also builds Shared first. The app links the kit and the consent target.
+      - target: WhitelabelKit
+        link: false
+      - target: WhitelabelConsent
+        link: false
+      # Xcode puts the packages' code into this static framework when the app is its only linker.
+      - package: Firebase
+        product: FirebaseRemoteConfig
+      - package: Firebase
+        product: FirebaseAnalytics
+      - package: Firebase
+        product: FirebaseCrashlytics
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.whitelabel.firebase
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+        SWIFT_VERSION: "5.9"
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+targetTemplates:
+  WhitelabelFirebaseApp:
+    # The static frameworks carry their packages' code, and Swift autolinks the binary frameworks
+    # they import. Analytics' measurement binary isn't imported, so the app links it itself.
+    dependencies:
+      - target: WhitelabelConsent
+        embed: false
+      - target: WhitelabelFirebase
+        embed: false
+      - framework: GoogleAppMeasurement.framework
+        implicit: true
+        embed: false
+    postBuildScripts:
+      - name: Upload dSYMs to Crashlytics (WL_FIREBASE on only)
+        basedOnDependencyAnalysis: false
+        script: |
+          # Only a configuration with real Firebase uploads; fake and off builds do nothing.
+          if [ "${WL_FIREBASE:-off}" != "on" ]; then
+            exit 0
+          fi
+          # Crashlytics' script comes with the firebase-ios-sdk package checkout.
+          run="${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
+          if [ ! -x "$run" ]; then
+            echo "warning: Crashlytics' upload script isn't at $run, so the dSYMs were not uploaded"
+            exit 0
+          fi
+          "$run" || echo "warning: the Crashlytics dSYM upload failed"

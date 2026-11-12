@@ -64,6 +64,8 @@ class AppDefinition internal constructor(
     internal val stylePack: StylePack = StylePack.Material,
     /** The app's own Koin bindings, from `modules(...)`. */
     internal val appModules: List<Module> = emptyList(),
+    /** The app called `firebase()`: remote values, analytics and crash reports come from Firebase. */
+    val usesFirebase: Boolean = false,
 ) {
     /**
      * Every Koin module the definition brings, once each: each entry's, then the app's own. Koin
@@ -84,6 +86,7 @@ class AppDefinitionBuilder internal constructor() {
     private var crashReporter: CrashReporter? = null
     private var stylePack: StylePack = StylePack.Material
     private val appModules = mutableListOf<Module>()
+    private var usesFirebase = false
 
     fun add(entry: FeatureEntry) {
         entries += entry
@@ -113,8 +116,22 @@ class AppDefinitionBuilder internal constructor() {
         crashReporter = reporter
     }
 
+    /**
+     * Uses Firebase for remote values, analytics and crash reports, behind the user's consent. It
+     * needs `firebase.enabled` (`true` or `debug`) in app.properties, and replaces [analytics] and
+     * [crashReporter].
+     */
+    fun firebase() {
+        usesFirebase = true
+    }
+
     internal fun build(): AppDefinition {
-        val definition = AppDefinition(entries.toList(), startTabRoute, analytics, crashReporter, stylePack, appModules.toList())
+        check(!usesFirebase || (analytics == null && crashReporter == null)) {
+            "firebase() replaces analytics() and crashReporter(); use one"
+        }
+        val definition = AppDefinition(
+            entries.toList(), startTabRoute, analytics, crashReporter, stylePack, appModules.toList(), usesFirebase,
+        )
         definition.toSpec().validate()
         return definition
     }
@@ -125,6 +142,15 @@ class AppDefinitionBuilder internal constructor() {
  * call the API need the app's `api.*` base URLs.
  */
 internal fun AppDefinition.backendProblem(hasBackend: Boolean): String? = toSpec().backendProblem(hasBackend)
+
+/**
+ * Fails at startup when `firebase()` and the app's `firebase.enabled` setting ([declared]: it isn't
+ * `false`) disagree, so a half-configured app never runs.
+ */
+internal fun checkFirebaseDeclared(definition: AppDefinition, declared: Boolean) {
+    check(!definition.usesFirebase || declared) { "firebase() needs firebase.enabled=true or debug in app.properties" }
+    check(definition.usesFirebase || !declared) { "firebase.enabled is set but the app definition doesn't call firebase()" }
+}
 
 /** Declares an app's features, e.g. `appDefinition { auth(); notes(); settings(); startTab(NotesRoute) }`. */
 fun appDefinition(block: AppDefinitionBuilder.() -> Unit): AppDefinition =

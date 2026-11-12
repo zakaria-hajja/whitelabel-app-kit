@@ -8,11 +8,24 @@ import com.whitelabel.core.analytics.LoggingCrashReporter
 import com.whitelabel.core.branding.BrandConfig
 import com.whitelabel.core.branding.Environment
 import com.whitelabel.core.branding.hasBackend
+import com.whitelabel.core.consent.Consent
+import com.whitelabel.core.consent.ConsentPort
+import com.whitelabel.core.consent.FakeConsentPort
+import com.whitelabel.core.consent.UmpResult
+import com.whitelabel.core.consent.DebugConsent
+import com.whitelabel.core.consent.consentModule
+import com.whitelabel.core.consent.fakeConsentResult
 import com.whitelabel.core.data.di.ApplicationScope
 import com.whitelabel.core.data.di.dataModule
 import com.whitelabel.core.datastore.StorePaths
 import com.whitelabel.core.datastore.TokenCipher
 import com.whitelabel.core.domain.LanguageRepository
+import com.whitelabel.core.firebase.CollectionSwitch
+import com.whitelabel.core.firebase.FirebaseMode
+import com.whitelabel.core.firebase.RemoteConfigSource
+import com.whitelabel.core.firebase.firebaseModule
+import com.whitelabel.core.domain.remote.DefaultsOnlyRemoteValues
+import com.whitelabel.core.domain.remote.RemoteValues
 import com.whitelabel.core.network.EngineOverride
 import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.network.NetworkConfig
@@ -47,6 +60,7 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import platform.UIKit.UIDevice
 
@@ -65,12 +79,81 @@ object SharedGraph {
     private var launch: Launch? = null
     private val contributors = mutableListOf<ModuleContributor>()
 
+    /** What Swift's services hand over before [start]; kept across [resetForTests] like [launch]. */
+    private class FirebaseServices(
+        val source: RemoteConfigSource,
+        val analytics: Analytics,
+        val crashReporter: CrashReporter,
+        val collection: CollectionSwitch,
+    )
+
+    private var consentPort: ConsentPort? = null
+    private var firebaseServices: FirebaseServices? = null
+    private var firebaseDeclared = false
+    private var debugFake = false
+    private var debugBuild = false
+    private var debugAnalytics = false
+    private var fakeConsent: UmpResult? = fakeConsentResult(DebugConsent.DEFAULT_FAKE_STATE)
+    private var mode = FirebaseMode.OFF
+
     val isStarted: Boolean get() = KoinPlatform.getKoinOrNull() != null
 
     /** Registers a debug-only module (the fake backend, via `IosMock.enable()`). */
     fun registerContributor(contributor: ModuleContributor) {
         if (contributors.none { it::class == contributor::class }) contributors += contributor
     }
+
+    /** Hands over the platform's consent form (UMP). Call before [start]; it also declares Firebase. */
+    fun useConsent(port: ConsentPort) {
+        consentPort = port
+        firebaseDeclared = true
+    }
+
+    /** Hands over the platform's Firebase pieces. Call before [start]; it also declares Firebase. */
+    fun useFirebase(source: RemoteConfigSource, analytics: Analytics, crashReporter: CrashReporter, collection: CollectionSwitch) {
+        firebaseServices = FirebaseServices(source, analytics, crashReporter, collection)
+        firebaseDeclared = true
+    }
+
+    /** The app's definition has a Firebase service (as Android's `firebase()`), even if it installs nothing in `off` mode. */
+    fun declareFirebase() {
+        firebaseDeclared = true
+    }
+
+    /**
+     * Debug launch arguments, called before [start] in debug builds only (so it also marks the build
+     * as debug): [fake] runs Firebase as the in-memory fake, [analytics] lets a debug build collect, and
+     * [fakeConsent] (`obtained`, `declined`, `failed`, `notRequired`) is what the fake consent answers.
+     */
+    fun useFirebaseDebug(fake: Boolean, analytics: Boolean, fakeConsent: String) {
+        debugBuild = true
+        debugFake = fake
+        debugAnalytics = analytics
+        this.fakeConsent = fakeConsentResult(fakeConsent)
+    }
+
+    /** Forgets what Swift handed over (tests). */
+    fun clearFirebaseServices() {
+        consentPort = null
+        firebaseServices = null
+        firebaseDeclared = false
+        debugFake = false
+        debugBuild = false
+        debugAnalytics = false
+        fakeConsent = fakeConsentResult(DebugConsent.DEFAULT_FAKE_STATE)
+    }
+
+    /** How Firebase runs in the started graph. */
+    fun firebaseMode(): FirebaseMode = mode
+
+    /** The app's consent state; only an app with a Firebase service has one to gather. */
+    fun consent(): Consent = koin.get()
+
+    /** The app's remote values: Firebase's in `on`/`fake` mode, the caller's defaults otherwise. */
+    fun remoteValues(): RemoteValues = koin.get()
+
+    /** The app's consent, or null when the app has no Firebase service (nothing to ask). */
+    fun consentOrNull(): Consent? = koin.getOrNull()
 
     /**
      * Starts the graph for [definition], once; later calls are ignored. Fails, with the rule's
@@ -85,14 +168,18 @@ object SharedGraph {
         check(!useMockApi || contributors.isNotEmpty()) {
             "The fake backend isn't linked: build the framework with -Pwhitelabel.mockApi=true and call IosMock.enable() first"
         }
+        val firebaseMode = firebaseModeFor(platform.firebase, services = firebaseServices != null, declared = firebaseDeclared, fakeMarker = debugFake)
         launch = Launch(platform, definition, appModules, useMockApi)
+        mode = firebaseMode
         Texts.pinLaunchLanguage()
         startKoin {
             modules(
                 listOf(networkModule, dataModule, shellModelModule(definition), platformModule(platform)) +
                     listOf(authenticationModule, settingsModule, profileModule, homeModule, catalogModule) +
                     appModules +
-                    if (useMockApi) contributors.flatMap { it.modules() } else emptyList(),
+                    firebaseModules(firebaseMode) +
+                    (if (useMockApi) contributors.flatMap { it.modules() } else emptyList()) +
+                    fakeOverrides(firebaseMode),
             )
         }
     }
@@ -130,6 +217,36 @@ object SharedGraph {
     private fun savedState(vararg pairs: Pair<String, String?>) =
         SavedStateHandle(pairs.filter { it.second != null }.associate { it.first to it.second })
 
+    private fun firebaseModules(mode: FirebaseMode): List<Module> {
+        if (!firebaseDeclared) return emptyList()
+        val port = consentPort
+        val services = firebaseServices
+        return listOfNotNull(
+            module {
+                if (port != null) single<ConsentPort> { port }
+                if (services != null) {
+                    single<RemoteConfigSource> { services.source }
+                    single<Analytics>(named("firebase")) { services.analytics }
+                    single<CrashReporter>(named("firebase")) { services.crashReporter }
+                    single<CollectionSwitch> { services.collection }
+                }
+            },
+            consentModule(),
+            // Fake mode's Firebase module goes last (fakeOverrides), not here.
+            if (mode == FirebaseMode.FAKE) null else firebaseModule(mode, debugBuild, debugAnalytics),
+        )
+    }
+
+    /** Fake mode's bindings go last, so a registered service can never replace them. */
+    private fun fakeOverrides(mode: FirebaseMode): List<Module> {
+        if (mode != FirebaseMode.FAKE) return emptyList()
+        val answer = fakeConsent
+        return listOf(
+            firebaseModule(FirebaseMode.FAKE, debugBuild, debugAnalytics),
+            module { single<ConsentPort> { FakeConsentPort(answer) } },
+        )
+    }
+
     private fun platformModule(platform: IosPlatform) = module {
         single<TokenCipher> { platform.tokenCipher }
         single<LanguageRepository> { platform.language }
@@ -145,6 +262,7 @@ object SharedGraph {
             )
         }
         single<HttpClientEngine> { getOrNull<EngineOverride>()?.engine() ?: defaultHttpEngine() }
+        single<RemoteValues> { DefaultsOnlyRemoteValues }
         single<Analytics> { LoggingAnalytics(platform.logger) }
         single<CrashReporter> { LoggingCrashReporter { message, throwable -> platform.logger("$message: $throwable") } }
     }

@@ -3,4 +3,6 @@
     <string name="showcase_shortcut_profile">Votre profil</string>
     <string name="showcase_shortcut_settings">Réglages</string>
     <string name="showcase_shortcut_catalog">Parcourir le catalogue</string>
+    <string name="showcase_settings_firebase">Firebase</string>
+    <string name="showcase_remote_note">Note distante</string>
 </resources>

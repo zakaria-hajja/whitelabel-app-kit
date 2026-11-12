@@ -64,8 +64,10 @@ private struct ShellContent: View {
             SplashView()
         } else if hasGate, !signedIn, let gate = runtime.definition.gate?.gateRoot() {
             GateView(root: gate, definition: runtime.definition, navigator: runtime.navigator)
+                .task { runtime.gatherConsent() }
         } else {
             TabsView(definition: runtime.definition, routes: state.visibleTabRoutes, navigator: runtime.navigator)
+                .task { runtime.gatherConsent() }
         }
     }
 
@@ -142,15 +144,23 @@ final class AppRuntime {
         if let current { return current }
         if let problem = definition.validationError { fatalError("Invalid app definition: \(problem)") }
         let platform = PlatformFactory.make(bundle: .main)
+        #if DEBUG
+        let debugBuild = true
+        #else
+        let debugBuild = false
+        #endif
+        if let problem = definition.serviceProblem(firebaseMode: platform.firebase, debugBuild: debugBuild) { fatalError("Invalid app definition: \(problem)") }
         var useMockApi = false
+        var mode = platform.firebase
         #if DEBUG
         let debug = DebugControls(arguments: ProcessInfo.processInfo.arguments)
         debug.beforeStart(bundle: .main)
         useMockApi = debug.useMockApi
         if useMockApi { IosMock.shared.enable() }
+        if debug.fakeFirebase, !definition.services.isEmpty { mode = "fake" }
         #endif
         do {
-            try SharedGraph.shared.start(platform: platform, definition: definition.spec, appModules: definition.modules, useMockApi: useMockApi)
+            try start(definition, platform: platform, useMockApi: useMockApi, mode: mode)
         } catch {
             fatalError("The app can't start: \(error.localizedDescription)")
         }
@@ -163,6 +173,21 @@ final class AppRuntime {
         ReminderNotifications.shared.install()
         ReminderNotifications.shared.connect { [weak runtime] in runtime?.open($0) }
         return runtime
+    }
+
+    /** Installs the app's services, then starts the graph: a service hands Kotlin its ports before they are needed. */
+    static func start(_ definition: AppDefinition, platform: IosPlatform, useMockApi: Bool, mode: String) throws {
+        if !definition.services.isEmpty {
+            SharedGraph.shared.declareFirebase()
+            for service in definition.services { service.install(mode: mode) }
+        }
+        try SharedGraph.shared.start(platform: platform, definition: definition.spec, appModules: definition.modules, useMockApi: useMockApi)
+    }
+
+    /** Once per launch, after the first content shows (never from the splash), and only for an app with a Firebase service. */
+    func gatherConsent() {
+        guard !definition.services.isEmpty else { return }
+        SharedGraph.shared.consent().gatherOnLaunch()
     }
 
     private var signedIn: Bool { shell.state.session is SessionStateSignedIn }

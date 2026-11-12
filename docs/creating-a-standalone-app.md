@@ -79,7 +79,19 @@ include(":app")
 `build.gradle.kts`: copy `foundation/build.gradle.kts` as it is. It declares the plugins (without
 applying them) so the convention plugins can apply them by id. A `plugins {}` block can't come
 from an applied script, so this one file is a copy; when the foundation adds a plugin, add it here
-too (the build fails with "Plugin with id … not found" until you do).
+too (the build fails with "Plugin with id … not found" until you do). For Firebase
+(`firebase.enabled` is `true` or `debug`) these two lines must be there:
+
+```kotlin
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.firebase.crashlytics) apply false
+```
+
+An app that also builds the iOS framework needs `alias(libs.plugins.crashkios.crashlyticslink) apply false`
+as well. The app's `google-services.json` goes in the app module's folder. See
+[firebase.md](firebase.md). Firebase also needs `ads.android.appId` (and `ads.ios.appId` for iOS) in
+`app.properties`: the AdMob app IDs that Google's consent SDK requires. Add
+`GADApplicationIdentifier` = `$(WL_ADMOB_APP_ID)` to the iOS app's Info.plist.
 
 **Version catalog:** the app uses the foundation's (`libs`). A library only this app needs is
 declared directly in its module, e.g. `implementation("group:name:1.2.3")`. When a second app
@@ -231,6 +243,10 @@ WhitelabelKit (in the foundation) plus the app's own SwiftUI. Showcase is the re
      WhitelabelKit imports `Shared`;
    - it exports `:core:ios`, the foundation's shared modules the app uses, and the app's own
      `:shared` modules. With `-Pwhitelabel.mockApi=true` it also links `:core:ios:mock`;
+   - don't list `:core:consent:shared`, `:core:firebase:shared` or `:core:firebase:crashlytics`:
+     `whitelabel.ios.app` adds and exports the first two for every app, Firebase or not, because
+     WhitelabelKit's Swift names their types (`Consent`). It adds the third, with CrashKiOS' link
+     plugin, only when `firebase.enabled` is `true` or `debug`;
    - `iosApp { androidApp.set(<the app module's dir>); iosConfigDir.set(<iosApp/Config>) }`.
      `generateIosConfig` writes the app's identity from `app.properties` into
      `iosApp/Config/{Debug,Release}.generated.xcconfig` (git-ignored).

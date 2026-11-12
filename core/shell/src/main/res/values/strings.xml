@@ -21,4 +21,5 @@
     <string name="shell_no_features_message">No feature of this app is enabled right now.</string>
     <string name="preview_label_backend">Backend</string>
     <string name="preview_backend_mock">Mock (in memory)</string>
+    <string name="privacy_choices">Privacy choices</string>
 </resources>

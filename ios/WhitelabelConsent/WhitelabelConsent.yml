@@ -1,0 +1,34 @@
+# WhitelabelConsent: the consent form (Google UMP) as a Kotlin ConsentPort. Only an app with Firebase
+# (or ads) includes it, beside WhitelabelKit.yml; WhitelabelKit itself never imports UMP:
+#
+#   include: [path/to/foundation/ios/WhitelabelKit/WhitelabelKit.yml,
+#             path/to/foundation/ios/WhitelabelConsent/WhitelabelConsent.yml, …]
+#
+# Like WhitelabelKit it is a static framework compiled against the app's Shared framework
+# (WL_SHARED_FRAMEWORKS). The app links it through WhitelabelFirebase.yml's WhitelabelFirebaseApp
+# template, and with it the UMP package.
+packages:
+  GoogleUserMessagingPlatform:
+    url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform
+    exactVersion: 3.1.0
+targets:
+  WhitelabelConsent:
+    type: framework.static
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: Sources/WhitelabelConsent
+    dependencies:
+      # LaunchFlags (-consentEEA); WhitelabelKit also builds Shared first. The app links the kit.
+      - target: WhitelabelKit
+        link: false
+      # Xcode puts the package's code into this static framework when the app is its only linker.
+      - package: GoogleUserMessagingPlatform
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.whitelabel.consent
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+        SWIFT_VERSION: "5.9"
+        SKIP_INSTALL: YES
+        GENERATE_INFOPLIST_FILE: YES
+        "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64

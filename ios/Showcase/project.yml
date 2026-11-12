@@ -3,6 +3,8 @@ options:
   deploymentTarget: { iOS: "17.0" }
 include:
   - ../WhitelabelKit/WhitelabelKit.yml
+  - ../WhitelabelConsent/WhitelabelConsent.yml
+  - ../WhitelabelFirebase/WhitelabelFirebase.yml
 configFiles:
   Debug: Config/Debug.generated.xcconfig
   Release: Config/Release.generated.xcconfig
@@ -21,6 +23,8 @@ targets:
   Showcase:
     type: application
     platform: iOS
+    # The Firebase and consent targets, their packages and the dSYM upload (WhitelabelFirebase.yml).
+    templates: [WhitelabelFirebaseApp]
     sources:
       - Showcase
       # The kit's screen labels: a static framework's resources ship through the app.
@@ -41,7 +45,8 @@ targets:
         MARKETING_VERSION: $(WL_VERSION_NAME)
         CURRENT_PROJECT_VERSION: $(WL_VERSION_CODE)
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
-        OTHER_LDFLAGS: [$(inherited), -framework, Shared]
+        # -ObjC: Firebase's Objective-C categories.
+        OTHER_LDFLAGS: [$(inherited), -ObjC, -framework, Shared]
     preBuildScripts:
       - name: Sync the shared framework and its strings into the app
         basedOnDependencyAnalysis: false
@@ -59,6 +64,27 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.whitelabel.kit.tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/$(WL_APP_NAME).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/$(WL_APP_NAME)
+        BUNDLE_LOADER: $(TEST_HOST)
+        FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
+  WhitelabelFirebaseTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ../WhitelabelFirebase/Tests/WhitelabelFirebaseTests
+    # The kit and the Firebase targets (with their packages) live in the host app; a second copy here
+    # would take the packages from the app.
+    dependencies:
+      - target: Showcase
+      - target: WhitelabelKit
+      - target: WhitelabelConsent
+        link: false
+      - target: WhitelabelFirebase
+        link: false
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.whitelabel.firebase.tests
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/$(WL_APP_NAME).app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/$(WL_APP_NAME)
         BUNDLE_LOADER: $(TEST_HOST)
         FRAMEWORK_SEARCH_PATHS: $(inherited) $(WL_SHARED_FRAMEWORKS)
@@ -82,4 +108,5 @@ schemes:
       config: Debug
       targets:
         - WhitelabelKitTests
+        - WhitelabelFirebaseTests
         - ShowcaseUITests

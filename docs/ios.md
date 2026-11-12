@@ -19,6 +19,9 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
   - WhitelabelKit's tests on a simulator;
   - a Release build that must not contain the fake backend.
 
+  While the owner's UI-test pause lasts, the script skips showcase's `ShowcaseUITests`
+  (`-skip-testing:ShowcaseUITests`). Remove that flag when the pause ends.
+
   The pre-push hook runs it on macOS when a push touches `ios/` or shared Kotlin. GitHub CI stays
   Android-only.
 
@@ -114,6 +117,10 @@ An app's `@main` is a few lines, the Swift twin of Android's `appDefinition { }`
   Koin modules. Its `spec` is the shared `DefinitionSpec`. The rules (one gate, sign-in features
   need `Auth()`, at least one tab…) are checked in Kotlin, and a broken definition stops the app at
   launch with the rule's message, as on Android.
+- **Services:** `AppDefinition(style:startTab:modules:services:)` also takes `services`, a list of
+  `AppService`s that install platform pieces before the graph starts. `FirebaseService()`
+  (`WhitelabelFirebase`) is the Swift twin of Android's `firebase()`; see [firebase.md](firebase.md).
+  A service in an app whose `WL_FIREBASE` setting disagrees stops the app at launch.
 - **`RootView`** starts the shared graph once and shows a splash until the shared `ShellViewModel`
   decides the tabs. It waits at most `CONFIG_WAIT_MS` (2 s) for the remote config, then uses the
   build-time defaults. Then it shows the gate's screen (signed out, with `Auth()`) or the tabs: a
@@ -183,6 +190,10 @@ Showcase on iOS has the same features, order and start tab as on Android:
 | `-fakeResetToken t1` | the fake issues reset token `t1`, already issued for `alice@shared.test` |
 | `-fakeFeatures catalog=false,profile=true` | the fake's remote flags |
 | `-fakeConfigDelayMs 5000` | the fake answers the config that late |
+| `-fakeFirebase` | Firebase runs as the in-memory fake (needs `FirebaseService()`) |
+| `-analyticsDebug` | analytics and crash collection on in Debug, events to Firebase's DebugView |
+| `-consentEEA` | the consent form behaves as in the EEA, and the stored consent is reset first |
+| `-fakeConsent obtained\|declined\|failed\|notRequired` | what the fake consent answers (default `obtained`) |
 | `-messageSeconds 15` | one-off messages and banners stay that long |
 | `-notificationAccess notAskedYet\|granted\|blocked` | the notification permission reports that status; asking grants without the system alert, which UI tests can't answer |
 | `<scheme>://_fake/offline`, `online`, `expire-tokens`, `revoke-sessions` | steer the running fake |
@@ -204,6 +215,24 @@ settings, home, shell and design-catalog tests. Two UI-test traps:
   relaunches the app with the same arguments, `-freshInstall` included;
 - after a successful sign-in, iOS offers to save the password. The sign-in robot answers
   "Not Now", or the sheet swallows the next tap.
+
+## Firebase and consent targets
+
+Two more Swift targets sit beside `WhitelabelKit.yml`, and an app includes them through XcodeGen only
+when it uses Firebase: `WhitelabelConsent` (UMP) and `WhitelabelFirebase` (Remote Config, Analytics,
+Crashlytics, `FirebaseService`). `WhitelabelKit` never imports Firebase. The app target uses the
+`WhitelabelFirebaseApp` template, which links both and adds the Crashlytics dSYM upload. The
+Swift packages link in Release too (SPM can't drop them per configuration), but Firebase only starts
+where `WL_FIREBASE` is `on`. The setup steps and the Info.plist keys are in [firebase.md](firebase.md). The app's Info.plist
+also needs `GADApplicationIdentifier` = `$(WL_ADMOB_APP_ID)` (`generateIosConfig` writes
+`WL_ADMOB_APP_ID` from `ads.ios.appId`): Google's consent SDK needs the AdMob app ID, and
+`FirebaseService` stops the app at launch without it.
+
+The `whitelabel.ios.app` plugin exports `:core:consent:shared` and `:core:firebase:shared` from every
+app's `Shared` framework, with or without Firebase: they are pure Kotlin, and WhitelabelKit's Swift
+names their types (`Consent` in `PrivacyChoicesRow`). Only an app with Firebase also gets
+`:core:firebase:crashlytics` (the Kotlin crash hook over CrashKiOS) and CrashKiOS' link plugin. An
+app's own export list names none of them.
 
 ## Platform pieces (Swift)
 

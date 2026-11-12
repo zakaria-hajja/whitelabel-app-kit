@@ -15,4 +15,6 @@
     <string name="foundation_privacy_policy_url" translatable="false"></string>
     <string name="foundation_terms_url" translatable="false"></string>
     <string name="foundation_default_features" translatable="false"></string>
+    <string name="foundation_firebase" translatable="false">off</string>
+    <string name="foundation_firebase_declared" translatable="false">false</string>
 </resources>

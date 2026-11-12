@@ -11,8 +11,15 @@ public enum PlatformFactory {
             tokenCipher: KeychainTokenCipher(service: bundle.bundleIdentifier ?? "whitelabel"),
             language: IosLanguageRepository(),
             brand: brand(from: bundle),
-            logger: logger
+            logger: logger,
+            firebase: firebase(from: bundle)
         )
+    }
+
+    /** `WLFirebase` (`on`, `fake` or `off`); anything else is off. */
+    static func firebase(from bundle: Bundle) -> String {
+        let value = bundle.object(forInfoDictionaryKey: "WLFirebase") as? String
+        return value == "on" || value == "fake" ? value! : "off"
     }
 
     static func brand(from bundle: Bundle) -> BrandConfig {

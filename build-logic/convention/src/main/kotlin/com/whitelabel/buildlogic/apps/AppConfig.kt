@@ -17,6 +17,10 @@ data class AppConfig(
     val privacyPolicyUrl: String,
     val termsUrl: String,
     val defaultFeatures: List<String>,
+    val firebase: ServiceMode = ServiceMode.OFF,
+    /** The app's AdMob app ID per platform (`ads.android.appId`, `ads.ios.appId`); Google's consent SDK needs it. */
+    val adsAndroidAppId: String? = null,
+    val adsIosAppId: String? = null,
     val signing: AppSigning?,
     val appDir: File,
 ) {

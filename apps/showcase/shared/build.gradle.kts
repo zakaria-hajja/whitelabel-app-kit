@@ -10,7 +10,8 @@ plugins {
 }
 
 // Showcase's shared code as one iOS framework. Every app's framework is named "Shared", so the
-// reusable Swift kit (ios/WhitelabelKit) imports the same module whatever the app.
+// reusable Swift kit (ios/WhitelabelKit) imports the same module whatever the app. The consent and
+// Firebase modules aren't listed: the whitelabel.ios.app plugin adds and exports them.
 val exported = listOf(
     ":core:common", ":core:domain", ":core:presentation", ":core:data", ":core:network", ":core:datastore",
     ":core:branding", ":core:analytics", ":core:shell:shared", ":core:ios",
@@ -41,4 +42,6 @@ kotlin {
 iosApp {
     androidApp.set(rootProject.layout.projectDirectory.dir("apps/showcase"))
     iosConfigDir.set(rootProject.layout.projectDirectory.dir("ios/Showcase/Config"))
+    // Gitignored (the repo is public): without it Debug runs on the fake Firebase.
+    firebaseConfigFile.set(rootProject.layout.projectDirectory.file("ios/Showcase/Showcase/GoogleService-Info.plist"))
 }
