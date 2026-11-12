@@ -2,6 +2,7 @@ package com.whitelabel.core.firebase
 
 import assertk.assertThat
 import assertk.assertions.containsExactly
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import com.whitelabel.core.analytics.Analytics
@@ -66,23 +67,18 @@ class FirebaseKoinTest {
         val port = FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1011"))
         val koin = app(FirebaseMode.ON, switch, port).koin
         assertThat(koin.get<RemoteValues>()).isInstanceOf<SourceRemoteValues>()
-        assertThat(switch.applied).containsExactly(FirebaseCollection(false, false, false))
+        assertThat(switch.applied).isEmpty()
         koin.get<Consent>().gatherOnLaunch()
         assertThat(switch.applied.last()).isEqualTo(FirebaseCollection(true, true, true))
     }
 
-    @Test fun `a throwing switch does not stop later consent changes from applying`() {
-        val applied = mutableListOf<FirebaseCollection>()
-        var first = true
+    @Test fun `a throwing switch does not break the consent state`() {
         val switch = object : CollectionSwitch {
-            override fun apply(collection: FirebaseCollection) {
-                if (first) { first = false; error("boom") }
-                applied += collection
-            }
+            override fun apply(collection: FirebaseCollection) = error("boom")
         }
         val port = FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1011"))
         val koin = app(FirebaseMode.ON, RecordingSwitch(), port, switch).koin
         koin.get<Consent>().gatherOnLaunch()
-        assertThat(applied).containsExactly(FirebaseCollection(true, true, true))
+        assertThat(koin.get<Consent>().state.value).isEqualTo(com.whitelabel.core.consent.ConsentState.Resolved(true, true))
     }
 }

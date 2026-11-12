@@ -5,8 +5,10 @@ import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.analytics.LoggingAnalytics
 import com.whitelabel.core.analytics.LoggingCrashReporter
 import com.whitelabel.core.consent.Consent
+import com.whitelabel.core.consent.ConsentState
 import com.whitelabel.core.domain.remote.RemoteValues
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import org.koin.core.module.Module
@@ -47,6 +49,8 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
         single(named("firebaseCollectionApplier"), createdAtStart = true) {
             val switch = get<CollectionSwitch>()
             get<Consent>().state
+                // Unknown applies nothing: the SDKs' persisted flags still carry the last applied consent.
+                .filter { it !is ConsentState.Unknown }
                 .onEach {
                     // One failing platform apply must not end the collector; later consent changes still apply.
                     runCatching { switch.apply(collectionFor(it, debugBuild, debugAnalytics)) }

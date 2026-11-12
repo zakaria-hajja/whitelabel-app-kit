@@ -6,32 +6,35 @@ import org.junit.jupiter.api.Test
 
 class CrashRuleTest {
     private val calls = mutableListOf<String>()
+    private var persisted = false
     private val rule = CrashRule(object : CrashCollection {
-        override fun setEnabled(enabled: Boolean) { calls += "enabled=$enabled" }
+        override fun isEnabled() = persisted
+        override fun setEnabled(enabled: Boolean) { calls += "enabled=$enabled"; persisted = enabled }
         override fun deleteUnsentReports() { calls += "delete" }
     })
 
-    @Test fun `turning crashes on deletes the queued reports first`() {
+    @Test fun `first turning on drops the reports captured while off`() {
         rule.apply(true)
         assertThat(calls).containsExactly("delete", "enabled=true")
     }
 
-    @Test fun `staying on does not delete again`() {
-        rule.apply(true)
-        calls.clear()
+    @Test fun `already on from an earlier launch keeps its reports`() {
+        persisted = true
         rule.apply(true)
         assertThat(calls).containsExactly("enabled=true")
     }
 
-    @Test fun `turning crashes off deletes the queued reports`() {
-        rule.apply(true)
-        calls.clear()
+    @Test fun `turning off deletes nothing`() {
+        persisted = true
         rule.apply(false)
-        assertThat(calls).containsExactly("delete", "enabled=false")
+        assertThat(calls).containsExactly("enabled=false")
     }
 
-    @Test fun `off at the start deletes too`() {
+    @Test fun `turning on again after off drops what was captured while off`() {
+        persisted = true
         rule.apply(false)
-        assertThat(calls).containsExactly("delete", "enabled=false")
+        calls.clear()
+        rule.apply(true)
+        assertThat(calls).containsExactly("delete", "enabled=true")
     }
 }

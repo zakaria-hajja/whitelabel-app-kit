@@ -7,27 +7,29 @@ import com.whitelabel.core.firebase.FirebaseCollection
 
 /** The Crashlytics calls the switch needs; lets the crash rule be tested without the SDK. */
 internal interface CrashCollection {
+    /** Crashlytics' own (persisted) collection flag. */
+    fun isEnabled(): Boolean
     fun setEnabled(enabled: Boolean)
     fun deleteUnsentReports()
 }
 
 private class CrashlyticsCollection(private val crashlytics: FirebaseCrashlytics) : CrashCollection {
+    override fun isEnabled() = crashlytics.isCrashlyticsCollectionEnabled
     override fun setEnabled(enabled: Boolean) = crashlytics.setCrashlyticsCollectionEnabled(enabled)
     override fun deleteUnsentReports() = crashlytics.deleteUnsentReports()
 }
 
 /**
- * Crash rule: Crashlytics queues reports while collection is off and sends them when it turns on.
- * So crashes from before consent are deleted when collection goes from off to on (the start of a
- * launch counts as off), and when it is turned off.
+ * Crash rule: reports captured while collection was off are pre-consent and are dropped when
+ * collection is first turned on; reports captured while it was on are kept (Crashlytics sends a
+ * fatal crash on the next launch, so a consented session's report must survive the restart).
+ * "Off" is Crashlytics' own persisted flag, read before it is set. Turning collection off deletes
+ * nothing: a failed consent gather is a form or network error, not a refusal.
  */
 internal class CrashRule(private val crash: CrashCollection) {
-    private var on = false
-
     fun apply(enabled: Boolean) {
-        if (enabled != on || !enabled) crash.deleteUnsentReports()
+        if (enabled && !crash.isEnabled()) crash.deleteUnsentReports()
         crash.setEnabled(enabled)
-        on = enabled
     }
 }
 
