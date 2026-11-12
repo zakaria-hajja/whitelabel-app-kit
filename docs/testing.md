@@ -8,6 +8,7 @@
 | Build logic | `build-logic/convention/src/test` | `scripts/check.sh`, CI | JUnit 5, AssertK, temp directories |
 | Instrumented (Compose UI, app end-to-end) | `src/androidTest` | locally, on an emulator no other run is using; CI job postponed until after the KMP migration | `createAndroidComposeRule`, AssertK |
 | Swift (WhitelabelKit) | `ios/WhitelabelKit/Tests` | `scripts/check-ios.sh` (macOS; pre-push) | XCTest, hosted by showcase's iOS app |
+| Swift (Firebase and consent) | `ios/WhitelabelFirebase/Tests/WhitelabelFirebaseTests` | `scripts/check-ios.sh` | XCTest, hosted by showcase's iOS app |
 | App identity | `apps/<name>/src/test/.../<Name>IdentityTest.kt` | `scripts/check.sh`, CI | asserts every `BuildConfig` field for both build types |
 | Built APKs | `scripts/verify-apps.sh` | CI after `assembleDebug`; release APKs in the release build (below) | `aapt2`: package, label, version, no foreign app IDs, distinct icons |
 
@@ -25,6 +26,26 @@ run on every push to `main`, and on a pull request only once it has the `release
 Adding the label starts the run, and later pushes to that PR rerun it. Add the label when a PR
 touches R8/ProGuard rules, dependencies, `build-logic`, the mock-backend wiring or anything
 release-only. The release check isn't required, so read its result before merging a labelled PR.
+
+**Firebase and consent suites** (no Firebase project needed; they use fake ports and a fake clock):
+- `:core:consent:shared`: the state mapping from UMP statuses, asking once per launch, the TCF
+  storage purpose (`ConsentTest`, `TcfTest`); `:core:consent:google`: `UmpStatusMappingTest`.
+- `:core:firebase:shared`: typed reads and fallbacks, `changes` (`SourceRemoteValuesTest`), nothing
+  collected before consent (`CollectionTest`, `ConsentGatedAnalyticsTest`), the mode wiring
+  (`FirebaseKoinTest`); `:core:firebase:google`: the crash rule and fetch interval
+  (`CrashRuleTest`, `FirebaseContributorTest`).
+- `:core:domain`: `DefaultsOnlyRemoteValuesTest`. `:core:shell`: `FirebaseWiringTest`,
+  `DebugMarkersTest`, `PrivacyChoicesTest`. `:core:ios`: `SharedGraphFirebaseTest`.
+- Build logic: `FirebaseSetupTest`, `IosConfigTest`, `AppConfigLoaderTest` (the `true` without a
+  config file fails, `debug` leaves release alone). `scripts/verify-apps.sh` checks that a release
+  dex has no Firebase unless `firebase.enabled=true`.
+- Swift: `WhitelabelFirebaseTests` (`FirebaseServiceTests`, `FirebaseSetupTests`, `CrashRuleTests`)
+  and WhitelabelKit's `AppServiceTests`, `LaunchFlagsTests`, `PrivacyChoicesRowTests`.
+- The checks that need real config files are manual:
+  [the Firebase checklist](superpowers/checklists/2026-11-12-firebase-manual.md).
+
+**UI tests are paused** (owner's decision). `scripts/check-ios.sh` skips `ShowcaseUITests` and no
+new UI or end-to-end tests are written for Firebase until the pause ends.
 
 ## Conventions
 

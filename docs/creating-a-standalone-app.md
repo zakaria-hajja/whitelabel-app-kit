@@ -79,7 +79,17 @@ include(":app")
 `build.gradle.kts`: copy `foundation/build.gradle.kts` as it is. It declares the plugins (without
 applying them) so the convention plugins can apply them by id. A `plugins {}` block can't come
 from an applied script, so this one file is a copy; when the foundation adds a plugin, add it here
-too (the build fails with "Plugin with id … not found" until you do).
+too (the build fails with "Plugin with id … not found" until you do). For Firebase
+(`firebase.enabled` is `true` or `debug`) these two lines must be there:
+
+```kotlin
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.firebase.crashlytics) apply false
+```
+
+An app that also builds the iOS framework needs `alias(libs.plugins.crashkios.crashlyticslink) apply false`
+as well. The app's `google-services.json` goes in the app module's folder. See
+[firebase.md](firebase.md).
 
 **Version catalog:** the app uses the foundation's (`libs`). A library only this app needs is
 declared directly in its module, e.g. `implementation("group:name:1.2.3")`. When a second app

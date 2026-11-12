@@ -70,6 +70,7 @@ The build validates this file and reports every problem at once, naming the file
 | `defaults.legal.privacyPolicyUrl` | `https://globex.example/privacy` | `https` |
 | `defaults.legal.termsUrl` | `https://globex.example/terms` | `https` |
 | `defaults.features` | `catalog,profile` | Optional. Flagged features that are on when remote config is unavailable |
+| `firebase.enabled` | `debug` | Optional: `false` (default), `true` or `debug`. `true` needs `apps/<name>/google-services.json`; `debug` runs a fake Firebase in Debug without it. See [firebase.md](firebase.md) |
 
 - **Base URLs** are the versioned API root. A missing trailing `/` is added for you.
 - **No backend:** leave out both base URLs (and `api.tenant`) for a local-only app. The shell then
@@ -129,6 +130,9 @@ feature's module, then the app's own `modules(...)`.
   app is public.
 - **Tabs and the bottom bar:** an app needs at least one tab. The bottom bar appears when two or
   more tabs are visible.
+- **Firebase:** `firebase()` in the definition (with `firebase.enabled` in `app.properties`) gives the
+  app remote values, analytics and crash reports behind the user's consent. Put
+  `PrivacyChoicesRow()` in the app's own settings section. See [firebase.md](firebase.md).
 - **Remote flags:** a feature with a flag key can be switched off remotely. When the remote config
   is unavailable, it falls back to `defaults.features`.
 

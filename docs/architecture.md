@@ -23,9 +23,14 @@ business features. The design is in
 | `:core:ios` | Built | The iOS app's entry point (`SharedGraph`): starts the shared graph with Swift-provided platform pieces and gives each shared ViewModel through a typed accessor. `:core:ios:mock` adds the fake backend in Debug. See [ios.md](ios.md) |
 | `:core:shell` | Built | What every app's host needs: `FoundationApplication`, the launcher `FoundationActivity` (splash, theme), `ShellNavHost` (root navigation and bottom bar), the `appDefinition { … }` API, `BrandConfig` read from generated resources, networking setup, remote feature flags, the theme and language preferences, analytics wiring, the sign-in gate, and the diagnostics screen (debug builds only, opened from Settings) |
 | `:apps:showcase` | Built | Reference app that will use every shared feature. It uses all of them: sign-in, home, catalog, profile and settings |
-| `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`. Kotlin Multiplatform (Android, iOS) |
+| `:core:domain` | Built | Cross-feature models and interfaces: `User`, `SessionState`, `SessionRepository`, `UserRepository`, `AppConfig`, `UserPreferencesRepository`, `RemoteValues` with a defaults-only implementation. Kotlin Multiplatform (Android, iOS) |
 | `:core:data` | Built | Their implementations: sign-in and sign-out, the cached user, the remote app config with its cached fallback, and the theme preference. Kotlin Multiplatform (Android, iOS). `androidDataModule` (AppCompat language, Keystore cipher, store paths) is Android-only |
 | `:core:ui` | Built | Android presentation helpers for features: `ObserveAsEvents`. (`UiText` lives in `:core:presentation`) |
+| `:core:consent:shared` | Built | `ConsentState`, the "resolved" rule, `ConsentPort` and gathering once per launch. Kotlin Multiplatform (Android, iOS). See [firebase.md](firebase.md) |
+| `:core:consent:google` | Built | Android UMP implementation of `ConsentPort`, contributed through `ModuleContributor` |
+| `:core:firebase:shared` | Built | The `RemoteValues` engine over a `RemoteConfigSource`, consent-gated analytics and crash reporting, the Koin module and the fake. Kotlin Multiplatform (Android, iOS) |
+| `:core:firebase:google` | Built | Android Firebase SDK: Remote Config, Analytics, Crashlytics. Linked per build type (`debugImplementation` for `firebase.enabled=debug`) |
+| `:core:firebase:crashlytics` | Built | iOS only: the Kotlin crash hook over CrashKiOS. Added by the iOS app plugin when Firebase is enabled |
 | `:core:analytics` | Built | `Analytics` and `CrashReporter` interfaces plus logging implementations. Kotlin Multiplatform (Android, iOS) |
 | `:feature:authentication` | Built | `auth()`: the whole-app sign-in gate with sign-in, registration and password reset. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
 | `:feature:authentication:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
@@ -38,6 +43,7 @@ business features. The design is in
 | `:feature:catalog` | Built | `catalog()`: paginated search with categories and sort, item screen and its deep link. See [shared-features.md](shared-features.md). Android UI: screens, the DSL function, screen strings |
 | `:feature:catalog:shared` | Built | The feature's ViewModels, State/Action/Event, domain, data source, Koin module and the messages its ViewModels show. Kotlin Multiplatform (Android, iOS) |
 | `:apps:showcase:shared` | Built | Showcase's shared code as one iOS framework (`ShowcaseShared`, with every shared module's strings) and `showcaseSharedModules(platform)`, its Koin modules. The Swift-facing entry point comes with the iOS starter |
+| `ios/WhitelabelConsent`, `ios/WhitelabelFirebase` | Built | Swift targets for UMP and Firebase (`FirebaseService`), included by an app's `project.yml` only when it uses Firebase. See [firebase.md](firebase.md) |
 | `ios/WhitelabelKit`, `ios/Showcase` | Built | The Swift half: the reusable kit (bridge, platform pieces; design system, shell and screens to come) and showcase's iOS project. See [ios.md](ios.md) |
 | `fixtures/standalone-app` | Built | A minimal backendless app wired like an app in its own repo; CI builds and verifies it |
 
@@ -207,6 +213,7 @@ progress: [2026-11-11-kmp-migration.md](superpowers/plans/2026-11-11-kmp-migrati
 ## 7. Further reading
 
 - [creating-an-app.md](creating-an-app.md): build app #N step by step
+- [firebase.md](firebase.md): remote values, analytics, crash reports and consent
 - [adding-a-shared-feature.md](adding-a-shared-feature.md): add a reusable feature
 - [branding.md](branding.md), [api-environments.md](api-environments.md),
   [release-signing.md](release-signing.md), [testing.md](testing.md)
