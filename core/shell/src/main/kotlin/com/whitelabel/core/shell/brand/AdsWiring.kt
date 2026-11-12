@@ -43,6 +43,7 @@ internal fun adsWiring(
     debugBuild = debugBuild,
     platform = AdsPlatform.ANDROID,
 )
+
 /**
  * Reads the app's `foundation_ads_declared`, `foundation_ads` and `foundation_ads_units` strings
  * (false, off and none until the app plugin writes them).

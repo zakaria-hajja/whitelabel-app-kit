@@ -39,8 +39,9 @@ import kotlinx.coroutines.withContext
  */
 internal object GoogleBannerHost : BannerHost {
     @Composable
-    override fun Banner(unitId: String, onLoaded: () -> Unit, onFailed: () -> Unit) {
+    override fun Banner(unitId: String, onRequested: () -> Unit, onLoaded: () -> Unit, onFailed: () -> Unit) {
         val context = LocalContext.current
+        val currentOnRequested by rememberUpdatedState(onRequested)
         val currentOnLoaded by rememberUpdatedState(onLoaded)
         val currentOnFailed by rememberUpdatedState(onFailed)
         var started by remember { mutableStateOf(MobileAdsStart.isDone) }
@@ -53,8 +54,9 @@ internal object GoogleBannerHost : BannerHost {
             val widthDp = maxWidth.value.toInt()
             val size = remember(widthDp) { AdSize.getLargeAnchoredAdaptiveBannerAdSize(context, widthDp) }
             // Google's current anchored adaptive size (it replaced the deprecated current-orientation one).
-            // A new unit or width is a new ad view and a new request.
+            // A new unit or width is a new ad view and a new request: the banner collapses until it loads.
             key(unitId, size) {
+                LaunchedEffect(Unit) { currentOnRequested() }
                 var view by remember { mutableStateOf<AdView?>(null) }
                 AndroidView(
                     factory = { viewContext ->

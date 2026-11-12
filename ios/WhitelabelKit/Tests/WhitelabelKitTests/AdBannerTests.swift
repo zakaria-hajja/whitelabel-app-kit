@@ -1,6 +1,14 @@
+import SwiftUI
 import XCTest
 import Shared
 @testable import WhitelabelKit
+
+/** A gate whose screens own "auth/login". */
+private struct LoginGate: Feature {
+    var spec: FeatureSpec { FeatureSpec(id: "auth", flagKey: nil, tabRoute: nil, requiresSignIn: false, isGate: true, requiresBackend: true) }
+    func tab() -> TabItem? { nil }
+    func routes(_ route: String, _ args: [String: String]) -> AnyView? { route == "auth/login" ? AnyView(EmptyView()) : nil }
+}
 
 /** What the kit's banner shows for each shared banner state, and how a load settles. */
 final class AdBannerTests: XCTestCase {
@@ -31,6 +39,14 @@ final class AdBannerTests: XCTestCase {
         XCTAssertFalse(BannerLoad.failed.takesSpace)
     }
 
+    func testANewRequestCollapsesUntilItLoads() {
+        for from in [BannerLoad.loading, .loaded, .failed] {
+            XCTAssertEqual(from.on(.requested), .loading, "\(from)")
+        }
+        // A resized banner's new view that fails stays collapsed: no labelled blank gap.
+        XCTAssertEqual(BannerLoad.loaded.on(.requested).on(.failed), .failed)
+    }
+
     func testTheShellDrawsTheTabsPlacementOnly() {
         let definition = AppDefinition(style: .material, ads: [AdPlacement(name: "own", underTab: nil), AdPlacement(name: "top", underTab: "home")]) {
             StubFeature("home", tab: "home")
@@ -41,7 +57,18 @@ final class AdBannerTests: XCTestCase {
         XCTAssertNil(AppDefinition(style: .material) { StubFeature("home", tab: "home") }.tabPlacement(forTab: "home"))
     }
 
-    @MainActor func testWithoutABannerHostNothingIsDrawn() {
-        XCTAssertNil(AdBanners.host)
+    @MainActor func testPlacementsUnderTheGatesScreensAreNamedForKotlin() {
+        let definition = AppDefinition(style: .material, ads: [AdPlacement(name: "g", underTab: "auth/login"), AdPlacement(name: "h", underTab: "home")]) {
+            LoginGate()
+            StubFeature("home", tab: "home")
+        }
+        XCTAssertEqual(AppRuntime.gateRoutes(of: definition), ["auth/login"])
+        XCTAssertEqual(AppRuntime.gateRoutes(of: AppDefinition(style: .material, ads: definition.ads) { StubFeature("home", tab: "home") }), [])
+    }
+
+    func testABannerNeedsTheAdsGraphAndAHost() {
+        XCTAssertFalse(AdBanner.draws(hasController: false, hasHost: true))
+        XCTAssertFalse(AdBanner.draws(hasController: true, hasHost: false))
+        XCTAssertTrue(AdBanner.draws(hasController: true, hasHost: true))
     }
 }

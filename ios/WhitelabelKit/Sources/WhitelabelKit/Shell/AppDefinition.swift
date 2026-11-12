@@ -10,7 +10,8 @@ import Shared
  * `ads` is Android's `ads { }`: `[AdPlacement(name: "home", underTab: HomeRoutes.shared.ROOT)]`. A
  * placement with `underTab` (a tab's route id) is drawn by the shell below that tab's root screen;
  * any other the app places with `AdBanner(placement:)`. Never under Settings or the gate. Ads need
- * `ads.enabled` in app.properties and `AdsService()` in `services`.
+ * `ads.enabled` in app.properties and `AdsService()` in `services`. An empty `ads` (the default) is
+ * an app without ads: unlike Android's `ads { }` with no placement, `ads: []` declares nothing.
  */
 public struct AppDefinition {
     public let style: StylePack

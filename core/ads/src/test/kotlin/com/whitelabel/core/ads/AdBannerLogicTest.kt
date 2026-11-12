@@ -48,4 +48,12 @@ class AdBannerLogicTest {
         assertThat(BannerLoad.FAILED.on(BannerEvent.LOADED)).isEqualTo(BannerLoad.LOADED)
         assertThat(BannerLoad.FAILED.on(BannerEvent.FAILED)).isEqualTo(BannerLoad.FAILED)
     }
+
+    @Test fun `a new request after a resize or a new unit collapses until it loads`() {
+        BannerLoad.entries.forEach { from ->
+            assertThat(from.on(BannerEvent.REQUESTED)).isEqualTo(BannerLoad.LOADING)
+        }
+        // The new view's failure then stays collapsed instead of keeping a blank labelled gap.
+        assertThat(BannerLoad.LOADED.on(BannerEvent.REQUESTED).on(BannerEvent.FAILED)).isEqualTo(BannerLoad.FAILED)
+    }
 }

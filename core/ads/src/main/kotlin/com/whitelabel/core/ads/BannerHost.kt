@@ -6,11 +6,12 @@ import com.whitelabel.core.network.ModuleContributor
 /**
  * Draws one banner for [AdBanner]. `:core:ads:google` binds it; without it (no SDK linked) the
  * banner takes no space. [Banner] loads an adaptive anchored banner for the available width and
- * reports the outcome: [onLoaded] once an ad is showing, [onFailed] when none could load.
+ * reports: [onRequested] each time a new ad view sends its request (the first time, and after a
+ * resize), then [onLoaded] once an ad is showing or [onFailed] when none could load.
  */
 interface BannerHost {
     @Composable
-    fun Banner(unitId: String, onLoaded: () -> Unit, onFailed: () -> Unit)
+    fun Banner(unitId: String, onRequested: () -> Unit, onLoaded: () -> Unit, onFailed: () -> Unit)
 }
 
 /**

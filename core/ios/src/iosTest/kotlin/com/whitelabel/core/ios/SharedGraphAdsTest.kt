@@ -3,6 +3,7 @@ package com.whitelabel.core.ios
 import com.whitelabel.core.ads.AdPlacement
 import com.whitelabel.core.ads.BannerState
 import com.whitelabel.core.ads.HideReason
+import com.whitelabel.core.ads.LaunchCounter
 import com.whitelabel.core.ads.TrackingPort
 import com.whitelabel.core.consent.ConsentState
 import com.whitelabel.core.consent.FakeConsentPort
@@ -28,6 +29,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.seconds
 import okio.FileSystem
+import org.koin.mp.KoinPlatform
 
 /** How the graph checks the app's ads against its settings and binds what Swift hands over. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -72,6 +74,10 @@ class SharedGraphAdsTest {
             definition, emptyList(), useMockApi = false,
         )
 
+    private companion object {
+        const val AUTH_START = "auth/login"
+    }
+
     /** The store reads and the launch count run on the graph's own scope, off this thread. */
     private fun awaitBanner(expected: BannerState) = runBlocking {
         withTimeout(5.seconds) { assertNotNull(SharedGraph.adsController()).bannerState("home").first { it == expected } }
@@ -105,10 +111,17 @@ class SharedGraphAdsTest {
         assertEquals("ads are on but AdsService() isn't in the app's services", error.message)
     }
 
-    @Test fun `a placement under settings or the gate or a bad name fails at start`() {
+    @Test fun `a placement under settings or the gate or not a tab or a bad name fails at start`() {
         placements(AdPlacement("s", "settings"))
         assertEquals(
             "No ads under settings: settings and sign-in screens stay ad-free",
+            assertFailsWith<IllegalArgumentException> { start() }.message,
+        )
+        SharedGraph.clearFirebaseServices()
+        // Swift names the routes the gate's screens own (Auth: sign-in, registration, …).
+        SharedGraph.declareAds(listOf(AdPlacement("g", AUTH_START)), gateRoutes = listOf(AUTH_START))
+        assertEquals(
+            "No ads under auth: settings and sign-in screens stay ad-free",
             assertFailsWith<IllegalArgumentException> { start() }.message,
         )
         SharedGraph.clearFirebaseServices()
@@ -166,6 +179,8 @@ class SharedGraphAdsTest {
         assertTrue(consent.state.value is ConsentState.Resolved)
         // Launch 1 never shows a banner, so the prompt waits for a later launch.
         awaitBanner(BannerState.Hidden(HideReason.FIRST_LAUNCH))
+        // Launch 0 (not counted yet) also reads as a first launch: wait until this one is counted.
+        runBlocking { withTimeout(5.seconds) { KoinPlatform.getKoin().get<LaunchCounter>().launchNumber.first { it == 1 } } }
         assertEquals(0, tracking.requests)
         // A restarted graph (the second launch) keeps the ads and the port, and asks once.
         SharedGraph.resetForTests()

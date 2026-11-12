@@ -47,6 +47,7 @@ fun AdBanner(placement: String, modifier: Modifier = Modifier) {
         )
         host.Banner(
             unitId = unitId,
+            onRequested = { load = load.on(BannerEvent.REQUESTED) },
             onLoaded = { load = load.on(BannerEvent.LOADED) },
             onFailed = { load = load.on(BannerEvent.FAILED) },
         )

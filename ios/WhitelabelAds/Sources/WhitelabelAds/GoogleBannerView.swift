@@ -5,16 +5,18 @@ import WhitelabelKit
 /**
  * Google Mobile Ads banners for the kit's `AdBanner`: a large anchored adaptive banner for the
  * available width. The SDK starts on the first banner the rules let load (consent is resolved by
- * then), never at app startup; a failed start is retried by the next banner.
+ * then), never at app startup. `MobileAds.shared.start` doesn't throw today, so `StartOnce`'s retry
+ * only matters if a start ever can fail.
  */
 struct GoogleBannerHost: BannerHost {
-    func banner(unitId: String, onLoaded: @escaping () -> Void, onFailed: @escaping () -> Void) -> AnyView {
-        AnyView(GoogleBanner(unitId: unitId, onLoaded: onLoaded, onFailed: onFailed))
+    func banner(unitId: String, onRequested: @escaping () -> Void, onLoaded: @escaping () -> Void, onFailed: @escaping () -> Void) -> AnyView {
+        AnyView(GoogleBanner(unitId: unitId, onRequested: onRequested, onLoaded: onLoaded, onFailed: onFailed))
     }
 }
 
 private struct GoogleBanner: View {
     let unitId: String
+    let onRequested: () -> Void
     let onLoaded: () -> Void
     let onFailed: () -> Void
 
@@ -29,10 +31,11 @@ private struct GoogleBanner: View {
                 .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { width = $0 }
             if started, width > 0 {
                 let size = largeAnchoredAdaptiveBanner(width: width)
-                // A new unit or width is a new banner view and a new request.
+                // A new unit or width is a new banner view and a new request: the slot collapses until it loads.
                 GoogleBannerRepresentable(unitId: unitId, size: size, onLoaded: onLoaded, onFailed: onFailed)
                     .frame(width: size.size.width, height: size.size.height)
                     .id("\(unitId)@\(Int(width))")
+                    .onAppear(perform: onRequested)
             }
         }
         .task {

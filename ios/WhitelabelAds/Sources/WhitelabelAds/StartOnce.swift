@@ -3,7 +3,8 @@ import Foundation
 /**
  * Runs a start once and lets every caller wait for it, as Android's `StartOnce`: the Google Mobile
  * Ads SDK starts on the first banner the rules let load, never at app startup. A start that throws
- * reports failure to its waiters and is forgotten, so a later banner tries again.
+ * reports failure to its waiters and is forgotten, so a later banner tries again. That retry only
+ * matters if a start can fail: `MobileAds.shared.start` doesn't throw today.
  */
 @MainActor
 final class StartOnce {

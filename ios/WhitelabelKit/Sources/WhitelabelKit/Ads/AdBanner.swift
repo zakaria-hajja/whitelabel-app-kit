@@ -5,11 +5,17 @@ import SwiftUI
 /**
  * Draws one banner for [AdBanner]: `AdsService` (WhitelabelAds) registers Google's. Without one (an
  * app without the ads target) every banner takes no space. [banner] loads an adaptive anchored
- * banner for the available width and reports the outcome: [onLoaded] once an ad shows, [onFailed]
- * when none could load. The Swift twin of Android's `BannerHost`.
+ * banner for the available width and reports: [onRequested] each time a new banner view sends its
+ * request (the first time, and after a resize), then [onLoaded] once an ad shows or [onFailed] when
+ * none could load. The Swift twin of Android's `BannerHost`.
  */
 public protocol BannerHost {
-    @MainActor func banner(unitId: String, onLoaded: @escaping () -> Void, onFailed: @escaping () -> Void) -> AnyView
+    @MainActor func banner(
+        unitId: String,
+        onRequested: @escaping () -> Void,
+        onLoaded: @escaping () -> Void,
+        onFailed: @escaping () -> Void
+    ) -> AnyView
 }
 
 /** Where the app's [BannerHost] is registered (by `AdsService` in `on` mode). */
@@ -46,15 +52,20 @@ enum AdBannerSlot: Equatable {
     static func undeclaredMessage(_ placement: String) -> String { "placement '\(placement)' isn't declared in ads { }" }
 }
 
-/** What the SDK reported for the banner on screen. */
-enum BannerEvent { case loaded, failed }
+/** What happened to the banner on screen: a new banner view sent its request, or the SDK reported the outcome. */
+enum BannerEvent { case requested, loaded, failed }
 
 /** Where a ready banner is: only [loaded] takes space. */
 enum BannerLoad: Equatable {
     case loading, loaded, failed
 
-    /** The state after [event]. Once an ad shows, a failed refresh keeps it (the SDK leaves the last ad in place). */
+    /**
+     * The state after [event]. Once an ad shows, a failed refresh keeps it (the SDK leaves the last ad
+     * in place). A new request (a new banner view, after a resize) has nothing on screen yet, so it
+     * collapses until it loads.
+     */
     func on(_ event: BannerEvent) -> BannerLoad {
+        if event == .requested { return .loading }
         if event == .loaded { return .loaded }
         return self == .loaded ? .loaded : .failed
     }
@@ -101,8 +112,11 @@ public struct AdBanner: View {
         _model = State(initialValue: SharedGraph.shared.adsController().map { AdBannerModel(controller: $0, placement: placement) })
     }
 
+    /** A banner draws only in an app with ads (a controller) and a registered [BannerHost]. */
+    static func draws(hasController: Bool, hasHost: Bool) -> Bool { hasController && hasHost }
+
     public var body: some View {
-        if let model, let host = AdBanners.host {
+        if Self.draws(hasController: model != nil, hasHost: AdBanners.host != nil), let model, let host = AdBanners.host {
             Group {
                 switch model.slot {
                 case let .load(unitId):
@@ -143,6 +157,7 @@ private struct LoadedBanner: View {
                 .foregroundStyle(style.colors.onSurfaceVariant)
             host.banner(
                 unitId: unitId,
+                onRequested: { load = load.on(.requested) },
                 onLoaded: { load = load.on(.loaded) },
                 onFailed: { load = load.on(.failed) }
             )

@@ -109,6 +109,8 @@ object SharedGraph {
 
     /** The app definition's placements (`AppDefinition(ads:)`), or null for an app without ads. */
     private var adPlacements: List<AdPlacement>? = null
+    /** The routes among the placements' `underTab`s that the sign-in gate's screens own. */
+    private var adGateRoutes: List<String> = emptyList()
     /** What `AdsService` hands over in `on` mode: the ATT port (or `NoTracking`); null when it installed nothing. */
     private var adsTracking: TrackingPort? = null
     private var ads = AdsWiring.OFF
@@ -141,10 +143,13 @@ object SharedGraph {
 
     /**
      * The app's banner placements (`AppDefinition(ads:)`, Android's `ads { }`): the app uses ads.
-     * Call before [start], which checks them against the app's ads settings.
+     * [gateRoutes] are the placements' routes that the sign-in gate's screens own (Swift asks the gate
+     * feature), so a placement there fails as on Android. Call before [start], which checks them
+     * against the app's ads settings.
      */
-    fun declareAds(placements: List<AdPlacement>) {
+    fun declareAds(placements: List<AdPlacement>, gateRoutes: List<String> = emptyList()) {
         adPlacements = placements
+        adGateRoutes = gateRoutes
     }
 
     /**
@@ -179,6 +184,7 @@ object SharedGraph {
     /** Forgets what Swift handed over, for Firebase and ads (tests). */
     fun clearFirebaseServices() {
         adPlacements = null
+        adGateRoutes = emptyList()
         adsTracking = null
         consentPort = null
         firebaseServices = null
@@ -278,7 +284,9 @@ object SharedGraph {
         checkAdPlacementTabs(
             placements,
             ownerOf = { route ->
-                definition.features.firstOrNull { it.tabRoute != null && it.tabRoute == route }?.let { AdTabOwner(it.id, it.isGate) }
+                val tab = definition.features.firstOrNull { it.tabRoute != null && it.tabRoute == route }
+                val gate = definition.features.firstOrNull { it.isGate }?.takeIf { route in adGateRoutes }
+                (tab ?: gate)?.let { AdTabOwner(it.id, it.isGate) }
             },
             routeName = { it.toString() },
         )

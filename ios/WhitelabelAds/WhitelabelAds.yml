@@ -68,7 +68,9 @@ targetTemplates:
       - name: Add the ads keys to Info.plist
         basedOnDependencyAnalysis: false
         # The processed Info.plist as an input orders this phase after Xcode writes it; without it the
-        # two can run in either order and Xcode's copy wins.
+        # two can run in either order and Xcode's copy wins. It can't also be declared an output (Xcode
+        # already produces it), so with ENABLE_USER_SCRIPT_SANDBOXING=YES the edit is refused: keep
+        # sandboxing off for the app target (XcodeGen's default; the dSYM upload needs that too).
         inputFiles:
           - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
         path: merge-info-plist.sh

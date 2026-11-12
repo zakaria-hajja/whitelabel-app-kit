@@ -185,9 +185,20 @@ final class AppRuntime {
             SharedGraph.shared.declareFirebase()
             for service in firebase { service.install(mode: mode) }
         }
-        if !definition.ads.isEmpty { SharedGraph.shared.declareAds(placements: definition.ads) }
+        if !definition.ads.isEmpty {
+            SharedGraph.shared.declareAds(placements: definition.ads, gateRoutes: gateRoutes(of: definition))
+        }
         for service in definition.services(.ads) { service.install(mode: platform.ads) }
         try SharedGraph.shared.start(platform: platform, definition: definition.spec, appModules: definition.modules, useMockApi: useMockApi)
+    }
+
+    /**
+     * The placements' routes that the sign-in gate's screens own, so a placement there fails at
+     * launch as on Android ("No ads under auth: …"); Kotlin checks the rest.
+     */
+    static func gateRoutes(of definition: AppDefinition) -> [String] {
+        guard let gate = definition.gate else { return [] }
+        return definition.ads.compactMap { $0.underTab as? String }.filter { gate.routes($0, [:]) != nil }
     }
 
     /**
