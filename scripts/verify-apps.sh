@@ -166,10 +166,12 @@ for type in $types; do
       fi
     fi
 
-    # Firebase and the consent SDK ship only in an app that declares firebase.enabled=true. R8 keeps
-    # the package names in dex strings, so a plain search finds them.
+    # Firebase and the consent SDK ship only in an app that declares firebase.enabled=true. R8 may
+    # rename or drop package names, so also look for strings the SDKs embed that it can't change:
+    # the FirebaseInitProvider class name and the Firebase Installations host, and the UMP
+    # consent-form host.
     if [ "$type" = release ]; then
-      if grep -aqE 'com/google/firebase|com/google/android/ump' "$tmp/dex" \
+      if grep -aqE 'com/google/firebase|com/google/android/ump|FirebaseInitProvider|firebaseinstallations\.googleapis\.com|fundingchoicesmessages\.google\.com' "$tmp/dex" \
         && [ "$(prop "$props" firebase.enabled)" != true ]; then
         bad "$app release: dex contains Firebase (firebase.enabled is not true)"
       else
