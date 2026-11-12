@@ -90,7 +90,7 @@ class FirebaseKoinTest {
         assertThat(switch.applied).containsExactly(none)
     }
 
-    @Test fun `a debug build without the switch turns collection off at start, before consent`() {
+    @Test fun `a debug build without the switch turns collection off at start before consent`() {
         // Flags a previous -analyticsDebug run persisted must not keep collecting.
         val switch = RecordingSwitch()
         app(FirebaseMode.ON, switch, FakeConsentPort(null), debugBuild = true, debugAnalytics = false)
@@ -103,7 +103,7 @@ class FirebaseKoinTest {
         assertThat(switch.applied).isEmpty()
     }
 
-    @Test fun `a withdrawal in the privacy options reaches the switch, even after a failing apply`() {
+    @Test fun `a withdrawal in the privacy options reaches the switch even after a failing apply`() {
         // The first apply throws; the collector must survive it and apply the later change.
         val switch = object : CollectionSwitch {
             var calls = 0

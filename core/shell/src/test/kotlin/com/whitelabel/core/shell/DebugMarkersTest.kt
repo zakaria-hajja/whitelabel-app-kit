@@ -27,8 +27,4 @@ class DebugMarkersTest {
         File(dir, "fake-consent-failed").createNewFile()
         assertThat(DebugMarkers(dir).fakeConsentState()).isEqualTo("failed")
     }
-
-    @Test fun `the eea marker matches the consent module's marker name`() {
-        assertThat(DebugMarkers.CONSENT_EEA).isEqualTo("consent-eea")
-    }
 }

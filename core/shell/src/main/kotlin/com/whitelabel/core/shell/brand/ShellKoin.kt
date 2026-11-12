@@ -83,9 +83,12 @@ internal fun foundationModules(
         contributors.flatMap { it.modules() } +
         fakeOverrides(definition, firebase)
 
-private fun firebaseModules(definition: AppDefinition, wiring: FirebaseWiring): List<Module> =
-    if (!definition.usesFirebase) emptyList()
-    else listOf(consentModule(), firebaseModule(wiring.mode, wiring.debugBuild, wiring.debugAnalytics))
+/** Fake mode's Firebase module isn't here: it goes last ([fakeOverrides]). */
+private fun firebaseModules(definition: AppDefinition, wiring: FirebaseWiring): List<Module> = when {
+    !definition.usesFirebase -> emptyList()
+    wiring.mode == FirebaseMode.FAKE -> listOf(consentModule())
+    else -> listOf(consentModule(), firebaseModule(wiring.mode, wiring.debugBuild, wiring.debugAnalytics))
+}
 
 /**
  * Fake mode's bindings (fake remote values, fake consent that shows no real form) go last, after the

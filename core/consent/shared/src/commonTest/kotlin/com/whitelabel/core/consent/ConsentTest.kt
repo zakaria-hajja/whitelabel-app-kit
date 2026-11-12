@@ -2,11 +2,10 @@ package com.whitelabel.core.consent
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import kotlinx.coroutines.test.TestScope
 import kotlin.test.Test
 
 class ConsentTest {
-    private fun consent(port: ConsentPort?) = Consent(port, TestScope())
+    private fun consent(port: ConsentPort?) = Consent(port)
 
     private fun gathered(result: UmpResult?): ConsentState {
         val c = consent(FakeConsentPort(result))

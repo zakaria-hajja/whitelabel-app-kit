@@ -3,7 +3,7 @@ package com.whitelabel.core.shell.brand
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import com.whitelabel.core.consent.UmpResult
-import com.whitelabel.core.consent.UmpStatus
+import com.whitelabel.core.consent.fakeConsentResult
 import com.whitelabel.core.firebase.FirebaseMode
 import com.whitelabel.core.firebase.FirebaseServicesContributor
 import com.whitelabel.core.network.ModuleContributor
@@ -49,17 +49,6 @@ internal fun firebaseModeFor(
  * crash, and recording it too would add a non-fatal copy of every crash.
  */
 internal fun recordsUncaughtCrashes(mode: FirebaseMode): Boolean = mode != FirebaseMode.ON
-
-/**
- * What a `fake-consent-<state>` marker answers: `obtained` (default), `declined` (the form was
- * answered with every purpose refused), `failed` (the gather fails) or `notRequired`.
- */
-internal fun fakeConsentResult(state: String): UmpResult? = when (state) {
-    "declined" -> UmpResult(UmpStatus.OBTAINED, canRequestAds = true, purposeConsents = "0")
-    "failed" -> null
-    "notRequired" -> UmpResult(UmpStatus.NOT_REQUIRED, canRequestAds = true, purposeConsents = null)
-    else -> UmpResult(UmpStatus.OBTAINED, canRequestAds = true, purposeConsents = "1111111111")
-}
 
 /**
  * Reads the app's `foundation_firebase` and `foundation_firebase_declared` strings (absent, so off

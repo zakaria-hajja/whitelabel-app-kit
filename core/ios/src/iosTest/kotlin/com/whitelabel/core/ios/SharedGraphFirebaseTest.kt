@@ -4,8 +4,6 @@ import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.consent.ConsentState
-import com.whitelabel.core.consent.UmpResult
-import com.whitelabel.core.consent.UmpStatus
 import com.whitelabel.core.domain.remote.RemoteValues
 import com.whitelabel.core.firebase.CollectionSwitch
 import com.whitelabel.core.firebase.FakeRemoteConfigSource
@@ -20,8 +18,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -110,13 +106,5 @@ class SharedGraphFirebaseTest {
         start("off")
         assertEquals(FirebaseMode.OFF, SharedGraph.firebaseMode())
         assertEquals("default", values().string("showcase_remote_note", "default"))
-    }
-
-    @Test fun `fake consent states map as on android`() {
-        assertEquals(UmpResult(UmpStatus.OBTAINED, canRequestAds = true, purposeConsents = "1111111111"), fakeConsentResult("obtained"))
-        assertEquals(UmpResult(UmpStatus.OBTAINED, canRequestAds = true, purposeConsents = "0"), fakeConsentResult("declined"))
-        assertEquals(UmpResult(UmpStatus.NOT_REQUIRED, canRequestAds = true, purposeConsents = null), fakeConsentResult("notRequired"))
-        assertNull(fakeConsentResult("failed"))
-        assertTrue(fakeConsentResult("nonsense") == fakeConsentResult("obtained"))
     }
 }

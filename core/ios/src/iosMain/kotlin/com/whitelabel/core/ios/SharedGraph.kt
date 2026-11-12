@@ -12,7 +12,9 @@ import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.consent.ConsentPort
 import com.whitelabel.core.consent.FakeConsentPort
 import com.whitelabel.core.consent.UmpResult
+import com.whitelabel.core.consent.DebugConsent
 import com.whitelabel.core.consent.consentModule
+import com.whitelabel.core.consent.fakeConsentResult
 import com.whitelabel.core.data.di.ApplicationScope
 import com.whitelabel.core.data.di.dataModule
 import com.whitelabel.core.datastore.StorePaths
@@ -91,7 +93,7 @@ object SharedGraph {
     private var debugFake = false
     private var debugBuild = false
     private var debugAnalytics = false
-    private var fakeConsent: UmpResult? = fakeConsentResult("obtained")
+    private var fakeConsent: UmpResult? = fakeConsentResult(DebugConsent.DEFAULT_FAKE_STATE)
     private var mode = FirebaseMode.OFF
 
     val isStarted: Boolean get() = KoinPlatform.getKoinOrNull() != null
@@ -138,7 +140,7 @@ object SharedGraph {
         debugFake = false
         debugBuild = false
         debugAnalytics = false
-        fakeConsent = fakeConsentResult("obtained")
+        fakeConsent = fakeConsentResult(DebugConsent.DEFAULT_FAKE_STATE)
     }
 
     /** How Firebase runs in the started graph. */
@@ -219,7 +221,7 @@ object SharedGraph {
         if (!firebaseDeclared) return emptyList()
         val port = consentPort
         val services = firebaseServices
-        return listOf(
+        return listOfNotNull(
             module {
                 if (port != null) single<ConsentPort> { port }
                 if (services != null) {
@@ -230,7 +232,8 @@ object SharedGraph {
                 }
             },
             consentModule(),
-            firebaseModule(mode, debugBuild, debugAnalytics),
+            // Fake mode's Firebase module goes last (fakeOverrides), not here.
+            if (mode == FirebaseMode.FAKE) null else firebaseModule(mode, debugBuild, debugAnalytics),
         )
     }
 

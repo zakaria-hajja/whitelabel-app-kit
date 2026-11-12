@@ -3,6 +3,7 @@ package com.whitelabel.core.consent.google
 import android.app.Application
 import android.content.pm.ApplicationInfo
 import com.whitelabel.core.consent.ConsentPort
+import com.whitelabel.core.consent.DebugConsent
 import com.whitelabel.core.network.ModuleContributor
 import java.io.File
 import org.koin.android.ext.koin.androidContext
@@ -23,7 +24,8 @@ class ConsentContributor : ModuleContributor {
                 UmpConsentPort(
                     context,
                     get(),
-                    debugGeographyEea = debuggable && File(context.filesDir, "debug/$DEBUG_EEA_MARKER").exists(),
+                    // Debug only: a release build never reads the marker.
+                    debugGeographyEea = debuggable && File(context.filesDir, "debug/${DebugConsent.EEA_MARKER}").exists(),
                 )
             }
         },

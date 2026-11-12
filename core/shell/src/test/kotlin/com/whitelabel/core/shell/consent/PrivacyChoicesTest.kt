@@ -6,14 +6,12 @@ import assertk.assertions.isFalse
 import assertk.assertions.isTrue
 import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.consent.FakeConsentPort
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import org.junit.jupiter.api.Test
 
 class PrivacyChoicesTest {
 
     private fun consentWith(port: FakeConsentPort): Consent =
-        Consent(port, CoroutineScope(Job())).also { it.gatherOnLaunch() }
+        Consent(port).also { it.gatherOnLaunch() }
 
     @Test fun `row is hidden when privacy options are not required`() {
         val port = FakeConsentPort(next = null, optionsRequired = false)

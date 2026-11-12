@@ -1,6 +1,5 @@
 package com.whitelabel.core.consent
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * The app's consent state. With no [port] (an app without Firebase or ads) nothing that needs consent
  * may run, so it resolves to everything denied.
  */
-class Consent(private val port: ConsentPort?, @Suppress("unused") private val scope: CoroutineScope) {
+class Consent(private val port: ConsentPort?) {
     private val _state = MutableStateFlow<ConsentState>(ConsentState.Unknown)
     val state: StateFlow<ConsentState> = _state.asStateFlow()
 

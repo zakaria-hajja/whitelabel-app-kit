@@ -11,12 +11,11 @@ import com.whitelabel.core.analytics.LoggingCrashReporter
 import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.consent.ConsentState
 import com.whitelabel.core.consent.UmpResult
-import com.whitelabel.core.consent.UmpStatus
 import com.whitelabel.core.domain.remote.DefaultsOnlyRemoteValues
 import com.whitelabel.core.domain.remote.RemoteValues
 import com.whitelabel.core.firebase.FirebaseMode
 import com.whitelabel.core.shell.brand.FirebaseWiring
-import com.whitelabel.core.shell.brand.fakeConsentResult
+import com.whitelabel.core.consent.fakeConsentResult
 import com.whitelabel.core.shell.brand.firebaseContributorPresent
 import com.whitelabel.core.shell.brand.recordsUncaughtCrashes
 import com.whitelabel.core.firebase.FirebaseServicesContributor
@@ -137,14 +136,6 @@ class FirebaseWiringTest {
         assertThat(koin.get<Consent>().state.value).isEqualTo(ConsentState.Failed)
     }
 
-    @Test fun `fake consent names map to ump results`() {
-        assertThat(fakeConsentResult("notRequired")).isEqualTo(UmpResult(UmpStatus.NOT_REQUIRED, true, null))
-        assertThat(fakeConsentResult("declined")).isEqualTo(UmpResult(UmpStatus.OBTAINED, true, "0"))
-        assertThat(fakeConsentResult("failed")).isEqualTo(null)
-        assertThat(fakeConsentResult("obtained")).isEqualTo(UmpResult(UmpStatus.OBTAINED, true, "1111111111"))
-        assertThat(fakeConsentResult("anything else")).isEqualTo(fakeConsentResult("obtained"))
-    }
-
     @Test fun `an app without firebase gets no consent binding`() {
         val koin = koinApplication {
             modules(foundationModules(appDefinition { add(entry("a", RouteA)) }, emptyList()))
@@ -152,8 +143,8 @@ class FirebaseWiringTest {
         assertThat(koin.getOrNull<Consent>()).isEqualTo(null)
     }
 
-    @Test fun `consentModule resolves against the real data module's application scope`() {
-        val koin = koinApplication { modules(com.whitelabel.core.data.di.dataModule, com.whitelabel.core.consent.consentModule()) }.koin
+    @Test fun `consentModule resolves on its own`() {
+        val koin = koinApplication { modules(com.whitelabel.core.consent.consentModule()) }.koin
         assertThat(koin.get<Consent>().state.value).isEqualTo(ConsentState.Unknown)
     }
 

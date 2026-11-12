@@ -1,6 +1,7 @@
 package com.whitelabel.core.shell.debug
 
 import android.content.Context
+import com.whitelabel.core.consent.DebugConsent
 import java.io.File
 
 /**
@@ -14,7 +15,7 @@ internal class DebugMarkers(private val dir: File?) {
 
     /** The state named by a `fake-consent-<state>` marker; `obtained` when there is none. */
     fun fakeConsentState(): String =
-        FAKE_CONSENT_STATES.firstOrNull { has("$FAKE_CONSENT_PREFIX$it") } ?: "obtained"
+        DebugConsent.FAKE_STATES.firstOrNull { has("$FAKE_CONSENT_PREFIX$it") } ?: DebugConsent.DEFAULT_FAKE_STATE
 
     companion object {
         /** Firebase runs as the in-memory fake. */
@@ -23,14 +24,10 @@ internal class DebugMarkers(private val dir: File?) {
         /** Analytics and crash collection run in a debug build (they are off there by default). */
         const val ANALYTICS_DEBUG = "analytics-debug"
 
-        /**
-         * Forces the EEA consent geography. Read by `:core:consent:google` as its `DEBUG_EEA_MARKER`;
-         * the shell can't depend on that module (release builds don't link it), so the literal is repeated.
-         */
-        const val CONSENT_EEA = "consent-eea"
+        // The EEA consent marker is DebugConsent.EEA_MARKER, read by :core:consent:google.
 
+        /** Followed by one of DebugConsent.FAKE_STATES. */
         const val FAKE_CONSENT_PREFIX = "fake-consent-"
-        val FAKE_CONSENT_STATES = listOf("obtained", "declined", "failed", "notRequired")
 
         fun of(context: Context, debugBuild: Boolean) = DebugMarkers(if (debugBuild) File(context.filesDir, "debug") else null)
     }
