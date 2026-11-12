@@ -64,9 +64,16 @@ verify_apk() {
   code=$(prop "$props" app.versionCode); version=$(prop "$props" app.versionName)
   echo "$badging" | grep -q "versionCode='$code' versionName='$version'" && ok "$app $type: version $code ($version)" \
     || bad "$app $type: version is not $code ($version)"
-  # Deep links (reset password, catalog items) open the app only through its own scheme.
+  # Deep links (reset password, catalog items) open the app only through its own scheme. A library's
+  # <queries> (the AdMob SDK's https/sms intents: package visibility, not links into the app) is skipped.
   scheme=$(prop "$props" app.deepLinkScheme)
-  schemes=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" | sed -n 's/.*android:scheme([^)]*)="\([^"]*\)".*/\1/p' | sort -u | tr '\n' ' ')
+  schemes=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" \
+    | awk '{ match($0, /^ */); d = RLENGTH }
+           skip && d > depth { next }
+           { skip = 0 }
+           /E: queries / { skip = 1; depth = d; next }
+           { print }' \
+    | sed -n 's/.*android:scheme([^)]*)="\([^"]*\)".*/\1/p' | sort -u | tr '\n' ' ')
   [ "$schemes" = "$scheme " ] && ok "$app $type: deep links use scheme '$scheme'" \
     || bad "$app $type: deep-link schemes are '$schemes', expected only '$scheme'"
 
