@@ -48,9 +48,12 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
         single<CrashReporter> { ConsentGatedCrashReporter(get(firebase), get<Consent>().state) }
         single(named("firebaseCollectionApplier"), createdAtStart = true) {
             val switch = get<CollectionSwitch>()
+            // A debug build without the switch never collects, so it turns collection off at once: the SDKs'
+            // persisted flags may still be on from an earlier -analyticsDebug run (turning off deletes nothing).
+            val offAtStart = debugBuild && !debugAnalytics
             get<Consent>().state
-                // Unknown applies nothing: the SDKs' persisted flags still carry the last applied consent.
-                .filter { it !is ConsentState.Unknown }
+                // Otherwise Unknown applies nothing: the persisted flags carry the last applied consent.
+                .filter { offAtStart || it !is ConsentState.Unknown }
                 .onEach {
                     // One failing platform apply must not end the collector; later consent changes still apply.
                     runCatching { switch.apply(collectionFor(it, debugBuild, debugAnalytics)) }

@@ -35,7 +35,16 @@ class FirebaseKoinTest {
         override fun record(throwable: Throwable) = Unit
     }
 
-    private fun app(mode: FirebaseMode, switch: RecordingSwitch = RecordingSwitch(), port: ConsentPort? = null, override: CollectionSwitch? = null): KoinApplication =
+    private val none = FirebaseCollection(analytics = false, analyticsStorage = false, crashes = false)
+
+    private fun app(
+        mode: FirebaseMode,
+        switch: RecordingSwitch = RecordingSwitch(),
+        port: ConsentPort? = null,
+        override: CollectionSwitch? = null,
+        debugBuild: Boolean = false,
+        debugAnalytics: Boolean = false,
+    ): KoinApplication =
         koinApplication {
             modules(
                 module {
@@ -47,7 +56,7 @@ class FirebaseKoinTest {
                     single<CrashReporter>(named("firebase")) { NoopAnalytics() }
                 },
                 consentModule(),
-                firebaseModule(mode, debugBuild = false, debugAnalytics = false),
+                firebaseModule(mode, debugBuild, debugAnalytics),
             )
         }.also { it.createEagerInstances() } // startKoin does this; koinApplication does not
 
@@ -71,6 +80,27 @@ class FirebaseKoinTest {
         assertThat(switch.applied).isEmpty()
         koin.get<Consent>().gatherOnLaunch()
         assertThat(switch.applied.last()).isEqualTo(FirebaseCollection(true, true, true))
+    }
+
+    @Test fun `a failed consent reaches the switch as all off`() {
+        val switch = RecordingSwitch()
+        val koin = app(FirebaseMode.ON, switch, FakeConsentPort(null)).koin
+        koin.get<Consent>().gatherOnLaunch()
+        assertThat(koin.get<Consent>().state.value).isEqualTo(ConsentState.Failed)
+        assertThat(switch.applied).containsExactly(none)
+    }
+
+    @Test fun `a debug build without the switch turns collection off at start, before consent`() {
+        // Flags a previous -analyticsDebug run persisted must not keep collecting.
+        val switch = RecordingSwitch()
+        app(FirebaseMode.ON, switch, FakeConsentPort(null), debugBuild = true, debugAnalytics = false)
+        assertThat(switch.applied).containsExactly(none)
+    }
+
+    @Test fun `a debug build with the switch waits for consent like release`() {
+        val switch = RecordingSwitch()
+        app(FirebaseMode.ON, switch, FakeConsentPort(null), debugBuild = true, debugAnalytics = true)
+        assertThat(switch.applied).isEmpty()
     }
 
     @Test fun `a withdrawal in the privacy options reaches the switch, even after a failing apply`() {
