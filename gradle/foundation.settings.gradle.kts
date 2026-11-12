@@ -24,6 +24,7 @@ val sharedModules = listOf(
     ":core:ios:mock",
     ":core:ui",
     ":core:analytics",
+    ":core:consent:shared",
     ":core:domain",
     ":core:data",
     ":feature:authentication",
