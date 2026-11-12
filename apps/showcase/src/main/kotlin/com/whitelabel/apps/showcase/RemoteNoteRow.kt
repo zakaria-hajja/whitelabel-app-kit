@@ -25,7 +25,7 @@ internal fun RemoteNoteRow() {
     SettingsValueRow(
         label = stringResource(R.string.showcase_remote_note),
         value = note,
-        onClick = {},
+        onClick = null,
         modifier = Modifier.testTag("showcase.remoteNote"),
     )
 }

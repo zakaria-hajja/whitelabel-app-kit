@@ -1,41 +1,55 @@
 import SwiftUI
 
-/** A setting and its current value, on one line or with the value under the label as the pack says; tapping opens its choices. */
+/**
+ * A setting and its current value, on one line or with the value under the label as the pack says;
+ * tapping opens its choices. Without an action it's read-only: no button, no chevron.
+ */
 public struct AppValueRow: View {
     @Environment(\.appStyle) private var style
     private let label: String
     private let value: String
-    private let action: () -> Void
+    private let action: (() -> Void)?
 
-    public init(_ label: String, value: String, action: @escaping () -> Void) {
+    public init(_ label: String, value: String, action: (() -> Void)? = nil) {
         self.label = label
         self.value = value
         self.action = action
     }
 
     public var body: some View {
-        Button(action: action) {
-            HStack {
-                switch style.pack.valueRows {
-                case .inline:
+        if let action {
+            Button(action: action) { content(chevron: true) }
+                .buttonStyle(.plain)
+                .accessibilityLabel(label)
+                .accessibilityValue(value)
+        } else {
+            content(chevron: false)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(label)
+                .accessibilityValue(value)
+        }
+    }
+
+    private func content(chevron: Bool) -> some View {
+        HStack {
+            switch style.pack.valueRows {
+            case .inline:
+                Text(label).font(style.typography.body).foregroundStyle(style.colors.onSurface)
+                Spacer(minLength: Spacing.md)
+                Text(value).font(style.typography.body).foregroundStyle(style.colors.onSurfaceVariant)
+            case .stacked:
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(label).font(style.typography.body).foregroundStyle(style.colors.onSurface)
-                    Spacer(minLength: Spacing.md)
-                    Text(value).font(style.typography.body).foregroundStyle(style.colors.onSurfaceVariant)
-                case .stacked:
-                    VStack(alignment: .leading, spacing: Spacing.xs) {
-                        Text(label).font(style.typography.body).foregroundStyle(style.colors.onSurface)
-                        Text(value).font(style.typography.label).foregroundStyle(style.colors.onSurfaceVariant)
-                    }
-                    Spacer(minLength: Spacing.md)
+                    Text(value).font(style.typography.label).foregroundStyle(style.colors.onSurfaceVariant)
                 }
+                Spacer(minLength: Spacing.md)
+            }
+            if chevron {
                 Image(systemName: "chevron.right").font(.footnote).foregroundStyle(style.colors.onSurfaceVariant).accessibilityHidden(true)
             }
-            .frame(minHeight: style.pack.sizing.listRowMinHeight)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
-        .accessibilityValue(value)
+        .frame(minHeight: style.pack.sizing.listRowMinHeight)
+        .contentShape(Rectangle())
     }
 }
 
