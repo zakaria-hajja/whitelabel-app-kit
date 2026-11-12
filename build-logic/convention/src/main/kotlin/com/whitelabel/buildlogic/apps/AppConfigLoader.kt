@@ -168,6 +168,10 @@ object AppConfigLoader {
             fail("ads.ios.trackingMessage", "is required when ads.ios.requestTracking=true (it is the tracking permission prompt's text)")
         }
 
+        if (iosTrackingMessage != null && ("$(" in iosTrackingMessage || "\${" in iosTrackingMessage)) {
+            fail("ads.ios.trackingMessage", "must not contain \$( or \${ (Xcode would expand it as a build setting)")
+        }
+
         val signing = parseSigning(dir, label, problems)
 
         if (problems.size != before) return null

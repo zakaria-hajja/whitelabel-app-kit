@@ -38,8 +38,13 @@ find_aapt2() {
 }
 
 # ads_in_dex DEX: succeeds when the dex holds the AdMob SDK. R8 may rename package names, so also
-# look for the init provider's class name, which the manifest keeps.
-ads_in_dex() { grep -aqE 'com/google/android/gms/ads|MobileAdsInitProvider' "$1"; }
+# look for the init provider's class name, which the manifest keeps. The package
+# com/google/android/gms/ads/identifier (play-services-ads-identifier, which Firebase Analytics
+# pulls in) is not the AdMob SDK and is ignored.
+ads_in_dex() {
+  grep -aqF 'MobileAdsInitProvider' "$1" && return 0
+  grep -aoE 'com/google/android/gms/ads/[A-Za-z]+' "$1" | grep -qv '^com/google/android/gms/ads/identifier$'
+}
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT

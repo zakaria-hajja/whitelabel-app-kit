@@ -171,4 +171,22 @@ class IosConfigTest {
 
         assertThat(e.message!!).contains("apps/showcase: ads.enabled=true needs ads.ios.appId")
     }
+
+    private fun messageLine(message: String): String {
+        val config = app().copy(ads = ServiceMode.ON, adsIosAppId = IOS_ID, adsIosUnits = mapOf("home" to unit), iosRequestTracking = true, iosTrackingMessage = message)
+        return iosXcconfig(config, "release")
+    }
+
+    @Test fun `a tracking message keeps quotes and escapes every double slash`() {
+        val out = messageLine("Say \"hi\" at https://a.example//b ///c")
+
+        assertThat(out).contains("WL_ADS_TRACKING_MESSAGE = Say \"hi\" at https:/$()/a.example/$()/b /$()/$()/c\n")
+    }
+
+    @Test fun `a tracking message with newlines and tabs stays on one line`() {
+        val out = messageLine("one\ntwo\r\nthree\tfour")
+
+        assertThat(out).contains("WL_ADS_TRACKING_MESSAGE = one two three four\n")
+        assertThat(out.lines().count { it.startsWith("WL_") }).isEqualTo(out.lines().count { it.isNotBlank() && !it.startsWith("//") })
+    }
 }

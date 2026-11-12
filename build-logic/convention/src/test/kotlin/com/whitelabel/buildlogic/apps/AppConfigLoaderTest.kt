@@ -527,4 +527,20 @@ class AppConfigLoaderTest {
 
         assertThat(AppConfigLoader.load(appDir).iosTrackingMessage).isEqualTo("Unused")
     }
+
+    @Test
+    fun `a tracking message with a build setting reference is rejected naming the key`() {
+        listOf("Hello \$(PRODUCT_NAME)", "Hello \${PRODUCT_NAME}").forEach { message ->
+            writeApp(mapOf("ads.ios.trackingMessage" to message))
+
+            assertThat(problems().single()).contains("apps/sample/app.properties: ads.ios.trackingMessage")
+        }
+    }
+
+    @Test
+    fun `a tracking message may contain quotes, slashes and a lone dollar`() {
+        writeApp(mapOf("ads.ios.trackingMessage" to "Save \"\$5\" at a//b"))
+
+        assertThat(AppConfigLoader.load(appDir).iosTrackingMessage).isEqualTo("Save \"\$5\" at a//b")
+    }
 }
