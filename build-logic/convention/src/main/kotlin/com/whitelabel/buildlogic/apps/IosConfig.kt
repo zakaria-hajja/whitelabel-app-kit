@@ -28,16 +28,23 @@ internal fun iosXcconfig(app: AppConfig, buildType: String, firebaseConfigFileEx
 }
 
 /**
- * What an app's iOS framework (`Shared`) adds for Firebase. [modules] are added to the framework and
- * exported: `:core:firebase:crashlytics`, the Kotlin crash hook over CrashKiOS, which the Swift
- * `FirebaseService` calls. [crashLinkPlugin]: CrashKiOS' link plugin. An app without Firebase gets
- * neither, so its framework holds no CrashKiOS code and links without Crashlytics. (The consent and
- * Firebase modules are pure Kotlin and exported by every app: WhitelabelKit uses their types.)
+ * What an app's iOS framework (`Shared`) adds for consent and Firebase. [modules] are added to the
+ * framework and exported:
+ * - every app: `:core:consent:shared` and `:core:firebase:shared`. They are pure Kotlin (no Apple
+ *   SDK), and WhitelabelKit's Swift names their types (`Consent` in `PrivacyChoicesRow`), so the kit
+ *   compiles only against a framework that exports them;
+ * - an app with Firebase: also `:core:firebase:crashlytics`, the Kotlin crash hook over CrashKiOS,
+ *   which the Swift `FirebaseService` calls.
+ *
+ * [crashLinkPlugin]: CrashKiOS' link plugin. An app without Firebase gets neither the hook nor the
+ * plugin, so its framework holds no CrashKiOS code and links without Crashlytics.
  */
 data class IosFirebaseFramework(val crashLinkPlugin: Boolean, val modules: List<String>)
 
+private val EVERY_APP_MODULES = listOf(":core:consent:shared", ":core:firebase:shared")
+
 fun iosFirebaseFramework(mode: ServiceMode): IosFirebaseFramework = when (mode) {
-    ServiceMode.OFF -> IosFirebaseFramework(crashLinkPlugin = false, modules = emptyList())
+    ServiceMode.OFF -> IosFirebaseFramework(crashLinkPlugin = false, modules = EVERY_APP_MODULES)
     ServiceMode.ON, ServiceMode.DEBUG ->
-        IosFirebaseFramework(crashLinkPlugin = true, modules = listOf(":core:firebase:crashlytics"))
+        IosFirebaseFramework(crashLinkPlugin = true, modules = EVERY_APP_MODULES + ":core:firebase:crashlytics")
 }

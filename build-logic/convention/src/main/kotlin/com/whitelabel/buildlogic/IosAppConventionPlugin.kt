@@ -61,9 +61,10 @@ abstract class GenerateIosConfig : DefaultTask() {
 
 /**
  * For an app's iOS framework module (`:apps:<name>:shared`): `generateIosConfig` from the app's
- * identity, and, when the app has Firebase (`firebase.enabled` true or debug), CrashKiOS' link plugin
- * and the Kotlin crash hook module, added and exported ([iosFirebaseFramework]). An app without
- * Firebase gets neither.
+ * identity, and the modules [iosFirebaseFramework] names, added and exported: the consent and
+ * Firebase types WhitelabelKit uses for every app, and, when the app has Firebase (`firebase.enabled`
+ * true or debug), CrashKiOS' link plugin and the Kotlin crash hook module. The app's own export list
+ * doesn't name them.
  */
 class IosAppConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
@@ -88,14 +89,12 @@ class IosAppConventionPlugin : Plugin<Project> {
             val app = AppConfigLoader.load(extension.androidApp.get().asFile)
             val firebase = iosFirebaseFramework(app.firebase)
             if (firebase.crashLinkPlugin) pluginManager.apply(libs.pluginId("crashkios-crashlyticslink"))
-            if (firebase.modules.isNotEmpty()) {
-                val kotlin = extensions.getByType<KotlinMultiplatformExtension>()
-                kotlin.sourceSets.getByName("commonMain").dependencies {
-                    firebase.modules.forEach { api(project(it)) }
-                }
-                kotlin.targets.withType<KotlinNativeTarget>().configureEach {
-                    binaries.withType<Framework>().configureEach { firebase.modules.forEach { export(project(it)) } }
-                }
+            val kotlin = extensions.getByType<KotlinMultiplatformExtension>()
+            kotlin.sourceSets.getByName("commonMain").dependencies {
+                firebase.modules.forEach { api(project(it)) }
+            }
+            kotlin.targets.withType<KotlinNativeTarget>().configureEach {
+                binaries.withType<Framework>().configureEach { firebase.modules.forEach { export(project(it)) } }
             }
         }
         Unit

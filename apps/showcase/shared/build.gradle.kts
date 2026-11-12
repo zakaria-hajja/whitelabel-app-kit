@@ -10,11 +10,11 @@ plugins {
 }
 
 // Showcase's shared code as one iOS framework. Every app's framework is named "Shared", so the
-// reusable Swift kit (ios/WhitelabelKit) imports the same module whatever the app.
+// reusable Swift kit (ios/WhitelabelKit) imports the same module whatever the app. The consent and
+// Firebase modules aren't listed: the whitelabel.ios.app plugin adds and exports them.
 val exported = listOf(
     ":core:common", ":core:domain", ":core:presentation", ":core:data", ":core:network", ":core:datastore",
-    ":core:branding", ":core:analytics", ":core:consent:shared",
-    ":core:firebase:shared", ":core:shell:shared", ":core:ios",
+    ":core:branding", ":core:analytics", ":core:shell:shared", ":core:ios",
     ":feature:authentication:shared", ":feature:settings:shared", ":feature:profile:shared",
     ":feature:home:shared", ":feature:catalog:shared",
 )

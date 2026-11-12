@@ -225,6 +225,12 @@ Crashlytics, `FirebaseService`). `WhitelabelKit` never imports Firebase. The app
 Swift packages link in Release too (SPM can't drop them per configuration), but Firebase only starts
 where `WL_FIREBASE` is `on`. The setup steps and the Info.plist keys are in [firebase.md](firebase.md).
 
+The `whitelabel.ios.app` plugin exports `:core:consent:shared` and `:core:firebase:shared` from every
+app's `Shared` framework, with or without Firebase: they are pure Kotlin, and WhitelabelKit's Swift
+names their types (`Consent` in `PrivacyChoicesRow`). Only an app with Firebase also gets
+`:core:firebase:crashlytics` (the Kotlin crash hook over CrashKiOS) and CrashKiOS' link plugin. An
+app's own export list names none of them.
+
 ## Platform pieces (Swift)
 
 - **`KeychainTokenCipher`:** AES-GCM via CryptoKit, with the key in the Keychain (after first

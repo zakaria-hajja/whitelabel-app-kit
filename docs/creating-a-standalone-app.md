@@ -241,6 +241,10 @@ WhitelabelKit (in the foundation) plus the app's own SwiftUI. Showcase is the re
      WhitelabelKit imports `Shared`;
    - it exports `:core:ios`, the foundation's shared modules the app uses, and the app's own
      `:shared` modules. With `-Pwhitelabel.mockApi=true` it also links `:core:ios:mock`;
+   - don't list `:core:consent:shared`, `:core:firebase:shared` or `:core:firebase:crashlytics`:
+     `whitelabel.ios.app` adds and exports the first two for every app, Firebase or not, because
+     WhitelabelKit's Swift names their types (`Consent`). It adds the third, with CrashKiOS' link
+     plugin, only when `firebase.enabled` is `true` or `debug`;
    - `iosApp { androidApp.set(<the app module's dir>); iosConfigDir.set(<iosApp/Config>) }`.
      `generateIosConfig` writes the app's identity from `app.properties` into
      `iosApp/Config/{Debug,Release}.generated.xcconfig` (git-ignored).
