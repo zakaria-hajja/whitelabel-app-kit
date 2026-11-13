@@ -26,6 +26,8 @@ import com.whitelabel.feature.settings.settings
 fun showcaseDefinition(): AppDefinition = appDefinition {
     // Firebase runs in Debug builds only (app.properties: firebase.enabled=debug); Release runs in off mode.
     firebase()
+    // A test banner under Home in Debug (app.properties: ads.enabled=debug); Release has no ads SDK.
+    ads { placement("home", underTab = HomeRoute) }
     auth()
     home(
         HomeOptions(

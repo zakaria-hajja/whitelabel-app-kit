@@ -2,6 +2,8 @@ package com.whitelabel.core.shell.brand
 
 import android.os.Build
 import android.util.Log
+import com.whitelabel.core.ads.AdsWiring
+import com.whitelabel.core.ads.adsModule
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.analytics.LoggingAnalytics
@@ -68,29 +70,34 @@ internal fun shellModule(definition: AppDefinition) = module {
 
 /**
  * Every Koin module an Android app starts with: the core layers, the shell, the definition's
- * modules (features, then the app's own), then the build type's [buildTypeModules] (Debug: the guest
- * account), then each classpath [contributors]' (the mock backend). Koin keeps the last binding of a
- * type: an app can replace a shared binding, and a contributor's wins over everything (the fake's
- * guest account over the Debug one).
+ * modules (features, then the app's own), consent, Firebase and ads when the app uses them, then the
+ * build type's [buildTypeModules] (Debug: the guest account), then each classpath [contributors]'
+ * (the mock backend, the Google SDK modules). Koin keeps the last binding of a type: an app can
+ * replace a shared binding, and a contributor's wins over everything (the fake's guest account over
+ * the Debug one).
  */
 internal fun foundationModules(
     definition: AppDefinition,
     contributors: List<ModuleContributor>,
     firebase: FirebaseWiring = FirebaseWiring.OFF,
+    ads: AdsWiring = AdsWiring.OFF,
     buildTypeModules: List<Module> = emptyList(),
 ): List<Module> =
     listOf(networkModule, dataModule, androidDataModule, shellModule(definition), shellModelModule(definition.toSpec())) +
         definition.koinModules +
+        (if (definition.needsConsent) listOf(consentModule()) else emptyList()) +
         firebaseModules(definition, firebase) +
+        // An app with ads { } always gets the controller, so its AdBanner and AdFree calls resolve even
+        // in a build with ads off (ads.enabled=debug in release), where every banner stays hidden.
+        (if (definition.usesAds) listOf(adsModule(ads.enabled, ads.units)) else emptyList()) +
         buildTypeModules +
         contributors.flatMap { it.modules() } +
         fakeOverrides(definition, firebase)
 
 /** Fake mode's Firebase module isn't here: it goes last ([fakeOverrides]). */
 private fun firebaseModules(definition: AppDefinition, wiring: FirebaseWiring): List<Module> = when {
-    !definition.usesFirebase -> emptyList()
-    wiring.mode == FirebaseMode.FAKE -> listOf(consentModule())
-    else -> listOf(consentModule(), firebaseModule(wiring.mode, wiring.debugBuild, wiring.debugAnalytics))
+    !definition.usesFirebase || wiring.mode == FirebaseMode.FAKE -> emptyList()
+    else -> listOf(firebaseModule(wiring.mode, wiring.debugBuild, wiring.debugAnalytics))
 }
 
 /**

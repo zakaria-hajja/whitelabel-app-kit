@@ -13,6 +13,8 @@ object AppConfigLoader {
     private val TENANT = Regex("^[a-z0-9][a-z0-9-]{1,62}$")
     private val APPLICATION_ID = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")
     private val ADMOB_APP_ID = Regex("^ca-app-pub-\\d{16}~\\d{10}$")
+    private val ADMOB_UNIT_ID = Regex("^ca-app-pub-\\d{16}/\\d{10}$")
+    private val PLACEMENT = Regex("^[A-Za-z][A-Za-z0-9_-]*$")
     private val DEEP_LINK_SCHEME = Regex("^[a-z][a-z0-9+.-]*$")
     private val LOCAL_HOSTS = setOf("localhost", "127.0.0.1", "10.0.2.2")
     // Must match core/shell/src/debug/res/xml/network_security_config.xml.
@@ -137,6 +139,39 @@ object AppConfigLoader {
         val adsAndroidAppId = check("ads.android.appId", value("ads.android.appId"), ADMOB_APP_ID)
         val adsIosAppId = check("ads.ios.appId", value("ads.ios.appId"), ADMOB_APP_ID)
 
+        val ads = when (val raw = value("ads.enabled")) {
+            null, "false" -> ServiceMode.OFF
+            "true" -> ServiceMode.ON
+            "debug" -> ServiceMode.DEBUG
+            else -> { fail("ads.enabled", "'$raw' must be false, true or debug"); null }
+        }
+        fun units(prefix: String): Map<String, String> = props.stringPropertyNames().sorted()
+            .filter { it.startsWith(prefix) }
+            .mapNotNull { key ->
+                val placement = key.removePrefix(prefix)
+                if (!PLACEMENT.matches(placement)) {
+                    fail(key, "placement '$placement' must match ${PLACEMENT.pattern}")
+                    null
+                } else {
+                    check(key, value(key), ADMOB_UNIT_ID)?.let { placement to it }
+                }
+            }.toMap()
+        val adsAndroidUnits = units("ads.android.banner.")
+        val adsIosUnits = units("ads.ios.banner.")
+        val iosRequestTracking = when (val raw = value("ads.ios.requestTracking")) {
+            null, "false" -> false
+            "true" -> true
+            else -> { fail("ads.ios.requestTracking", "'$raw' must be false or true"); false }
+        }
+        val iosTrackingMessage = value("ads.ios.trackingMessage")
+        if (iosRequestTracking && iosTrackingMessage == null) {
+            fail("ads.ios.trackingMessage", "is required when ads.ios.requestTracking=true (it is the tracking permission prompt's text)")
+        }
+
+        if (iosTrackingMessage != null && ("$(" in iosTrackingMessage || "\${" in iosTrackingMessage)) {
+            fail("ads.ios.trackingMessage", "must not contain \$( or \${ (Xcode would expand it as a build setting)")
+        }
+
         val signing = parseSigning(dir, label, problems)
 
         if (problems.size != before) return null
@@ -155,6 +190,11 @@ object AppConfigLoader {
             firebase = firebase!!,
             adsAndroidAppId = adsAndroidAppId,
             adsIosAppId = adsIosAppId,
+            ads = ads!!,
+            adsAndroidUnits = adsAndroidUnits,
+            adsIosUnits = adsIosUnits,
+            iosRequestTracking = iosRequestTracking,
+            iosTrackingMessage = iosTrackingMessage,
             signing = signing,
             appDir = dir,
         )

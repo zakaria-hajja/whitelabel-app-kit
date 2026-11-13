@@ -1,0 +1,103 @@
+import GoogleMobileAds
+import SwiftUI
+import WhitelabelKit
+
+/**
+ * Google Mobile Ads banners for the kit's `AdBanner`: a large anchored adaptive banner for the
+ * available width. The SDK starts on the first banner the rules let load (consent is resolved by
+ * then), never at app startup. `MobileAds.shared.start` doesn't throw today, so `StartOnce`'s retry
+ * only matters if a start ever can fail.
+ */
+struct GoogleBannerHost: BannerHost {
+    func banner(unitId: String, onRequested: @escaping () -> Void, onLoaded: @escaping () -> Void, onFailed: @escaping () -> Void) -> AnyView {
+        AnyView(GoogleBanner(unitId: unitId, onRequested: onRequested, onLoaded: onLoaded, onFailed: onFailed))
+    }
+}
+
+private struct GoogleBanner: View {
+    let unitId: String
+    let onRequested: () -> Void
+    let onLoaded: () -> Void
+    let onFailed: () -> Void
+
+    @State private var started = false
+    @State private var width: CGFloat = 0
+    @State private var requests = BannerRequests()
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Measures the width the banner may use, without taking any height.
+            Color.clear
+                .frame(maxWidth: .infinity, maxHeight: 0)
+                .onGeometryChange(for: CGFloat.self, of: { $0.size.width }) { width = $0 }
+            if started, width > 0 {
+                let size = largeAnchoredAdaptiveBanner(width: width)
+                // A new unit or width is a new banner view and a new request: the slot collapses until it loads.
+                GoogleBannerRepresentable(unitId: unitId, size: size, onLoaded: onLoaded, onFailed: onFailed)
+                    .frame(width: size.size.width, height: size.size.height)
+                    .id(BannerRequests.key(unitId: unitId, width: width))
+                    .onAppear { if requests.appeared(unitId: unitId, width: width) { onRequested() } }
+            }
+        }
+        .task {
+            let ok = await StartOnce.mobileAds.run { _ = await MobileAds.shared.start() }
+            if ok { started = true } else { onFailed() }
+        }
+    }
+}
+
+private struct GoogleBannerRepresentable: UIViewRepresentable {
+    let unitId: String
+    let size: AdSize
+    let onLoaded: () -> Void
+    let onFailed: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> BannerView {
+        let banner = BannerView(adSize: size)
+        banner.adUnitID = unitId
+        context.coordinator.update(onLoaded: onLoaded, onFailed: onFailed)
+        banner.delegate = context.coordinator
+        banner.load(Request())
+        return banner
+    }
+
+    func updateUIView(_ view: BannerView, context: Context) {
+        context.coordinator.update(onLoaded: onLoaded, onFailed: onFailed)
+    }
+
+    /** Reports the SDK's outcome; a refresh that fails after a load keeps the last ad (the kit's `BannerLoad`). */
+    final class Coordinator: NSObject, BannerViewDelegate {
+        private var onLoaded: () -> Void = {}
+        private var onFailed: () -> Void = {}
+
+        func update(onLoaded: @escaping () -> Void, onFailed: @escaping () -> Void) {
+            self.onLoaded = onLoaded
+            self.onFailed = onFailed
+        }
+
+        func bannerViewDidReceiveAd(_ bannerView: BannerView) { onLoaded() }
+
+        func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Swift.Error) { onFailed() }
+    }
+}
+
+/**
+ * Which appearances of a banner view are new requests. A new unit or width is a new banner view (it
+ * is keyed by [key]) and so a new request; the same view appearing again (back to the tab root, or
+ * back to the tab) keeps its ad, so it must not reset the slot to loading.
+ */
+struct BannerRequests {
+    private var last: String?
+
+    static func key(unitId: String, width: CGFloat) -> String { "\(unitId)@\(Int(width))" }
+
+    /** Records that the view for [unitId] at [width] appeared; true when it is a new banner view. */
+    mutating func appeared(unitId: String, width: CGFloat) -> Bool {
+        let key = Self.key(unitId: unitId, width: width)
+        guard key != last else { return false }
+        last = key
+        return true
+    }
+}

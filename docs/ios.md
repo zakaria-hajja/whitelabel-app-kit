@@ -239,6 +239,16 @@ names their types (`Consent` in `PrivacyChoicesRow`). Only an app with Firebase 
 `:core:firebase:crashlytics` (the Kotlin crash hook over CrashKiOS) and CrashKiOS' link plugin. An
 app's own export list names none of them.
 
+## Ads target
+
+`ios/WhitelabelAds` is a third optional Swift target (Google Mobile Ads, `AdsService`, the ATT prompt). An app
+that shows ads includes `WhitelabelAds.yml` and adds the `WhitelabelAdsApp` template beside
+`WhitelabelFirebaseApp` (or `WhitelabelConsentApp` without Firebase). The template adds the ads keys to the
+built Info.plist; the app's own Info.plist needs `GADApplicationIdentifier` and
+`WLAdsDeclared` = `$(WL_ADS_DECLARED)`. `AppDefinition(..., services: [AdsService()], ads: [AdPlacement(...)])`
+declares the banners and `AdBanner(placement:)` draws one. `WhitelabelKit` never imports the ads SDK. Steps
+and rules: [ads.md](ads.md).
+
 ## Platform pieces (Swift)
 
 - **`KeychainTokenCipher`:** AES-GCM via CryptoKit, with the key in the Keychain (after first

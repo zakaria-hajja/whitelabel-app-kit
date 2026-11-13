@@ -16,6 +16,7 @@ kotlin {
             api(project(":core:branding"))
             api(project(":core:consent:shared"))
             api(project(":core:firebase:shared"))
+            api(project(":core:ads:shared"))
             api(project(":feature:authentication:shared"))
             api(project(":feature:settings:shared"))
             api(project(":feature:profile:shared"))

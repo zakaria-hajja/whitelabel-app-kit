@@ -103,16 +103,99 @@ class IosConfigTest {
 
     @Test fun `an app without firebase exports the consent and firebase types WhitelabelKit names, but no crashlytics`() {
         assertThat(iosFirebaseFramework(ServiceMode.OFF)).isEqualTo(
-            IosFirebaseFramework(crashLinkPlugin = false, modules = listOf(":core:consent:shared", ":core:firebase:shared")),
+            IosFirebaseFramework(crashLinkPlugin = false, modules = listOf(":core:consent:shared", ":core:firebase:shared", ":core:ads:shared")),
         )
     }
 
     @Test fun `an app with firebase on or in debug also gets the crashlytics module and the link plugin`() {
         val withFirebase = IosFirebaseFramework(
             crashLinkPlugin = true,
-            modules = listOf(":core:consent:shared", ":core:firebase:shared", ":core:firebase:crashlytics"),
+            modules = listOf(":core:consent:shared", ":core:firebase:shared", ":core:ads:shared", ":core:firebase:crashlytics"),
         )
         assertThat(iosFirebaseFramework(ServiceMode.ON)).isEqualTo(withFirebase)
         assertThat(iosFirebaseFramework(ServiceMode.DEBUG)).isEqualTo(withFirebase)
+    }
+
+    private val unit = "ca-app-pub-6543210987654321/0987654321"
+
+    @Test fun `ads off writes off, no units, no tracking and no message`() {
+        val out = iosXcconfig(app(), "debug")
+
+        assertThat(out).contains("WL_ADS = off\n")
+        assertThat(out).contains("WL_ADS_UNITS = \n")
+        assertThat(out).contains("WL_ADS_TRACKING = no\n")
+        assertThat(out).contains("WL_ADS_TRACKING_MESSAGE = \n")
+    }
+
+    @Test fun `ads on writes the mode, the sorted units, tracking and its message per build type`() {
+        val config = app().copy(
+            ads = ServiceMode.ON, adsIosAppId = IOS_ID, adsIosUnits = mapOf("home" to unit, "catalog" to unit),
+            iosRequestTracking = true, iosTrackingMessage = "Ads stay relevant.",
+        )
+
+        val release = iosXcconfig(config, "release")
+        assertThat(release).contains("WL_ADS = on\n")
+        assertThat(release).contains("WL_ADS_UNITS = catalog=$unit;home=$unit\n")
+        assertThat(release).contains("WL_ADS_TRACKING = yes\n")
+        assertThat(release).contains("WL_ADS_TRACKING_MESSAGE = Ads stay relevant.\n")
+        // Debug swaps the units for Google's test unit.
+        assertThat(iosXcconfig(config, "debug")).contains("WL_ADS_UNITS = catalog=ca-app-pub-3940256099942544/2435281174;home=ca-app-pub-3940256099942544/2435281174\n")
+    }
+
+    @Test fun `ads in debug mode is off in release, with no tracking and no message`() {
+        val config = app().copy(ads = ServiceMode.DEBUG, iosRequestTracking = true, iosTrackingMessage = "Msg")
+
+        val release = iosXcconfig(config, "release")
+        assertThat(release).contains("WL_ADS = off\n")
+        assertThat(release).contains("WL_ADS_TRACKING = no\n")
+        assertThat(release).contains("WL_ADS_TRACKING_MESSAGE = \n")
+        assertThat(iosXcconfig(config, "debug")).contains("WL_ADS = on\n")
+        assertThat(iosXcconfig(config, "debug")).contains("WL_ADS_TRACKING = yes\n")
+    }
+
+    @Test fun `WL_ADS_DECLARED says whether ads enabled is set, the same in both build types`() {
+        listOf("debug", "release").forEach { buildType ->
+            assertThat(iosXcconfig(app(), buildType)).contains("WL_ADS_DECLARED = false\n")
+            assertThat(iosXcconfig(app().copy(ads = ServiceMode.DEBUG), buildType)).contains("WL_ADS_DECLARED = true\n")
+            val on = app().copy(ads = ServiceMode.ON, adsIosAppId = IOS_ID, adsIosUnits = mapOf("home" to unit))
+            assertThat(iosXcconfig(on, buildType)).contains("WL_ADS_DECLARED = true\n")
+        }
+    }
+
+    @Test fun `ads in debug mode without an app id writes the test app id in both build types`() {
+        val config = app().copy(ads = ServiceMode.DEBUG)
+
+        assertThat(iosXcconfig(config, "debug")).contains("WL_ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511\n")
+        assertThat(iosXcconfig(config, "release")).contains("WL_ADMOB_APP_ID = ca-app-pub-3940256099942544~1458002511\n")
+    }
+
+    @Test fun `a real ios app id is kept in debug when ads are on`() {
+        assertThat(iosXcconfig(app().copy(ads = ServiceMode.DEBUG, adsIosAppId = IOS_ID), "debug")).contains("WL_ADMOB_APP_ID = $IOS_ID\n")
+    }
+
+    @Test fun `ads true without the ios app id fails generation naming the key`() {
+        val e = assertThrows(InvalidAppConfigException::class.java) {
+            iosXcconfig(app().copy(ads = ServiceMode.ON, adsIosUnits = mapOf("home" to unit)), "debug")
+        }
+
+        assertThat(e.message!!).contains("apps/showcase: ads.enabled=true needs ads.ios.appId")
+    }
+
+    private fun messageLine(message: String): String {
+        val config = app().copy(ads = ServiceMode.ON, adsIosAppId = IOS_ID, adsIosUnits = mapOf("home" to unit), iosRequestTracking = true, iosTrackingMessage = message)
+        return iosXcconfig(config, "release")
+    }
+
+    @Test fun `a tracking message keeps quotes and escapes every double slash`() {
+        val out = messageLine("Say \"hi\" at https://a.example//b ///c")
+
+        assertThat(out).contains("WL_ADS_TRACKING_MESSAGE = Say \"hi\" at https:/$()/a.example/$()/b /$()/$()/c\n")
+    }
+
+    @Test fun `a tracking message with newlines and tabs stays on one line`() {
+        val out = messageLine("one\ntwo\r\nthree\tfour")
+
+        assertThat(out).contains("WL_ADS_TRACKING_MESSAGE = one two three four\n")
+        assertThat(out.lines().count { it.startsWith("WL_") }).isEqualTo(out.lines().count { it.isNotBlank() && !it.startsWith("//") })
     }
 }

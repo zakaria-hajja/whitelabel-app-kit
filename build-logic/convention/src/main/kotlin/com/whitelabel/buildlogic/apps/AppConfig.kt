@@ -21,6 +21,14 @@ data class AppConfig(
     /** The app's AdMob app ID per platform (`ads.android.appId`, `ads.ios.appId`); Google's consent SDK needs it. */
     val adsAndroidAppId: String? = null,
     val adsIosAppId: String? = null,
+    /** `ads.enabled`: off, on (every build type) or debug (debug builds only). */
+    val ads: ServiceMode = ServiceMode.OFF,
+    /** Banner unit IDs per placement, from `ads.android.banner.<placement>` and `ads.ios.banner.<placement>`. */
+    val adsAndroidUnits: Map<String, String> = emptyMap(),
+    val adsIosUnits: Map<String, String> = emptyMap(),
+    /** `ads.ios.requestTracking`: whether iOS asks for App Tracking Transparency; needs [iosTrackingMessage]. */
+    val iosRequestTracking: Boolean = false,
+    val iosTrackingMessage: String? = null,
     val signing: AppSigning?,
     val appDir: File,
 ) {
