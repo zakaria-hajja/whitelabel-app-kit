@@ -111,4 +111,54 @@ class AdFreeTest {
         assertThat(reopened.loaded.value).isEqualTo(true)
         assertThat(reopened.state.value).isEqualTo(AdFreeState.Active(at(4)))
     }
+
+    @Test
+    fun `clear ends an active window`() = runTest {
+        val adFree = adFree()
+        adFree.grantUntil(at(5))
+        adFree.clear()
+        assertThat(adFree.state.value).isEqualTo(AdFreeState.Inactive)
+    }
+
+    @Test
+    fun `clear empties the store`() = runTest {
+        val process1 = Job()
+        adFree(process1).apply { grantUntil(at(5)); clear() }
+        process1.cancel()
+        assertThat(adFree().state.value).isEqualTo(AdFreeState.Inactive)
+    }
+
+    @Test
+    fun `extend after clear starts from now`() = runTest {
+        val adFree = adFree()
+        adFree.grantUntil(at(5))
+        adFree.clear()
+        adFree.extend(1.hours)
+        assertThat(adFree.state.value).isEqualTo(AdFreeState.Active(at(1)))
+    }
+
+    @Test
+    fun clearIsNotUndoneByTheStoredWindow() = runTest {
+        val process1 = Job()
+        adFree(process1).grantUntil(at(4))
+        process1.cancel()
+        // The stored window is read on this process's own (not yet run) scope, after the clear.
+        val reopened = AdFree(path, clock, CoroutineScope(StandardTestDispatcher(testScheduler) + Job()), fileSystem)
+        reopened.clear()
+        advanceUntilIdle()
+        assertThat(reopened.state.value).isEqualTo(AdFreeState.Inactive)
+    }
+
+    @Test
+    fun clearBeforeLoadStaysCleared() = runTest {
+        val process1 = Job()
+        adFree(process1).grantUntil(at(4))
+        process1.cancel()
+        val reopened = AdFree(path, clock, CoroutineScope(StandardTestDispatcher(testScheduler) + Job()), fileSystem)
+        reopened.clear()
+        assertThat(reopened.loaded.value).isEqualTo(true)
+        advanceUntilIdle()
+        assertThat(reopened.loaded.value).isEqualTo(true)
+        assertThat(reopened.state.value).isEqualTo(AdFreeState.Inactive)
+    }
 }

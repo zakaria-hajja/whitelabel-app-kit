@@ -36,6 +36,9 @@ class AdFree(path: Path, private val clock: Clock, scope: CoroutineScope, fileSy
 
     private val isLoaded = MutableStateFlow(false)
 
+    // After clear(), a document read from the store may predate it; every later write publishes itself.
+    private val trustStore = MutableStateFlow(true)
+
     /** False until the stored window has been read once; treat "not loaded" as ads hidden. */
     val loaded: StateFlow<Boolean> = isLoaded.asStateFlow()
 
@@ -43,7 +46,7 @@ class AdFree(path: Path, private val clock: Clock, scope: CoroutineScope, fileSy
         scope.launch {
             store.data.collect { doc ->
                 // Windows only grow, so never let a stale stored value undo a grant made in memory.
-                publish(doc.untilEpochMillis?.let(Instant::fromEpochMilliseconds))
+                if (trustStore.value) publish(doc.untilEpochMillis?.let(Instant::fromEpochMilliseconds))
                 isLoaded.value = true
             }
         }
@@ -55,6 +58,14 @@ class AdFree(path: Path, private val clock: Clock, scope: CoroutineScope, fileSy
 
     /** Re-evaluated against the clock on every read, and on collect also when the window ends. */
     val state: StateFlow<AdFreeState> = ClockedState()
+
+    /** Ends the window now. Unlike [grantUntil] and [extend], this shortens. */
+    suspend fun clear() {
+        trustStore.value = false
+        store.update { it.copy(untilEpochMillis = null) }
+        until.value = null
+        isLoaded.value = true
+    }
 
     /** Sets the window end to [until], but never shortens an active window. */
     suspend fun grantUntil(until: Instant) {

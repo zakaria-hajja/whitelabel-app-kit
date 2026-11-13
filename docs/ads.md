@@ -108,11 +108,12 @@ Enforced in `AdGate`, not by apps. In this order, the first that applies hides t
 
 1. Ads off in this build.
 2. The placement isn't declared.
-3. No ad request before consent is `Resolved(canRequestAds = true)`. A consent that is pending,
+3. The app hid the placement (`setHidden`, see "App hooks").
+4. No ad request before consent is `Resolved(canRequestAds = true)`. A consent that is pending,
    failed or declined for ads keeps banners hidden.
-4. No ads on launch 1 (the launch counter lives in `ads-launches.json`).
-5. No ads during an active ad-free window.
-6. Banners only: there's no interstitial or rewarded API.
+5. No ads on launch 1 (the launch counter lives in `ads-launches.json`).
+6. No ads during an active ad-free window.
+7. Banners only: there's no interstitial or rewarded API.
 
 The Google SDK starts only when the first banner is allowed to load, after all of this, never at
 startup. Nothing else is placed for you: the shell refuses a placement under the Settings tab and
@@ -137,6 +138,23 @@ From Swift: `SharedGraph.shared.adFree()` (nil in an app without ads). The windo
 `ads-free.json`, ends by the clock without a restart, and survives relaunches. Banners hide as soon as
 it starts and come back when it ends. Nothing in the foundation sells ad-free: the app decides what
 grants it.
+
+## App hooks
+
+Two calls for an app's shared code (Koin: `get<AdsController>()`, `get<AdFree>()`; Swift:
+`SharedGraph.shared.adsController()`, `SharedGraph.shared.adFree()`, both nil without ads):
+
+```kotlin
+ads.setHidden("home", true)    // hide the placement, e.g. while its screen is empty
+ads.setHidden("home", false)   // back to the house rules
+adFree.clear()                 // end the ad-free window now (refunds, a debug tool)
+```
+
+- `setHidden` only hides: consent, first launch, ad-free time and ads-off still decide when a banner
+  may show. A hidden placement never loads an ad or asks for tracking. It's idempotent, a no-op for an
+  undeclared placement or with ads off, and lasts for the process (not stored), so set it from live
+  state.
+- `clear()` is the only call that shortens a window. Banners come back as when a window runs out.
 
 ## iOS tracking (ATT)
 
