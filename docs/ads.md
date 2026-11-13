@@ -150,6 +150,11 @@ ads.setHidden("home", false)   // back to the house rules
 adFree.clear()                 // end the ad-free window now (refunds, a debug tool)
 ```
 
+```swift
+SharedGraph.shared.adsController()?.setHidden(placement: "home", hidden: true)
+try await SharedGraph.shared.adFree()?.clear()
+```
+
 - `setHidden` only hides: consent, first launch, ad-free time and ads-off still decide when a banner
   may show. A hidden placement never loads an ad or asks for tracking. It's idempotent, a no-op for an
   undeclared placement or with ads off, and lasts for the process (not stored), so set it from live

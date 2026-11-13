@@ -16,7 +16,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import okio.FileSystem
 import okio.Path
@@ -36,8 +40,10 @@ class AdFree(path: Path, private val clock: Clock, scope: CoroutineScope, fileSy
 
     private val isLoaded = MutableStateFlow(false)
 
-    // After clear(), a document read from the store may predate it; every later write publishes itself.
+    // After clear(), a document read from the store may predate it; every later write publishes itself
+    // (writes are serialized by [writes] and publish even when their caller is cancelled).
     private val trustStore = MutableStateFlow(true)
+    private val writes = Mutex()
 
     /** False until the stored window has been read once; treat "not loaded" as ads hidden. */
     val loaded: StateFlow<Boolean> = isLoaded.asStateFlow()
@@ -60,15 +66,18 @@ class AdFree(path: Path, private val clock: Clock, scope: CoroutineScope, fileSy
     val state: StateFlow<AdFreeState> = ClockedState()
 
     /** Ends the window now. Unlike [grantUntil] and [extend], this shortens. */
-    suspend fun clear() {
-        trustStore.value = false
+    suspend fun clear() = write {
         store.update { it.copy(untilEpochMillis = null) }
+        trustStore.value = false
         until.value = null
         isLoaded.value = true
     }
 
+    /** One writer at a time, and a started write always reaches memory: the store commits it either way. */
+    private suspend fun <R> write(block: suspend () -> R): R = writes.withLock { withContext(NonCancellable) { block() } }
+
     /** Sets the window end to [until], but never shortens an active window. */
-    suspend fun grantUntil(until: Instant) {
+    suspend fun grantUntil(until: Instant) = write {
         var written = until
         store.update { cur ->
             val keep = cur.untilEpochMillis?.let(Instant::fromEpochMilliseconds)
@@ -80,7 +89,7 @@ class AdFree(path: Path, private val clock: Clock, scope: CoroutineScope, fileSy
     }
 
     /** Adds [by] to the later of now and the current end. */
-    suspend fun extend(by: Duration) {
+    suspend fun extend(by: Duration) = write {
         var written = clock.now()
         store.update { cur ->
             val current = cur.untilEpochMillis?.let(Instant::fromEpochMilliseconds)

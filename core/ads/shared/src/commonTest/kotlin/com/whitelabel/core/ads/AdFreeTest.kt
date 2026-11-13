@@ -13,6 +13,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import okio.ForwardingFileSystem
+import kotlinx.coroutines.launch
+import okio.Path
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 
@@ -160,5 +163,27 @@ class AdFreeTest {
         advanceUntilIdle()
         assertThat(reopened.loaded.value).isEqualTo(true)
         assertThat(reopened.state.value).isEqualTo(AdFreeState.Inactive)
+    }
+
+    /** A grant whose caller is cancelled mid-write is still stored; memory must not lose it after a clear. */
+    @Test
+    fun aGrantCancelledMidWriteAfterClearStillHidesAds() = runTest {
+        var onMove: () -> Unit = {}
+        val fs = object : ForwardingFileSystem(fileSystem) {
+            override fun atomicMove(source: Path, target: Path) {
+                super.atomicMove(source, target)
+                onMove()
+            }
+        }
+        val adFree = AdFree(path, clock, CoroutineScope(UnconfinedTestDispatcher(testScheduler) + Job()), fs)
+        adFree.grantUntil(at(5))
+        adFree.clear()
+        val caller = launch(UnconfinedTestDispatcher(testScheduler)) {
+            onMove = { coroutineContext[Job]!!.cancel() }
+            adFree.grantUntil(at(3))
+        }
+        advanceUntilIdle()
+        assertThat(caller.isCancelled).isEqualTo(true)
+        assertThat(adFree.state.value).isEqualTo(AdFreeState.Active(at(3)))
     }
 }
