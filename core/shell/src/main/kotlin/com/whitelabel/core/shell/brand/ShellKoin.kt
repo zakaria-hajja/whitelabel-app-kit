@@ -70,16 +70,18 @@ internal fun shellModule(definition: AppDefinition) = module {
 
 /**
  * Every Koin module an Android app starts with: the core layers, the shell, the definition's
- * modules (features, then the app's own), consent, Firebase and ads when the app uses them, then
- * each classpath [contributors]' (the mock backend, the Google SDK modules).
- * Koin keeps the last binding of a type: an app can replace a shared binding, and a contributor's
- * wins over everything.
+ * modules (features, then the app's own), consent, Firebase and ads when the app uses them, then the
+ * build type's [buildTypeModules] (Debug: the guest account), then each classpath [contributors]'
+ * (the mock backend, the Google SDK modules). Koin keeps the last binding of a type: an app can
+ * replace a shared binding, and a contributor's wins over everything (the fake's guest account over
+ * the Debug one).
  */
 internal fun foundationModules(
     definition: AppDefinition,
     contributors: List<ModuleContributor>,
     firebase: FirebaseWiring = FirebaseWiring.OFF,
     ads: AdsWiring = AdsWiring.OFF,
+    buildTypeModules: List<Module> = emptyList(),
 ): List<Module> =
     listOf(networkModule, dataModule, androidDataModule, shellModule(definition), shellModelModule(definition.toSpec())) +
         definition.koinModules +
@@ -88,6 +90,7 @@ internal fun foundationModules(
         // An app with ads { } always gets the controller, so its AdBanner and AdFree calls resolve even
         // in a build with ads off (ads.enabled=debug in release), where every banner stays hidden.
         (if (definition.usesAds) listOf(adsModule(ads.enabled, ads.units)) else emptyList()) +
+        buildTypeModules +
         contributors.flatMap { it.modules() } +
         fakeOverrides(definition, firebase)
 

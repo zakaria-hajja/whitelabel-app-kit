@@ -46,6 +46,8 @@ struct DebugControls {
         if messageSeconds > 0 { MessageBanner.seconds = messageSeconds }
         applyLaunchFlags()
         SharedGraph.shared.useFirebaseDebug(fake: fakeFirebase, analytics: analyticsDebug, fakeConsent: fakeConsent)
+        // "Continue as guest (debug)": the account the backend's db:seed (and the fake) create.
+        SharedGraph.shared.useDebugGuest(email: "alice@shared.test", password: "Password123!")
         let cipher = KeychainTokenCipher(service: bundle.bundleIdentifier ?? "whitelabel")
         if arguments.contains("-dropTokenKey") { cipher.deleteKey() }
         guard arguments.contains("-freshInstall") else { return }

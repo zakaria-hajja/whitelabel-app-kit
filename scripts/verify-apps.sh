@@ -10,7 +10,8 @@
 #
 # Always: application IDs and deep-link schemes are unique across apps.
 # Unless --config-only, for each app's built APK of each build type (aapt2 from the newest
-# build-tools): package, label and version match app.properties; no other app's application ID
+# build-tools): package, label and version match app.properties; a release APK has no debug guest
+# account; no other app's application ID
 # appears in its dex; a release dex has no mock backend, no Firebase unless firebase.enabled=true and no AdMob SDK unless ads.enabled=true; its deep links use only its own scheme; its launcher foreground differs from every other app's; the generated
 # foundation_* config resources the shell reads exist, match app.properties and nothing else.
 # Prints one OK/FAIL line per check and exits non-zero if any check fails.
@@ -56,6 +57,17 @@ verify_apk() {
   [ "$type" = debug ] && id="$id.debug"
   badging=$("$aapt2" dump badging "$apk")
 
+  # The debug guest sign-in's account is Debug-only: no foundation_debug_guest_* resource and no
+  # seeded password (it lives in resources.arsc, not the dex) may reach a release APK.
+  if [ "$type" = release ]; then
+    if "$aapt2" dump resources "$apk" | grep -q foundation_debug_guest \
+      || unzip -p "$apk" resources.arsc 'classes*.dex' | grep -aqF 'Password123!'; then
+      bad "$app release: contains the debug guest account"
+    else
+      ok "$app release: no debug guest account"
+    fi
+  fi
+
   echo "$badging" | grep -q "^package: name='$id' " && ok "$app $type: package $id" \
     || bad "$app $type: package is not $id"
   name=$(prop "$props" app.name)
@@ -84,7 +96,10 @@ verify_apk() {
            name != "" { v = $0; sub(/^[^"]*"/, "", v); sub(/"[^"]*$/, "", v); print name "=" v; name = "" }' \
     | sort > "$tmp/config"
   names=$(cut -d= -f1 "$tmp/config" | LC_ALL=C sort | tr '\n' ' ')
-  expected_names="foundation_ads foundation_ads_declared foundation_ads_units foundation_api_base_url foundation_app_name foundation_deep_link_scheme foundation_default_features foundation_environment foundation_firebase foundation_firebase_declared foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
+  # Debug builds also carry the debug guest sign-in's account (from :core:shell's debug resources).
+  guest_names=""
+  [ "$type" = debug ] && guest_names="foundation_debug_guest_email foundation_debug_guest_password "
+  expected_names="foundation_ads foundation_ads_declared foundation_ads_units foundation_api_base_url foundation_app_name ${guest_names}foundation_deep_link_scheme foundation_default_features foundation_environment foundation_firebase foundation_firebase_declared foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
   [ "$names" = "$expected_names" ] && ok "$app $type: config resources are the expected set" \
     || bad "$app $type: config resources are [$names], expected [$expected_names]"
   # No api.<type>.baseUrl means an app without a backend: the generated URL is empty.

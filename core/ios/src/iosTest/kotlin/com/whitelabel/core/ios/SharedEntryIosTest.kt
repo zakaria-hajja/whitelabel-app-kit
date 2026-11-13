@@ -1,5 +1,6 @@
 package com.whitelabel.core.ios
 
+import com.whitelabel.core.domain.DebugGuestAccount
 import com.whitelabel.core.shell.model.DefinitionSpec
 import com.whitelabel.core.shell.model.FeatureSpec
 import com.whitelabel.feature.catalog.CatalogOptions
@@ -11,6 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,6 +20,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import okio.FileSystem
+import org.koin.mp.KoinPlatform
 
 /** What the iOS app calls to start the shared graph and get its ViewModels. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -30,6 +33,7 @@ class SharedEntryIosTest {
 
     @AfterTest fun tearDown() {
         SharedGraph.stop()
+        SharedGraph.clearDebugGuest()
         FileSystem.SYSTEM.deleteRecursively(dir)
         Dispatchers.resetMain()
     }
@@ -73,5 +77,18 @@ class SharedEntryIosTest {
     @Test fun `the mock api without the mock module fails naming the gradle property`() {
         val error = assertFailsWith<IllegalStateException> { SharedGraph.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = true) }
         assertTrue(error.message!!.contains("-Pwhitelabel.mockApi=true"), error.message)
+    }
+
+    @Test fun `a debug guest is bound on the real backend`() {
+        SharedGraph.useDebugGuest("me@x.test", "pw")
+        SharedGraph.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
+        assertEquals(DebugGuestAccount("me@x.test", "pw"), KoinPlatform.getKoin().get<DebugGuestAccount>())
+    }
+
+    @Test fun `no guest unless one is set`() {
+        SharedGraph.useDebugGuest("me@x.test", "pw")
+        SharedGraph.clearDebugGuest()
+        SharedGraph.start(testPlatform(dir), settingsOnly, emptyList(), useMockApi = false)
+        assertNull(KoinPlatform.getKoin().getOrNull<DebugGuestAccount>())
     }
 }

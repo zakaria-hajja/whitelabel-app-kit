@@ -182,9 +182,13 @@ Showcase on iOS has the same features, order and start tab as on Android:
 
 ### Debug controls (Debug builds)
 
+Debug builds always show **Continue as guest (debug)** on the sign-in screen. It signs in as
+`alice@shared.test`, on the fake or on a backend seeded with `npm run db:seed`
+(`DebugControls` hands the account to `SharedGraph.useDebugGuest`; Release never does).
+
 | Launch argument / link | Effect |
 |---|---|
-| `-mockApi` | run on the in-memory fake backend; the sign-in screen then shows **Continue as guest (debug)**, which signs in as `alice@shared.test` |
+| `-mockApi` | run on the in-memory fake backend |
 | `-freshInstall` | start as a new install: no stores, no Keychain key, device language, no fake sessions |
 | `-dropTokenKey` | delete only the Keychain key, as after a reinstall or a restored backup: the session reads as signed out |
 | `-fakeResetToken t1` | the fake issues reset token `t1`, already issued for `alice@shared.test` |
