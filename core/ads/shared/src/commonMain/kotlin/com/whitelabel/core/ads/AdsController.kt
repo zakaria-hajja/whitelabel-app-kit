@@ -38,6 +38,8 @@ class AdsController(
     private val banners = MutableStateFlow<Map<String, Lazy<StateFlow<BannerState>>>>(emptyMap())
     private val trackingStarted = MutableStateFlow(false)
     private val trackingDone = MutableStateFlow(false)
+    // Placements the app hid; one more input to every banner's decision. Not stored: the app re-derives it.
+    private val hidden = MutableStateFlow<Set<String>>(emptySet())
 
     private val undeclared = MutableStateFlow<BannerState>(BannerState.Hidden(HideReason.UNDECLARED)).asStateFlow()
     private val adsOff = MutableStateFlow<BannerState>(BannerState.Hidden(HideReason.ADS_OFF)).asStateFlow()
@@ -59,11 +61,20 @@ class AdsController(
             banners.value.getValue(placement)
         }.value
 
+    /**
+     * Hides [placement] while [hidden] is true (only hides: the house rules still decide when it may show).
+     * Idempotent; a no-op for an undeclared placement or with ads off. Lasts for this process.
+     */
+    fun setHidden(placement: String, hidden: Boolean) {
+        this.hidden.update { if (hidden) it + placement else it - placement }
+    }
+
     private fun decision(placement: String): AdDecision {
         val now = clock.now()
         val gated = adGate(
             adsEnabled = enabled,
             placementDeclared = placement in units,
+            hiddenByApp = placement in hidden.value,
             consent = consent.state.value,
             launchNumber = launches.launchNumber.value,
             adFreeUntil = (adFree.state.value as? AdFreeState.Active)?.until,
@@ -88,8 +99,8 @@ class AdsController(
             if (it is AdDecision.Hide) BannerState.Hidden(it.reason) else BannerState.Hidden(HideReason.LOADING)
         }
         return combine(
-            consent.state, launches.launchNumber, adFree.state, adFree.loaded,
-        ) { _, _, _, _ -> decision(placement) }
+            consent.state, launches.launchNumber, adFree.state, adFree.loaded, hidden,
+        ) { _, _, _, _, _ -> decision(placement) }
             .transformLatest { decision ->
                 when (decision) {
                     is AdDecision.Hide -> emit(BannerState.Hidden(decision.reason))

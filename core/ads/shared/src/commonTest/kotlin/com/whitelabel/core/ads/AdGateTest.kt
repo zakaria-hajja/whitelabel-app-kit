@@ -16,7 +16,8 @@ class AdGateTest {
         consent: ConsentState = granted,
         launch: Int = 2,
         adFreeUntil: Instant? = null,
-    ) = adGate(adsEnabled, declared, consent, launch, adFreeUntil, now)
+        hiddenByApp: Boolean = false,
+    ) = adGate(adsEnabled, declared, hiddenByApp, consent, launch, adFreeUntil, now)
 
     private fun hide(reason: HideReason) = AdDecision.Hide(reason)
 
@@ -48,4 +49,12 @@ class AdGateTest {
     @Test fun `first launch beats ad-free`() =
         assertThat(gate(launch = 1, adFreeUntil = Instant.fromEpochSeconds(9_999)))
             .isEqualTo(hide(HideReason.FIRST_LAUNCH))
+
+    @Test fun `app hidden hides`() = assertThat(gate(hiddenByApp = true)).isEqualTo(hide(HideReason.APP_HIDDEN))
+    @Test fun `ads off beats app hidden`() =
+        assertThat(gate(adsEnabled = false, hiddenByApp = true)).isEqualTo(hide(HideReason.ADS_OFF))
+    @Test fun `undeclared beats app hidden`() =
+        assertThat(gate(declared = false, hiddenByApp = true)).isEqualTo(hide(HideReason.UNDECLARED))
+    @Test fun `app hidden beats pending consent`() =
+        assertThat(gate(consent = ConsentState.Unknown, hiddenByApp = true)).isEqualTo(hide(HideReason.APP_HIDDEN))
 }
