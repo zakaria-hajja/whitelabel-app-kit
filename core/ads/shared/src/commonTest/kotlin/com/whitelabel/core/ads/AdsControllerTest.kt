@@ -218,4 +218,64 @@ class AdsControllerTest {
         )
         assertThat(controller.bannerState("home").value).isEqualTo(hidden(HideReason.FIRST_LAUNCH))
     }
+
+    @Test
+    fun `hiding a ready banner hides it and showing brings it back`() = runTest {
+        val rig = rig(earlierLaunches = 1)
+        val banner = rig.controller.bannerState("home")
+        rig.tracking.finish()
+        assertThat(banner.value).isEqualTo(ready)
+        rig.controller.setHidden("home", true)
+        assertThat(banner.value).isEqualTo(hidden(HideReason.APP_HIDDEN))
+        rig.controller.setHidden("home", false)
+        assertThat(banner.value).isEqualTo(ready)
+    }
+
+    @Test
+    fun hiddenBeforeTheFirstReadStartsHidden() = runTest {
+        val rig = rig(earlierLaunches = 1)
+        rig.controller.setHidden("home", true)
+        assertThat(rig.controller.bannerState("home").value).isEqualTo(hidden(HideReason.APP_HIDDEN))
+        assertThat(rig.tracking.calls).isEqualTo(0)
+    }
+
+    @Test
+    fun `a hidden placement never asks for tracking`() = runTest {
+        val rig = rig(earlierLaunches = 1)
+        rig.controller.setHidden("home", true)
+        rig.controller.bannerState("home")
+        testScheduler.runCurrent()
+        assertThat(rig.tracking.calls).isEqualTo(0)
+    }
+
+    @Test
+    fun hidingWhileTheTrackingPromptIsOpenHidesAndDoesNotAskTwice() = runTest {
+        val rig = rig(earlierLaunches = 1)
+        val banner = rig.controller.bannerState("home")
+        assertThat(rig.tracking.calls).isEqualTo(1)
+        rig.controller.setHidden("home", true)
+        assertThat(banner.value).isEqualTo(hidden(HideReason.APP_HIDDEN))
+        rig.tracking.finish()
+        rig.controller.setHidden("home", false)
+        assertThat(banner.value).isEqualTo(ready)
+        assertThat(rig.tracking.calls).isEqualTo(1)
+    }
+
+    @Test
+    fun `setHidden on an undeclared placement changes nothing`() = runTest {
+        val rig = rig(earlierLaunches = 1)
+        rig.controller.setHidden("nope", true)
+        assertThat(rig.controller.bannerState("nope").value).isEqualTo(hidden(HideReason.UNDECLARED))
+    }
+
+    @Test
+    fun setHiddenReachesEveryReaderOfThePlacement() = runTest {
+        val rig = rig(earlierLaunches = 1)
+        val a = rig.controller.bannerState("home")
+        val b = rig.controller.bannerState("home")
+        assertThat(a).isSameInstanceAs(b)
+        rig.controller.setHidden("home", true)
+        assertThat(a.value).isEqualTo(hidden(HideReason.APP_HIDDEN))
+        assertThat(b.value).isEqualTo(hidden(HideReason.APP_HIDDEN))
+    }
 }

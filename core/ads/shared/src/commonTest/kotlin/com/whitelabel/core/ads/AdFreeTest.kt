@@ -13,6 +13,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import okio.ForwardingFileSystem
+import kotlinx.coroutines.launch
+import okio.Path
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 
@@ -110,5 +113,77 @@ class AdFreeTest {
         advanceUntilIdle()
         assertThat(reopened.loaded.value).isEqualTo(true)
         assertThat(reopened.state.value).isEqualTo(AdFreeState.Active(at(4)))
+    }
+
+    @Test
+    fun `clear ends an active window`() = runTest {
+        val adFree = adFree()
+        adFree.grantUntil(at(5))
+        adFree.clear()
+        assertThat(adFree.state.value).isEqualTo(AdFreeState.Inactive)
+    }
+
+    @Test
+    fun `clear empties the store`() = runTest {
+        val process1 = Job()
+        adFree(process1).apply { grantUntil(at(5)); clear() }
+        process1.cancel()
+        assertThat(adFree().state.value).isEqualTo(AdFreeState.Inactive)
+    }
+
+    @Test
+    fun `extend after clear starts from now`() = runTest {
+        val adFree = adFree()
+        adFree.grantUntil(at(5))
+        adFree.clear()
+        adFree.extend(1.hours)
+        assertThat(adFree.state.value).isEqualTo(AdFreeState.Active(at(1)))
+    }
+
+    @Test
+    fun clearIsNotUndoneByTheStoredWindow() = runTest {
+        val process1 = Job()
+        adFree(process1).grantUntil(at(4))
+        process1.cancel()
+        // The stored window is read on this process's own (not yet run) scope, after the clear.
+        val reopened = AdFree(path, clock, CoroutineScope(StandardTestDispatcher(testScheduler) + Job()), fileSystem)
+        reopened.clear()
+        advanceUntilIdle()
+        assertThat(reopened.state.value).isEqualTo(AdFreeState.Inactive)
+    }
+
+    @Test
+    fun clearBeforeLoadStaysCleared() = runTest {
+        val process1 = Job()
+        adFree(process1).grantUntil(at(4))
+        process1.cancel()
+        val reopened = AdFree(path, clock, CoroutineScope(StandardTestDispatcher(testScheduler) + Job()), fileSystem)
+        reopened.clear()
+        assertThat(reopened.loaded.value).isEqualTo(true)
+        advanceUntilIdle()
+        assertThat(reopened.loaded.value).isEqualTo(true)
+        assertThat(reopened.state.value).isEqualTo(AdFreeState.Inactive)
+    }
+
+    /** A grant whose caller is cancelled mid-write is still stored; memory must not lose it after a clear. */
+    @Test
+    fun aGrantCancelledMidWriteAfterClearStillHidesAds() = runTest {
+        var onMove: () -> Unit = {}
+        val fs = object : ForwardingFileSystem(fileSystem) {
+            override fun atomicMove(source: Path, target: Path) {
+                super.atomicMove(source, target)
+                onMove()
+            }
+        }
+        val adFree = AdFree(path, clock, CoroutineScope(UnconfinedTestDispatcher(testScheduler) + Job()), fs)
+        adFree.grantUntil(at(5))
+        adFree.clear()
+        val caller = launch(UnconfinedTestDispatcher(testScheduler)) {
+            onMove = { coroutineContext[Job]!!.cancel() }
+            adFree.grantUntil(at(3))
+        }
+        advanceUntilIdle()
+        assertThat(caller.isCancelled).isEqualTo(true)
+        assertThat(adFree.state.value).isEqualTo(AdFreeState.Active(at(3)))
     }
 }
