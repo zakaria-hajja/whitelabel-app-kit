@@ -36,8 +36,16 @@ class ReminderEngine(
     /**
      * Makes the stored reminders whose id starts with [idPrefix] exactly [reminders]:
      * new and changed ones are armed, unchanged ones are left alone, the rest under the prefix are cancelled.
+     *
+     * A wanted reminder whose time has passed follows the late rule (posted if recent) when [postPast] is
+     * true, the default. With [postPast] false, `setAll` never posts: a past reminder that is stored is left
+     * exactly as it is (its alarm, or [onSystemChange], shows it once), even if the wanted copy differs,
+     * because it is the only copy still owed to the user and replacing it would mean posting it here or
+     * losing it; a past reminder that isn't stored was shown already or missed, so it is dropped. Use it
+     * when the list was computed from a snapshot that may be stale by the time this runs (say a replan
+     * racing a reminder's alarm): an alarm that fired in between can't make the reminder show twice.
      */
-    suspend fun setAll(reminders: List<Reminder>, idPrefix: String) = locked {
+    suspend fun setAll(reminders: List<Reminder>, idPrefix: String, postPast: Boolean = true) = locked {
         require(reminders.all { it.id.startsWith(idPrefix) }) { "Every reminder id must start with \"$idPrefix\"" }
         val wanted = reminders.associateBy { it.id }
         val stored = current().filter { it.id.startsWith(idPrefix) }
@@ -47,9 +55,11 @@ class ReminderEngine(
         if (goneIds.isNotEmpty()) store.update { list -> list.filterNot { it.id in goneIds } }
 
         val storedById = stored.associateBy { it.id }
+        val time = now()
         wanted.values.forEach { reminder ->
             val old = storedById[reminder.id]
             if (old == reminder) return@forEach
+            if (!postPast && reminder.at <= time) return@forEach // stored: its alarm owns it; not stored: dropped
             if (old != null) alarms.cancel(old.id)
             place(reminder)
         }

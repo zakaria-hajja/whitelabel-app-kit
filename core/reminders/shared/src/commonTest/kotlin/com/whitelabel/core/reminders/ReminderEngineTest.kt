@@ -175,6 +175,84 @@ class ReminderEngineTest {
         assertThat(poster.posted.map { it.id }).containsExactly("m:recent")
         assertThat(engine.pending()).isEmpty()
     }
+
+    // setAll(..., postPast = false): a replan never posts. Past reminders belong to their alarm (or onSystemChange).
+
+    @Test fun `setAll keeping past never re-posts a reminder its alarm just showed`() = runTest {
+        // The app read the pending set while m:x was still waiting, then its alarm fired before the app's setAll ran.
+        val x = reminder("m:x", now)
+        store.seed(x)
+        val planned = listOf(x)
+
+        engine.onAlarm("m:x")
+        engine.setAll(planned, idPrefix = "m:", postPast = false)
+
+        assertThat(poster.posted).containsExactly(x)
+        assertThat(engine.pending()).isEmpty()
+    }
+
+    @Test fun `setAll by default still posts a past reminder that isn't stored`() = runTest {
+        val x = reminder("m:x", now)
+        store.seed(x)
+
+        engine.onAlarm("m:x")
+        engine.setAll(listOf(x), idPrefix = "m:")
+
+        assertThat(poster.posted).containsExactly(x, x)
+    }
+
+    @Test fun `setAll keeping past drops a past reminder that isn't stored and arms future ones`() = runTest {
+        engine.setAll(
+            listOf(reminder("m:recent", LocalDateTime(2027, 3, 9, 20, 1)), reminder("m:later", at(9))),
+            idPrefix = "m:",
+            postPast = false,
+        )
+
+        assertThat(poster.posted).isEmpty()
+        assertThat(engine.pending()).containsExactly(reminder("m:later", at(9)))
+        assertThat(alarms.log).containsExactly("set m:later ${at(9)}")
+    }
+
+    @Test fun `setAll keeping past leaves a stored due reminder for its alarm`() = runTest {
+        val x = reminder("m:x", now)
+        store.seed(x)
+
+        engine.setAll(listOf(x), idPrefix = "m:", postPast = false)
+
+        assertThat(poster.posted).isEmpty()
+        assertThat(engine.pending()).containsExactly(x)
+        assertThat(alarms.log).isEmpty()
+
+        engine.onAlarm("m:x")
+        assertThat(poster.posted).containsExactly(x)
+    }
+
+    @Test fun `setAll keeping past leaves a stored reminder whose new version is past`() = runTest {
+        // A delayed alarm (07:30, still stored) and an earlier reminder time moved after 08:00 (09:00 → 07:00).
+        val delayed = reminder("m:delayed", LocalDateTime(2027, 3, 10, 7, 30))
+        val moved = reminder("m:moved", at(9))
+        store.seed(delayed, moved)
+
+        engine.setAll(
+            listOf(delayed.copy(title = "renamed"), moved.copy(at = LocalDateTime(2027, 3, 10, 7, 0))),
+            idPrefix = "m:",
+            postPast = false,
+        )
+
+        assertThat(poster.posted).isEmpty()
+        assertThat(engine.pending()).containsExactly(delayed, moved)
+        assertThat(alarms.log).isEmpty()
+    }
+
+    @Test fun `setAll keeping past still cancels what is no longer wanted`() = runTest {
+        store.seed(reminder("m:x", now), reminder("m:y", at(9)))
+
+        engine.setAll(emptyList(), idPrefix = "m:", postPast = false)
+
+        assertThat(engine.pending()).isEmpty()
+        assertThat(alarms.log).containsExactly("cancel m:x", "cancel m:y")
+        assertThat(poster.posted).isEmpty()
+    }
 }
 
 private class MemoryStore(private val afterWrite: suspend () -> Unit = {}) : ReminderStore {
