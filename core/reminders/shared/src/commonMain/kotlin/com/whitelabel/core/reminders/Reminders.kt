@@ -9,8 +9,13 @@ class Reminders(private val engine: ReminderEngine) {
     /** Schedules [reminder], replacing one with the same id. */
     suspend fun schedule(reminder: Reminder) = engine.schedule(reminder)
 
-    /** Makes the pending reminders whose id starts with [idPrefix] exactly [reminders] (every id must start with it). */
-    suspend fun setAll(reminders: List<Reminder>, idPrefix: String) = engine.setAll(reminders, idPrefix)
+    /**
+     * Makes the pending reminders whose id starts with [idPrefix] exactly [reminders] (every id must start with it).
+     * With [postPast] false it never posts: a past reminder already pending is left for its alarm, one that
+     * isn't pending is dropped. See [ReminderEngine.setAll].
+     */
+    suspend fun setAll(reminders: List<Reminder>, idPrefix: String, postPast: Boolean = true) =
+        engine.setAll(reminders, idPrefix, postPast)
 
     suspend fun cancel(id: String) = engine.cancel(id)
 
