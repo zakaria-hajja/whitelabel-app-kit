@@ -71,4 +71,7 @@
     <dimen name="brand_corner_small">8dp</dimen>
     <dimen name="brand_corner_medium">12dp</dimen>
     <dimen name="brand_corner_large">16dp</dimen>
+    <!-- Material 3's own extraSmall (snackbars, menus) and extraLarge (dialogs, sheets) radii. -->
+    <dimen name="brand_corner_extra_small">4dp</dimen>
+    <dimen name="brand_corner_extra_large">28dp</dimen>
 </resources>
