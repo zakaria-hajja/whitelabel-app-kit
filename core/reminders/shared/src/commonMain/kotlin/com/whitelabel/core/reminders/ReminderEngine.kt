@@ -38,12 +38,18 @@ class ReminderEngine(
      * new and changed ones are armed, unchanged ones are left alone, the rest under the prefix are cancelled.
      *
      * A wanted reminder whose time has passed follows the late rule (posted if recent) when [postPast] is
-     * true, the default. With [postPast] false, `setAll` never posts: a past reminder that is stored is left
-     * exactly as it is (its alarm, or [onSystemChange], shows it once), even if the wanted copy differs,
-     * because it is the only copy still owed to the user and replacing it would mean posting it here or
-     * losing it; a past reminder that isn't stored was shown already or missed, so it is dropped. Use it
-     * when the list was computed from a snapshot that may be stale by the time this runs (say a replan
-     * racing a reminder's alarm): an alarm that fired in between can't make the reminder show twice.
+     * true, the default. With [postPast] false, `setAll` never posts, and reads the time once:
+     * - a wanted reminder whose time has passed and whose stored copy is still due (its time has passed
+     *   too) is left exactly as stored, even if the wanted copy differs: it is the only copy still owed,
+     *   and replacing it would mean posting it here or losing it. Its alarm shows it once (on iOS, one
+     *   past the armed cap waits for the next launch's [onSystemChange]);
+     * - one whose stored copy isn't due yet is cancelled and removed: the plan no longer wants it then;
+     * - one that isn't stored was shown already or missed, so it is dropped;
+     * - a future one is stored and armed, even if the clock passes its time while `setAll` runs (the
+     *   alarm then fires at once).
+     * Use it when the list was computed from a snapshot that may be stale by the time this runs (say a
+     * replan racing a reminder's alarm): an alarm that fired in between can't make the reminder show twice.
+     * In both modes a stored reminder left out of [reminders] is cancelled and never shown.
      */
     suspend fun setAll(reminders: List<Reminder>, idPrefix: String, postPast: Boolean = true) = locked {
         require(reminders.all { it.id.startsWith(idPrefix) }) { "Every reminder id must start with \"$idPrefix\"" }
@@ -59,9 +65,18 @@ class ReminderEngine(
         wanted.values.forEach { reminder ->
             val old = storedById[reminder.id]
             if (old == reminder) return@forEach
-            if (!postPast && reminder.at <= time) return@forEach // stored: its alarm owns it; not stored: dropped
-            if (old != null) alarms.cancel(old.id)
-            place(reminder)
+            if (postPast) {
+                if (old != null) alarms.cancel(old.id)
+                place(reminder)
+            } else if (reminder.at > time) {
+                if (old != null) alarms.cancel(old.id)
+                storeAndArm(reminder)
+            } else if (old != null && old.at > time) {
+                // Not due yet, and the plan moved it into the past: it no longer happens then.
+                alarms.cancel(old.id)
+                store.update { list -> list.filterNot { it.id == old.id } }
+            }
+            // Otherwise: stored and due (its alarm owns it) or not stored (shown or missed): leave it.
         }
     }
 
@@ -109,12 +124,12 @@ class ReminderEngine(
 
     /** Stores and arms a future reminder; a past one is removed and posted if it's recent enough. */
     private suspend fun place(reminder: Reminder) {
-        if (reminder.at > now()) {
-            store.update { list -> (list.filterNot { it.id == reminder.id } + reminder).sortedWith(ORDER) }
-            alarms.set(reminder.id, reminder.at)
-        } else {
-            fire(reminder)
-        }
+        if (reminder.at > now()) storeAndArm(reminder) else fire(reminder)
+    }
+
+    private suspend fun storeAndArm(reminder: Reminder) {
+        store.update { list -> (list.filterNot { it.id == reminder.id } + reminder).sortedWith(ORDER) }
+        alarms.set(reminder.id, reminder.at)
     }
 
     /** Removes [reminder] first (so it is never shown twice), then posts it unless it's too late. */
