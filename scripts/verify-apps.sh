@@ -99,7 +99,7 @@ verify_apk() {
   # Debug builds also carry the debug guest sign-in's account (from :core:shell's debug resources).
   guest_names=""
   [ "$type" = debug ] && guest_names="foundation_debug_guest_email foundation_debug_guest_password "
-  expected_names="foundation_ads foundation_ads_declared foundation_ads_units foundation_api_base_url foundation_app_name ${guest_names}foundation_deep_link_scheme foundation_default_features foundation_environment foundation_firebase foundation_firebase_declared foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
+  expected_names="foundation_ads foundation_ads_declared foundation_ads_non_personalized foundation_ads_units foundation_api_base_url foundation_app_name ${guest_names}foundation_deep_link_scheme foundation_default_features foundation_environment foundation_firebase foundation_firebase_declared foundation_privacy_policy_url foundation_support_email foundation_tenant foundation_terms_url "
   [ "$names" = "$expected_names" ] && ok "$app $type: config resources are the expected set" \
     || bad "$app $type: config resources are [$names], expected [$expected_names]"
   # No api.<type>.baseUrl means an app without a backend: the generated URL is empty.
@@ -113,7 +113,9 @@ verify_apk() {
     *) ads=off ;;
   esac
   case "$(prop "$props" ads.enabled)" in true|debug) ads_declared=true ;; *) ads_declared=false ;; esac
-  for pair in "foundation_firebase_declared=$declared" "foundation_ads=$ads" "foundation_ads_declared=$ads_declared" "foundation_api_base_url=$url" "foundation_app_name=$name" "foundation_tenant=$(prop "$props" api.tenant)"; do
+  # ads.nonPersonalized is published as true only where ads are on in this build type.
+  npa=false; [ "$ads" = on ] && [ "$(prop "$props" ads.nonPersonalized)" = true ] && npa=true
+  for pair in "foundation_firebase_declared=$declared" "foundation_ads=$ads" "foundation_ads_declared=$ads_declared" "foundation_ads_non_personalized=$npa" "foundation_api_base_url=$url" "foundation_app_name=$name" "foundation_tenant=$(prop "$props" api.tenant)"; do
     grep -qxF "$pair" "$tmp/config" && ok "$app $type: $pair" \
       || bad "$app $type: expected $pair, APK has $(grep "^${pair%%=*}=" "$tmp/config" || echo 'nothing')"
   done
