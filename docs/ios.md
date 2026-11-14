@@ -156,9 +156,15 @@ what the lock holds are in [creating-an-app.md](creating-an-app.md#content-gate-
 - **Sheets and covers:** the lock shows in **its own window above everything** (above alerts), from
   the first frame after the app returns. Under it, SwiftUI dismisses the sheets and full-screen
   covers the app's screens had open (animated, but behind the lock), so after unlock they are
-  closed and their unsaved state is gone. Alerts and controllers UIKit presented (the share sheet)
-  stay under the lock and show again after unlock. `ContentGateUITests` (Showcase,
+  closed and their unsaved state is gone. SwiftUI's `.alert`, `.confirmationDialog` and `.popover`
+  belong to the removed screens too, so they're gone after unlock as well. Only controllers presented
+  **through UIKit** (`UIAlertController`, the share sheet, the UMP consent or privacy-options form)
+  stay under the lock and are still there after unlock. The lock window is modal for VoiceOver, so
+  nothing under it is read, and VoiceOver moves to the lock and back to the app on unlock. `ContentGateUITests` (Showcase,
   `-uiTestContentGate`) proves the first frame.
+- **Its own window:** the lock is hosted in a separate window, so it doesn't inherit any
+  `.environment(...)` the app puts on or around `RootView`. Inject what the lock screen reads inside
+  the `lockScreen` closure (a missing `@Environment` observable crashes at runtime).
 - **App-switcher cover:** the kit ignores `protectsAppSwitcher` on iOS. The app draws its own cover
   (e.g. on `scenePhase == .inactive`).
 

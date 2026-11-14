@@ -15,9 +15,11 @@ import Shared
  *
  * `lockScreen` is Android's `contentGate { }`: the app's lock, shown **instead of** the app while the
  * app's `ContentGate` (bound in its Koin modules) is LOCKED. The app's screens are removed under it,
- * and the lock shows in its own window above everything (sheets and covers being dismissed, alerts,
- * UIKit-presented controllers such as the share sheet). Bind the gate as a `single`. The app-switcher
- * privacy cover stays the app's own.
+ * and the lock shows in its own window above everything (sheets, covers and SwiftUI alerts being
+ * dismissed, and UIKit-presented controllers such as the share sheet, which stay open under it).
+ * Because it's its own window, the lock doesn't inherit `.environment(...)` set around `RootView`:
+ * inject what it reads inside this closure. Bind the gate as a `single`. The app-switcher privacy
+ * cover stays the app's own.
  */
 public struct AppDefinition {
     public let style: StylePack
