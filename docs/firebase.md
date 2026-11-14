@@ -91,17 +91,25 @@ app in another, and give each build type its own file:
   }
   ```
 
-  Both default to `firebaseConfigFile`. That only tells `generateIosConfig` which configurations
-  have a plist; Xcode still has to bundle the right one. Keep the plists **outside** the app
-  target's source folder (XcodeGen bundles every plist there, in both configurations) and copy the
-  configuration's plist into the bundle with a pre-build script on the app target. It must be a
-  *pre*-build script: the template's dSYM upload (post-build) reads the plist from the built bundle.
+  The paths are an example (Munch's Xcode project is in `iosApp/`): `Firebase/` sits next to the
+  Xcode project, which is `$SRCROOT` in the script below, so for a project in `ios/<App>/` point
+  Gradle at `ios/<App>/Firebase/…`. Both default to `firebaseConfigFile`, so set both or neither:
+  with only one set, the other configuration still counts a plist at the default path. These
+  settings only tell `generateIosConfig` which configurations have a plist; Xcode still has to
+  bundle the right one. Keep the plists **outside** the app target's source folder (XcodeGen bundles
+  every plist there, in both configurations) and copy the configuration's plist into the bundle with
+  a pre-build script on the app target. It must be a *pre*-build script: the template's dSYM upload
+  (post-build) reads the plist from the built bundle.
+  Don't declare the plist as the phase's input or output file: Xcode fails the build when a declared
+  input is missing (`debug` mode with only a Debug plist would break every Release build), and with
+  dependency analysis it skips the phase when nothing declared changed, leaving a stale plist in the
+  bundle after `WL_FIREBASE` turns `fake` or `off`. Running it every build costs one `cp`. (This
+  needs user script sandboxing off, XcodeGen's default.)
 
   ```yaml
       preBuildScripts:
         - name: Copy this configuration's GoogleService-Info.plist
-          inputFiles: [$(SRCROOT)/Firebase/$(CONFIGURATION)/GoogleService-Info.plist]
-          outputFiles: [$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist]
+          basedOnDependencyAnalysis: false
           script: |
             dst="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GoogleService-Info.plist"
             if [ "${WL_FIREBASE:-off}" != on ]; then rm -f "$dst"; exit 0; fi
@@ -262,12 +270,14 @@ Without the switch, no event appears in DebugView. Release collects normally, on
 
 - **Android:** the Crashlytics plugin uploads the R8 mapping with a release build.
 - **iOS:** an Xcode build phase uploads the dSYMs when `WL_FIREBASE` is `on`. Fake and off builds do
-  nothing.
-- **One project per build type:** nothing extra. The Release mapping goes to the project in the
-  release `google-services.json` (the plugin reads the variant's app ID), and the dSYMs to the
-  project of the plist bundled in that build. An upload needs network, so a CI build that is never
-  shipped can skip it with `-x uploadCrashlyticsMappingFileRelease`. The script comes from the firebase-ios-sdk package checkout, and the build only warns if
+  nothing. The script comes from the firebase-ios-sdk package checkout, and the build only warns if
   it isn't there, so check that a real upload shows in the console (see the manual checklist).
+- **One project per build type:** nothing extra in the foundation. The Release mapping goes to the
+  project in the release `google-services.json` (the plugin reads the variant's app ID). The dSYMs
+  should go to the project of the plist bundled in that build, since Crashlytics' upload script
+  reads the bundled plist; confirm the first Release upload lands in the Release project. An upload
+  needs network, so a CI build that is never shipped can skip the mapping upload with
+  `-x uploadCrashlyticsMappingFileRelease`.
 - Kotlin exceptions reach Crashlytics with their Kotlin frames on iOS, through CrashKiOS. Both
   uncaught ones and `CrashReporter.record(throwable)`.
 - Each uncaught crash is reported once. On Android with Firebase on, the shell's uncaught-exception
