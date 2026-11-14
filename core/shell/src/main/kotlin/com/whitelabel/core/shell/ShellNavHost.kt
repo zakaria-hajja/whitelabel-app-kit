@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -223,9 +224,15 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
     val destination = backStackEntry?.destination
     // Hairline packs draw a 1 dp rule above the bar instead of relying on its tonal elevation.
     val hairline = AppTheme.style.surfaces == SurfaceStyle.Hairline
+    // Opt-in (StylePack.bottomBarOnSurface): the hairline alone separates a bar drawn on the
+    // page's own surface. Material's bar has no tonal elevation, so surface stays untinted.
+    val onSurface = hairline && AppTheme.style.bottomBarOnSurface
     Column {
         if (hairline) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        NavigationBar(modifier = Modifier.testTag(BOTTOM_BAR_TAG)) {
+        NavigationBar(
+            modifier = Modifier.testTag(BOTTOM_BAR_TAG),
+            containerColor = if (onSurface) MaterialTheme.colorScheme.surface else NavigationBarDefaults.containerColor,
+        ) {
             tabs.forEach { tab ->
                 val label = stringResource(tab.label)
                 NavigationBarItem(

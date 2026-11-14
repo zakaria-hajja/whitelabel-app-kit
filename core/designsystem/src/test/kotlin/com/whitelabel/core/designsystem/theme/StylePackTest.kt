@@ -5,6 +5,8 @@ import androidx.compose.ui.unit.dp
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
 import assertk.assertions.isNull
 import com.whitelabel.core.designsystem.theme.MotionCurve.Spring
 import com.whitelabel.core.designsystem.theme.MotionCurve.Tween
@@ -36,6 +38,12 @@ class StylePackTest {
         assertThat(m.topBar).isEqualTo(TopBarStyle.Raised)
         assertThat(m.sectionHeader).isEqualTo(SectionHeaderStyle.Accent)
         assertThat(m.valueRows).isEqualTo(ValueRowLayout.Inline)
+    }
+
+    @Test fun `bottom bar stays on surface container unless an app opts in`() {
+        assertThat(StylePack.Material.bottomBarOnSurface).isFalse()
+        assertThat(StylePack.Gallery.bottomBarOnSurface).isFalse()
+        assertThat(StylePack.Gallery.copy(bottomBarOnSurface = true).bottomBarOnSurface).isTrue()
     }
 
     @Test fun `gallery chrome follows the design`() {
