@@ -5,6 +5,7 @@ import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.data.di.ApplicationScope
 import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.shell.brand.adsWiringFor
+import com.whitelabel.core.shell.model.ContentGate
 import com.whitelabel.core.shell.brand.buildTypeModules
 import com.whitelabel.core.shell.brand.firebaseWiringFor
 import com.whitelabel.core.shell.brand.foundationModules
@@ -33,6 +34,12 @@ abstract class FoundationApplication : Application() {
     /** Whether the uncaught-exception handler records through [CrashReporter]; set by [startFoundation]. */
     @Volatile private var recordUncaught = true
 
+    /** Forwards the app's foreground/background to its content gate, if it binds one. */
+    private var gateLifecycle: ContentGateLifecycle? = null
+
+    /** The app's lock, resolved once by [startFoundation]; the activity reads this instance. */
+    internal val contentGate: ContentGate? get() = gateLifecycle?.gate
+
     override fun onCreate() {
         super.onCreate()
         startFoundation()
@@ -54,6 +61,7 @@ abstract class FoundationApplication : Application() {
             androidContext(this@FoundationApplication)
             modules(foundationModules(definition, contributors, firebase, ads, buildTypeModules(this@FoundationApplication)))
         }
+        gateLifecycle = resolveContentGate(GlobalContext.get(), definition)?.also(::registerContentGateLifecycle)
     }
 
     /**
@@ -61,6 +69,8 @@ abstract class FoundationApplication : Application() {
      * the app's files and start a fresh graph. A store file can be open only once at a time.
      */
     fun stopFoundation() {
+        gateLifecycle?.let(::unregisterContentGateLifecycle)
+        gateLifecycle = null
         val job = GlobalContext.getOrNull()?.getOrNull<CoroutineScope>(ApplicationScope)?.coroutineContext?.job
         stopKoin()
         job?.let { runBlocking { it.join() } }

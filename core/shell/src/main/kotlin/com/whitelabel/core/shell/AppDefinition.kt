@@ -14,6 +14,8 @@ import com.whitelabel.core.ads.tabPlacementFor
 import org.koin.core.module.Module
 import com.whitelabel.core.shell.model.DefinitionSpec
 import com.whitelabel.core.shell.model.FeatureSpec
+import com.whitelabel.core.shell.model.ContentGate
+import androidx.compose.runtime.Composable
 
 /** A bottom-bar destination. [route] is a `@Serializable` route object registered by the entry's graph. */
 /**
@@ -75,6 +77,8 @@ class AppDefinition internal constructor(
     val usesAds: Boolean = false,
     /** The banner slots from `ads { }`, in declaration order. */
     internal val adPlacements: List<AdPlacement> = emptyList(),
+    /** The app's lock screen, from `contentGate { }`; shown while the app's [ContentGate] is LOCKED. */
+    internal val lockScreen: (@Composable () -> Unit)? = null,
 ) {
     /** Firebase and ads both wait for the user's consent, gathered at launch. */
     internal val needsConsent: Boolean get() = usesFirebase || usesAds
@@ -100,6 +104,7 @@ class AppDefinitionBuilder internal constructor() {
     private val appModules = mutableListOf<Module>()
     private var usesFirebase = false
     private var ads: AdsBuilder? = null
+    private var lockScreen: (@Composable () -> Unit)? = null
 
     fun add(entry: FeatureEntry) {
         entries += entry
@@ -148,13 +153,24 @@ class AppDefinitionBuilder internal constructor() {
         (ads ?: AdsBuilder().also { ads = it }).apply(block)
     }
 
+    /**
+     * Puts [lockScreen] in front of the whole app while the app's [ContentGate] (bound in its modules)
+     * is LOCKED. The lock replaces the app's screens: nothing under it is composed. Only
+     * `rememberSaveable` state and ViewModels survive a relock (plain `remember` doesn't). Windows outside
+     * the composition (View dialogs, `PopupWindow`, toasts, the system share sheet) are NOT hidden:
+     * never put protected content in them.
+     */
+    fun contentGate(lockScreen: @Composable () -> Unit) {
+        this.lockScreen = lockScreen
+    }
+
     internal fun build(): AppDefinition {
         check(!usesFirebase || (analytics == null && crashReporter == null)) {
             "firebase() replaces analytics() and crashReporter(); use one"
         }
         val definition = AppDefinition(
             entries.toList(), startTabRoute, analytics, crashReporter, stylePack, appModules.toList(), usesFirebase,
-            usesAds = ads != null, adPlacements = ads?.build().orEmpty(),
+            usesAds = ads != null, adPlacements = ads?.build().orEmpty(), lockScreen = lockScreen,
         )
         definition.toSpec().validate()
         definition.validateAdPlacements()

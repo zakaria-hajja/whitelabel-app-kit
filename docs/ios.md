@@ -137,6 +137,31 @@ An app's `@main` is a few lines, the Swift twin of Android's `appDefinition { }`
 - **`messageBanner(state.message) { send(OnMessageShown) }`**: a ViewModel's one-off message at the
   bottom for 3 s (Android's snackbar). A newer message replaces it.
 
+### Content gate (app lock)
+
+`AppDefinition(…, ads:, lockScreen: { AnyView(LockView()) }) { features }` is Android's
+`contentGate { }`: with a `ContentGate` bound in the app's Koin modules, `RootView` shows the splash
+while the gate is `PENDING`, `lockScreen` **instead of** the app while it's `LOCKED`, and the app while
+it's `OPEN`. Without a lock screen and a binding nothing changes; one half without the other stops
+the app at launch with Android's message (checked right after the graph starts). The contract and
+what the lock holds are in [creating-an-app.md](creating-an-app.md#content-gate-app-lock).
+
+- **Lifecycle:** `ContentGateDriver` (owned by `AppRuntime`) observes
+  `UIApplication.willEnterForegroundNotification` and `didEnterBackgroundNotification`. These are
+  app-level, so one iPad scene going away doesn't count, and there's no foreground call on a cold
+  launch. The handler calls the gate and re-reads its state in the same call, so SwiftUI's first frame
+  after returning is already the lock.
+- **Held while locked:** the app's screens (and so `gatherConsent()` and banners) aren't in the
+  hierarchy, and a pending link waits until the content shows.
+- **Sheets and covers:** the lock shows in **its own window above everything** (above alerts), from
+  the first frame after the app returns. Under it, SwiftUI dismisses the sheets and full-screen
+  covers the app's screens had open (animated, but behind the lock), so after unlock they are
+  closed and their unsaved state is gone. Alerts and controllers UIKit presented (the share sheet)
+  stay under the lock and show again after unlock. `ContentGateUITests` (Showcase,
+  `-uiTestContentGate`) proves the first frame.
+- **App-switcher cover:** the kit ignores `protectsAppSwitcher` on iOS. The app draws its own cover
+  (e.g. on `scenePhase == .inactive`).
+
 ### Features, and an app's own screens
 
 A feature is a type that conforms to `Feature`:

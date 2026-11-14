@@ -141,6 +141,60 @@ feature's module, then the app's own `modules(...)`.
   `ads.android.banner.<placement>` / `ads.ios.banner.<placement>`. See [ads.md](ads.md).
 - **Remote flags:** a feature with a flag key can be switched off remotely. When the remote config
   is unavailable, it falls back to `defaults.features`.
+- **Content gate (app lock):** see [Content gate](#content-gate-app-lock) below.
+
+### Content gate (app lock)
+
+An app can put its own lock screen in front of the whole app. It's optional: without it the shell
+runs exactly as before. The app opts in with two halves, and startup fails when only one is there
+(`contentGate() needs a ContentGate bound in the app's modules` /
+`a ContentGate is bound but the app definition doesn't call contentGate()`):
+
+```kotlin
+fun globexDefinition(): AppDefinition = appDefinition {
+    // …features…
+    modules(globexModule)               // binds single<ContentGate> { get<GlobexLock>() }
+    contentGate { GlobexLockRoot() }    // the lock screen (Compose)
+}
+```
+
+On iOS it's `AppDefinition(…, lockScreen: { AnyView(LockView()) }) { … }` with the same Koin binding
+(see [ios.md](ios.md#content-gate-app-lock)).
+
+The app's `ContentGate` (shared Kotlin, `com.whitelabel.core.shell.model`) must keep this contract:
+
+- `state` is `PENDING` until the app knows whether it's locked; the splash stays meanwhile. It must
+  leave `PENDING` quickly and **never return to it** (it has no timeout: falling back to content
+  would defeat the lock). Then `LOCKED` shows the lock screen and `OPEN` the app.
+- `onAppForeground()` updates `state` **synchronously** (no suspend, no dispatch), so the first frame
+  after returning is already the lock. Android calls it once at launch too and iOS doesn't; the
+  result must not depend on that. `onAppBackground()` is the app going to the background (process
+  level: not on rotation, not for one iPad scene).
+- Bind it as a `single`: the lock screen, the shell and the lifecycle must hold the same instance.
+  The shell resolves it once while the app starts (Android: `Application.onCreate`) and reads that
+  instance afterwards, so creating it must be cheap and must not throw. A gate that fails to build
+  fails startup; the app never runs unlocked because of wiring.
+- `protectsAppSwitcher`: true while `PENDING` and whenever the lock is on. On Android the shell then
+  hides the recents snapshot (API 33+ `setRecentsScreenshotEnabled(false)`, API 26–32 `FLAG_SECURE`,
+  which also blocks the user's own screenshots; the shell clears only a `FLAG_SECURE` it set). On iOS the app draws its own switcher cover.
+- The shell never unlocks: the lock screen does, through the app's own implementation.
+
+What the lock holds: the lock **replaces** the app in composition, so nothing under it exists. No
+screens, dialogs, sheets (Compose) or banners (so no ATT prompt either), and no deep link opens: a link that
+arrives while locked waits and opens after unlock. Launch consent (UMP) waits for the first unlock.
+A consent form already open when the app relocks stays above the lock.
+
+What survives a relock: the back stack, `rememberSaveable` state and ViewModels. Plain `remember`
+state doesn't. Each unlock logs one `screen_view` for the current screen (the screen is viewed
+again; screen name only).
+
+On iOS the lock shows in its own window above everything the app presents. Sheets and full-screen
+covers the app's screens had open are dismissed under it, so they are closed after unlock; alerts and
+UIKit-presented controllers (the share sheet) stay under the lock and show again after unlock (see
+[ios.md](ios.md#content-gate-app-lock)).
+
+On Android, never put protected content in windows outside the composition (View dialogs,
+`PopupWindow`, toasts, the system share sheet): a relock doesn't hide them.
 
 ## 5. Build file and manifest
 

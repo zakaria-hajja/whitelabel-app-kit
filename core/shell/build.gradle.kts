@@ -33,6 +33,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    // The content gate hears the app's foreground/background from ProcessLifecycleOwner.
+    implementation(libs.androidx.lifecycle.process)
 
     testImplementation(libs.ktor.client.mock)
     testImplementation(libs.turbine)
