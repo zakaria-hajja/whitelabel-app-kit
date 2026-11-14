@@ -65,6 +65,13 @@ reminders.schedule(
   // After editing Netflix: its reminders become exactly these two; other creatures' stay as they are.
   reminders.setAll(listOf(renewalSoon, hungryToday), idPrefix = "netflix:")
   ```
+
+  Pass `postPast = false` when the list may be stale by the time `setAll` runs, for example a replan
+  at app start that can race a reminder's alarm or a boot broadcast. Then `setAll` never posts: a
+  reminder whose time has passed is left exactly as stored (its alarm shows it once, even if the new
+  list changed it) or, if it isn't stored, dropped as already shown or missed. A reminder can't show
+  twice because an alarm fired between the app's read and its `setAll`. The default (`true`) keeps the
+  late rule below.
 - `cancel(id)`, `cancelAll()` and `pending()` do what they say.
 
 `at` is a local date and time. It's read in the phone's current time zone, so a 09:00 reminder
@@ -79,7 +86,8 @@ still fires at 09:00 after the user flies somewhere else.
   re-arms every pending reminder after each of them.
 - **The 12-hour rule.** A reminder whose time passed while the phone was off is shown once on boot
   if it's less than 12 hours late; an older one is dropped. Scheduling a time that has already
-  passed follows the same rule.
+  passed follows the same rule (posted now if recent), except `setAll(..., postPast = false)`, which
+  never posts.
 - **Blocked notifications.** Scheduling always works. If notifications are blocked when the time
   comes, nothing is shown and the reminder is removed; the app isn't told.
 - **The content is the app's.** The module never groups, throttles or rewords notifications.
