@@ -25,6 +25,18 @@
     <color name="brand_light_surface_variant">#E7E0EC</color>
     <color name="brand_light_on_surface_variant">#49454F</color>
     <color name="brand_light_outline">#79747E</color>
+    <!-- Material 3 surface-container, outline-variant and inverse roles. Defaults: the constants
+         lightColorScheme()/darkColorScheme() use (Material 1.4.0), so apps that don't set them
+         render as before. The bottom bar is drawn on surface_container; hairlines use outline_variant. -->
+    <color name="brand_light_surface_container_lowest">#FFFFFF</color>
+    <color name="brand_light_surface_container_low">#F7F2FA</color>
+    <color name="brand_light_surface_container">#F3EDF7</color>
+    <color name="brand_light_surface_container_high">#ECE6F0</color>
+    <color name="brand_light_surface_container_highest">#E6E0E9</color>
+    <color name="brand_light_outline_variant">#CAC4D0</color>
+    <color name="brand_light_inverse_surface">#322F35</color>
+    <color name="brand_light_inverse_on_surface">#F5EFF7</color>
+    <color name="brand_light_inverse_primary">#D0BCFF</color>
     <color name="brand_dark_primary">#D0BCFF</color>
     <color name="brand_dark_on_primary">#381E72</color>
     <color name="brand_dark_primary_container">#4F378B</color>
@@ -46,6 +58,15 @@
     <color name="brand_dark_surface_variant">#49454F</color>
     <color name="brand_dark_on_surface_variant">#CAC4D0</color>
     <color name="brand_dark_outline">#938F99</color>
+    <color name="brand_dark_surface_container_lowest">#0F0D13</color>
+    <color name="brand_dark_surface_container_low">#1D1B20</color>
+    <color name="brand_dark_surface_container">#211F26</color>
+    <color name="brand_dark_surface_container_high">#2B2930</color>
+    <color name="brand_dark_surface_container_highest">#36343B</color>
+    <color name="brand_dark_outline_variant">#49454F</color>
+    <color name="brand_dark_inverse_surface">#E6E0E9</color>
+    <color name="brand_dark_inverse_on_surface">#322F35</color>
+    <color name="brand_dark_inverse_primary">#6750A4</color>
 
     <dimen name="brand_corner_small">8dp</dimen>
     <dimen name="brand_corner_medium">12dp</dimen>
