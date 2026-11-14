@@ -25,6 +25,8 @@ fun ColorScheme.contrastPairs(): List<ContrastPair> = listOf(
     ContrastPair("onTertiary/tertiary", onTertiary, tertiary),
     ContrastPair("onTertiaryContainer/tertiaryContainer", onTertiaryContainer, tertiaryContainer),
     ContrastPair("onError/error", onError, error),
+    // Error banners and validation summaries.
+    ContrastPair("onErrorContainer/errorContainer", onErrorContainer, errorContainer),
     ContrastPair("onBackground/background", onBackground, background),
     ContrastPair("onSurface/surface", onSurface, surface),
     ContrastPair("onSurfaceVariant/surfaceVariant", onSurfaceVariant, surfaceVariant),
@@ -32,4 +34,11 @@ fun ColorScheme.contrastPairs(): List<ContrastPair> = listOf(
     ContrastPair("onSurfaceVariant/surfaceContainer", onSurfaceVariant, surfaceContainer),
     ContrastPair("onSurface/surfaceContainerHigh", onSurface, surfaceContainerHigh),
     ContrastPair("inverseOnSurface/inverseSurface", inverseOnSurface, inverseSurface),
+    // Text on the fixed roles; the variant is checked on the darker dim tone, its weakest pairing.
+    ContrastPair("onPrimaryFixed/primaryFixed", onPrimaryFixed, primaryFixed),
+    ContrastPair("onPrimaryFixedVariant/primaryFixedDim", onPrimaryFixedVariant, primaryFixedDim),
+    ContrastPair("onSecondaryFixed/secondaryFixed", onSecondaryFixed, secondaryFixed),
+    ContrastPair("onSecondaryFixedVariant/secondaryFixedDim", onSecondaryFixedVariant, secondaryFixedDim),
+    ContrastPair("onTertiaryFixed/tertiaryFixed", onTertiaryFixed, tertiaryFixed),
+    ContrastPair("onTertiaryFixedVariant/tertiaryFixedDim", onTertiaryFixedVariant, tertiaryFixedDim),
 )

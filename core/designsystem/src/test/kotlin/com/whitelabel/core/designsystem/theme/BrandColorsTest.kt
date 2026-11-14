@@ -18,7 +18,7 @@ class BrandColorsTest {
 
     private class Role(val name: String, val read: (ColorScheme) -> Color, val light: Int, val dark: Int)
 
-    /** All 30 roles `brandColorScheme` sets, each with its light and dark resource id. */
+    /** All 46 roles `brandColorScheme` sets, each with its light and dark resource id. */
     private val roles = listOf(
         Role("primary", { it.primary }, R.color.brand_light_primary, R.color.brand_dark_primary),
         Role("onPrimary", { it.onPrimary }, R.color.brand_light_on_primary, R.color.brand_dark_on_primary),
@@ -50,6 +50,22 @@ class BrandColorsTest {
         Role("inverseSurface", { it.inverseSurface }, R.color.brand_light_inverse_surface, R.color.brand_dark_inverse_surface),
         Role("inverseOnSurface", { it.inverseOnSurface }, R.color.brand_light_inverse_on_surface, R.color.brand_dark_inverse_on_surface),
         Role("inversePrimary", { it.inversePrimary }, R.color.brand_light_inverse_primary, R.color.brand_dark_inverse_primary),
+        Role("errorContainer", { it.errorContainer }, R.color.brand_light_error_container, R.color.brand_dark_error_container),
+        Role("onErrorContainer", { it.onErrorContainer }, R.color.brand_light_on_error_container, R.color.brand_dark_on_error_container),
+        Role("surfaceBright", { it.surfaceBright }, R.color.brand_light_surface_bright, R.color.brand_dark_surface_bright),
+        Role("surfaceDim", { it.surfaceDim }, R.color.brand_light_surface_dim, R.color.brand_dark_surface_dim),
+        Role("primaryFixed", { it.primaryFixed }, R.color.brand_light_primary_fixed, R.color.brand_dark_primary_fixed),
+        Role("primaryFixedDim", { it.primaryFixedDim }, R.color.brand_light_primary_fixed_dim, R.color.brand_dark_primary_fixed_dim),
+        Role("onPrimaryFixed", { it.onPrimaryFixed }, R.color.brand_light_on_primary_fixed, R.color.brand_dark_on_primary_fixed),
+        Role("onPrimaryFixedVariant", { it.onPrimaryFixedVariant }, R.color.brand_light_on_primary_fixed_variant, R.color.brand_dark_on_primary_fixed_variant),
+        Role("secondaryFixed", { it.secondaryFixed }, R.color.brand_light_secondary_fixed, R.color.brand_dark_secondary_fixed),
+        Role("secondaryFixedDim", { it.secondaryFixedDim }, R.color.brand_light_secondary_fixed_dim, R.color.brand_dark_secondary_fixed_dim),
+        Role("onSecondaryFixed", { it.onSecondaryFixed }, R.color.brand_light_on_secondary_fixed, R.color.brand_dark_on_secondary_fixed),
+        Role("onSecondaryFixedVariant", { it.onSecondaryFixedVariant }, R.color.brand_light_on_secondary_fixed_variant, R.color.brand_dark_on_secondary_fixed_variant),
+        Role("tertiaryFixed", { it.tertiaryFixed }, R.color.brand_light_tertiary_fixed, R.color.brand_dark_tertiary_fixed),
+        Role("tertiaryFixedDim", { it.tertiaryFixedDim }, R.color.brand_light_tertiary_fixed_dim, R.color.brand_dark_tertiary_fixed_dim),
+        Role("onTertiaryFixed", { it.onTertiaryFixed }, R.color.brand_light_on_tertiary_fixed, R.color.brand_dark_on_tertiary_fixed),
+        Role("onTertiaryFixedVariant", { it.onTertiaryFixedVariant }, R.color.brand_light_on_tertiary_fixed_variant, R.color.brand_dark_on_tertiary_fixed_variant),
     )
 
     private fun mismatches(dark: Boolean): String {
@@ -64,7 +80,7 @@ class BrandColorsTest {
     }
 
     @Test fun `the table covers every role`() {
-        assertThat(roles.map { it.name }.distinct().size).isEqualTo(30)
+        assertThat(roles.map { it.name }.distinct().size).isEqualTo(46)
     }
 
     @Test fun `dark scheme reads each role from its own resource`() {
