@@ -7,7 +7,8 @@ private const val ANDROID_EMULATOR_HOST = "10.0.2.2"
  * The app's identity and API settings for one build type as an Xcode build-settings file. The
  * values are the ones Android publishes ([appConfigFields]), prefixed `WL_`, plus the bundle id
  * (with `.debug` for debug, as on Android) and the version. `//` is written as `/$()/`, since
- * xcconfig reads `//` as a comment. `WL_FIREBASE` is `on`, `fake` or `off` ([firebaseSetup]);
+ * xcconfig reads `//` as a comment. `WL_FIREBASE` is `on`, `fake` or `off` ([firebaseSetup], from the
+ * build types that have a `GoogleService-Info.plist`, [firebaseConfigBuildTypes]);
  * `WL_ADMOB_APP_ID` is the iOS AdMob app ID ([resolvedAdmobAppId]; empty when absent), which Info.plist reads as
  * `GADApplicationIdentifier`. `WL_ADS` (`on`/`off`), `WL_ADS_UNITS` (`placement=unit;...`), `WL_ADS_TRACKING`
  * (`yes`/`no`) and `WL_ADS_TRACKING_MESSAGE` come from [adsSetup]; tracking and its message are published
@@ -15,10 +16,10 @@ private const val ANDROID_EMULATOR_HOST = "10.0.2.2"
  * says whether `ads.enabled` is set at all, so the app can tell a missing setting from a build type with
  * ads off (Android's `foundation_ads_declared`).
  */
-internal fun iosXcconfig(app: AppConfig, buildType: String, firebaseConfigFileExists: Boolean = false): String {
+internal fun iosXcconfig(app: AppConfig, buildType: String, firebaseConfigBuildTypes: Set<String> = emptySet()): String {
     val label = "apps/${app.appDir.name}"
     val firebase = firebaseSetup(
-        app.firebase, firebaseConfigFileExists, adsAppId = app.adsIosAppId, adsAppIdKey = "ads.ios.appId",
+        app.firebase, firebaseConfigBuildTypes, adsAppId = app.adsIosAppId, adsAppIdKey = "ads.ios.appId",
         label = label, configFileName = "GoogleService-Info.plist",
     )
     val ads = adsSetup(app.ads, app.adsIosAppId, app.adsIosUnits, Platform.IOS, label)

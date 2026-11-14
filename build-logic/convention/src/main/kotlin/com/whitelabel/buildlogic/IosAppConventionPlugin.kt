@@ -8,7 +8,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.InputDirectory
@@ -31,6 +31,12 @@ abstract class IosAppExtension {
 
     /** The app's `GoogleService-Info.plist`; defaults to `<iosConfigDir>/../<project dir>/GoogleService-Info.plist`. */
     abstract val firebaseConfigFile: RegularFileProperty
+
+    /** The Debug configuration's `GoogleService-Info.plist` (its own Firebase project); defaults to [firebaseConfigFile]. */
+    abstract val debugFirebaseConfigFile: RegularFileProperty
+
+    /** The Release configuration's `GoogleService-Info.plist` (its own Firebase project); defaults to [firebaseConfigFile]. */
+    abstract val releaseFirebaseConfigFile: RegularFileProperty
 }
 
 /** Writes `Debug.generated.xcconfig` and `Release.generated.xcconfig` from the app's `app.properties`. */
@@ -39,12 +45,18 @@ abstract class GenerateIosConfig : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val androidApp: DirectoryProperty
 
-    /** The plist may be absent; only whether it exists changes the output, so only that is an input. */
+    /**
+     * The plists may be absent; only which build types have one changes the output, so only that
+     * ([firebaseConfigBuildTypes]) is an input.
+     */
     @get:Internal
-    abstract val firebaseConfigFile: RegularFileProperty
+    abstract val debugFirebaseConfigFile: RegularFileProperty
+
+    @get:Internal
+    abstract val releaseFirebaseConfigFile: RegularFileProperty
 
     @get:Input
-    abstract val firebaseConfigFileExists: Property<Boolean>
+    abstract val firebaseConfigBuildTypes: SetProperty<String>
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -52,10 +64,11 @@ abstract class GenerateIosConfig : DefaultTask() {
     @TaskAction
     fun generate() {
         val app = AppConfigLoader.load(androidApp.get().asFile)
-        val exists = firebaseConfigFileExists.get()
+        // Both files come from the same set, so `true` with one plist missing fails for both.
+        val buildTypes = firebaseConfigBuildTypes.get()
         val out = outputDir.get().asFile
-        out.resolve("Debug.generated.xcconfig").writeText(iosXcconfig(app, "debug", exists))
-        out.resolve("Release.generated.xcconfig").writeText(iosXcconfig(app, "release", exists))
+        out.resolve("Debug.generated.xcconfig").writeText(iosXcconfig(app, "debug", buildTypes))
+        out.resolve("Release.generated.xcconfig").writeText(iosXcconfig(app, "release", buildTypes))
     }
 }
 
@@ -74,14 +87,20 @@ class IosAppConventionPlugin : Plugin<Project> {
             description = "Writes the iOS project's xcconfig files from the app's app.properties"
             androidApp.set(extension.androidApp)
             outputDir.set(extension.iosConfigDir)
-            firebaseConfigFile.set(
-                extension.firebaseConfigFile.orElse(
-                    extension.iosConfigDir.map { it.file("../${it.asFile.parentFile.name}/GoogleService-Info.plist") },
-                ),
+            val firebaseConfigFile = extension.firebaseConfigFile.orElse(
+                extension.iosConfigDir.map { it.file("../${it.asFile.parentFile.name}/GoogleService-Info.plist") },
             )
-            // providers.fileContents makes the file a tracked configuration-cache input, unlike File.isFile.
-            firebaseConfigFileExists.set(
-                providers.fileContents(firebaseConfigFile).asBytes.map { true }.orElse(false),
+            debugFirebaseConfigFile.set(extension.debugFirebaseConfigFile.orElse(firebaseConfigFile))
+            releaseFirebaseConfigFile.set(extension.releaseFirebaseConfigFile.orElse(firebaseConfigFile))
+            // providers.fileContents makes each file a tracked configuration-cache input, unlike File.isFile.
+            fun exists(file: RegularFileProperty) = providers.fileContents(file).asBytes.map { true }.orElse(false)
+            firebaseConfigBuildTypes.set(
+                exists(debugFirebaseConfigFile).zip(exists(releaseFirebaseConfigFile)) { debug, release ->
+                    buildSet {
+                        if (debug) add("debug")
+                        if (release) add("release")
+                    }
+                },
             )
         }
         // The app's directory is set in the module's build script, so its properties are read after it.
