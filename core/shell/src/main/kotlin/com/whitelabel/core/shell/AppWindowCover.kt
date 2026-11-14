@@ -27,6 +27,12 @@ internal interface AppWindows {
  * [cover] runs at process ON_STOP; [uncover] runs once the gate is OPEN again (a return in the grace
  * period, or the unlock). A relock removes the composition's windows meanwhile, so they never show.
  * Main thread only.
+ *
+ * Not covered yet (tracked as a follow-up): a window created after [cover] ran, for example a dialog
+ * a ViewModel event opens while the app is in the background, and a covered window something shows
+ * again while the app is in the background (`Dialog.show()` on a showing dialog). Either can still
+ * draw before the gate decides. API 26–28 is best effort: the window list comes from reflection, and
+ * if that fails nothing is hidden (the behaviour before this fix).
  */
 internal class AppWindowCover(private val windowRoots: () -> List<View> = ::appWindowRoots) : AppWindows {
 

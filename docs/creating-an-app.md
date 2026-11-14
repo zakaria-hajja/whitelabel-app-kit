@@ -202,6 +202,11 @@ View dialogs, `PopupWindow`s) is hidden from the moment the app goes to the back
 system shows those windows before the gate can decide, so they would flash their old content above or
 before the lock. A return the gate lets through (within its grace period) shows them again at once,
 state kept; after a relock the composition's ones are gone and any other shows again after unlock.
+Two cases are not covered yet and are tracked as a follow-up: a window created after the app went to
+the background (for example a dialog a ViewModel event opens while the app is in the background), and
+a hidden window something shows again while the app is in the background. Either can still flash on
+return. On API 26–28 the hiding is best effort (it reads the window list by reflection; if that fails,
+nothing is hidden).
 Never put protected content in toasts or the system share sheet: they are not the app's windows.
 
 ## 5. Build file and manifest
