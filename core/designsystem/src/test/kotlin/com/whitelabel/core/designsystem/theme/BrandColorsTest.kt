@@ -16,75 +16,71 @@ class BrandColorsTest {
     /** A distinct, opaque color per resource id. */
     private val fake: (Int) -> Color = { id -> Color(id or 0xFF000000.toInt()) }
 
-    private fun roles(light: Boolean): List<Triple<String, (ColorScheme) -> Color, Int>> = if (light) {
-        listOf(
-            Triple("primary", { s: ColorScheme -> s.primary }, R.color.brand_light_primary),
-            Triple("surfaceContainerLowest", { s: ColorScheme -> s.surfaceContainerLowest }, R.color.brand_light_surface_container_lowest),
-            Triple("surfaceContainerLow", { s: ColorScheme -> s.surfaceContainerLow }, R.color.brand_light_surface_container_low),
-            Triple("surfaceContainer", { s: ColorScheme -> s.surfaceContainer }, R.color.brand_light_surface_container),
-            Triple("surfaceContainerHigh", { s: ColorScheme -> s.surfaceContainerHigh }, R.color.brand_light_surface_container_high),
-            Triple("surfaceContainerHighest", { s: ColorScheme -> s.surfaceContainerHighest }, R.color.brand_light_surface_container_highest),
-            Triple("outlineVariant", { s: ColorScheme -> s.outlineVariant }, R.color.brand_light_outline_variant),
-            Triple("inverseSurface", { s: ColorScheme -> s.inverseSurface }, R.color.brand_light_inverse_surface),
-            Triple("inverseOnSurface", { s: ColorScheme -> s.inverseOnSurface }, R.color.brand_light_inverse_on_surface),
-            Triple("inversePrimary", { s: ColorScheme -> s.inversePrimary }, R.color.brand_light_inverse_primary),
-            Triple("errorContainer", { s: ColorScheme -> s.errorContainer }, R.color.brand_light_error_container),
-            Triple("onErrorContainer", { s: ColorScheme -> s.onErrorContainer }, R.color.brand_light_on_error_container),
-            Triple("surfaceBright", { s: ColorScheme -> s.surfaceBright }, R.color.brand_light_surface_bright),
-            Triple("surfaceDim", { s: ColorScheme -> s.surfaceDim }, R.color.brand_light_surface_dim),
-            Triple("primaryFixed", { s: ColorScheme -> s.primaryFixed }, R.color.brand_light_primary_fixed),
-            Triple("primaryFixedDim", { s: ColorScheme -> s.primaryFixedDim }, R.color.brand_light_primary_fixed_dim),
-            Triple("onPrimaryFixed", { s: ColorScheme -> s.onPrimaryFixed }, R.color.brand_light_on_primary_fixed),
-            Triple("onPrimaryFixedVariant", { s: ColorScheme -> s.onPrimaryFixedVariant }, R.color.brand_light_on_primary_fixed_variant),
-            Triple("secondaryFixed", { s: ColorScheme -> s.secondaryFixed }, R.color.brand_light_secondary_fixed),
-            Triple("secondaryFixedDim", { s: ColorScheme -> s.secondaryFixedDim }, R.color.brand_light_secondary_fixed_dim),
-            Triple("onSecondaryFixed", { s: ColorScheme -> s.onSecondaryFixed }, R.color.brand_light_on_secondary_fixed),
-            Triple("onSecondaryFixedVariant", { s: ColorScheme -> s.onSecondaryFixedVariant }, R.color.brand_light_on_secondary_fixed_variant),
-            Triple("tertiaryFixed", { s: ColorScheme -> s.tertiaryFixed }, R.color.brand_light_tertiary_fixed),
-            Triple("tertiaryFixedDim", { s: ColorScheme -> s.tertiaryFixedDim }, R.color.brand_light_tertiary_fixed_dim),
-            Triple("onTertiaryFixed", { s: ColorScheme -> s.onTertiaryFixed }, R.color.brand_light_on_tertiary_fixed),
-            Triple("onTertiaryFixedVariant", { s: ColorScheme -> s.onTertiaryFixedVariant }, R.color.brand_light_on_tertiary_fixed_variant),
-        )
-    } else {
-        listOf(
-            Triple("primary", { s: ColorScheme -> s.primary }, R.color.brand_dark_primary),
-            Triple("surfaceContainerLowest", { s: ColorScheme -> s.surfaceContainerLowest }, R.color.brand_dark_surface_container_lowest),
-            Triple("surfaceContainerLow", { s: ColorScheme -> s.surfaceContainerLow }, R.color.brand_dark_surface_container_low),
-            Triple("surfaceContainer", { s: ColorScheme -> s.surfaceContainer }, R.color.brand_dark_surface_container),
-            Triple("surfaceContainerHigh", { s: ColorScheme -> s.surfaceContainerHigh }, R.color.brand_dark_surface_container_high),
-            Triple("surfaceContainerHighest", { s: ColorScheme -> s.surfaceContainerHighest }, R.color.brand_dark_surface_container_highest),
-            Triple("outlineVariant", { s: ColorScheme -> s.outlineVariant }, R.color.brand_dark_outline_variant),
-            Triple("inverseSurface", { s: ColorScheme -> s.inverseSurface }, R.color.brand_dark_inverse_surface),
-            Triple("inverseOnSurface", { s: ColorScheme -> s.inverseOnSurface }, R.color.brand_dark_inverse_on_surface),
-            Triple("inversePrimary", { s: ColorScheme -> s.inversePrimary }, R.color.brand_dark_inverse_primary),
-            Triple("errorContainer", { s: ColorScheme -> s.errorContainer }, R.color.brand_dark_error_container),
-            Triple("onErrorContainer", { s: ColorScheme -> s.onErrorContainer }, R.color.brand_dark_on_error_container),
-            Triple("surfaceBright", { s: ColorScheme -> s.surfaceBright }, R.color.brand_dark_surface_bright),
-            Triple("surfaceDim", { s: ColorScheme -> s.surfaceDim }, R.color.brand_dark_surface_dim),
-            Triple("primaryFixed", { s: ColorScheme -> s.primaryFixed }, R.color.brand_dark_primary_fixed),
-            Triple("primaryFixedDim", { s: ColorScheme -> s.primaryFixedDim }, R.color.brand_dark_primary_fixed_dim),
-            Triple("onPrimaryFixed", { s: ColorScheme -> s.onPrimaryFixed }, R.color.brand_dark_on_primary_fixed),
-            Triple("onPrimaryFixedVariant", { s: ColorScheme -> s.onPrimaryFixedVariant }, R.color.brand_dark_on_primary_fixed_variant),
-            Triple("secondaryFixed", { s: ColorScheme -> s.secondaryFixed }, R.color.brand_dark_secondary_fixed),
-            Triple("secondaryFixedDim", { s: ColorScheme -> s.secondaryFixedDim }, R.color.brand_dark_secondary_fixed_dim),
-            Triple("onSecondaryFixed", { s: ColorScheme -> s.onSecondaryFixed }, R.color.brand_dark_on_secondary_fixed),
-            Triple("onSecondaryFixedVariant", { s: ColorScheme -> s.onSecondaryFixedVariant }, R.color.brand_dark_on_secondary_fixed_variant),
-            Triple("tertiaryFixed", { s: ColorScheme -> s.tertiaryFixed }, R.color.brand_dark_tertiary_fixed),
-            Triple("tertiaryFixedDim", { s: ColorScheme -> s.tertiaryFixedDim }, R.color.brand_dark_tertiary_fixed_dim),
-            Triple("onTertiaryFixed", { s: ColorScheme -> s.onTertiaryFixed }, R.color.brand_dark_on_tertiary_fixed),
-            Triple("onTertiaryFixedVariant", { s: ColorScheme -> s.onTertiaryFixedVariant }, R.color.brand_dark_on_tertiary_fixed_variant),
-        )
-    }
+    private class Role(val name: String, val read: (ColorScheme) -> Color, val light: Int, val dark: Int)
+
+    /** All 46 roles `brandColorScheme` sets, each with its light and dark resource id. */
+    private val roles = listOf(
+        Role("primary", { it.primary }, R.color.brand_light_primary, R.color.brand_dark_primary),
+        Role("onPrimary", { it.onPrimary }, R.color.brand_light_on_primary, R.color.brand_dark_on_primary),
+        Role("primaryContainer", { it.primaryContainer }, R.color.brand_light_primary_container, R.color.brand_dark_primary_container),
+        Role("onPrimaryContainer", { it.onPrimaryContainer }, R.color.brand_light_on_primary_container, R.color.brand_dark_on_primary_container),
+        Role("secondary", { it.secondary }, R.color.brand_light_secondary, R.color.brand_dark_secondary),
+        Role("onSecondary", { it.onSecondary }, R.color.brand_light_on_secondary, R.color.brand_dark_on_secondary),
+        Role("secondaryContainer", { it.secondaryContainer }, R.color.brand_light_secondary_container, R.color.brand_dark_secondary_container),
+        Role("onSecondaryContainer", { it.onSecondaryContainer }, R.color.brand_light_on_secondary_container, R.color.brand_dark_on_secondary_container),
+        Role("tertiary", { it.tertiary }, R.color.brand_light_tertiary, R.color.brand_dark_tertiary),
+        Role("onTertiary", { it.onTertiary }, R.color.brand_light_on_tertiary, R.color.brand_dark_on_tertiary),
+        Role("tertiaryContainer", { it.tertiaryContainer }, R.color.brand_light_tertiary_container, R.color.brand_dark_tertiary_container),
+        Role("onTertiaryContainer", { it.onTertiaryContainer }, R.color.brand_light_on_tertiary_container, R.color.brand_dark_on_tertiary_container),
+        Role("error", { it.error }, R.color.brand_light_error, R.color.brand_dark_error),
+        Role("onError", { it.onError }, R.color.brand_light_on_error, R.color.brand_dark_on_error),
+        Role("background", { it.background }, R.color.brand_light_background, R.color.brand_dark_background),
+        Role("onBackground", { it.onBackground }, R.color.brand_light_on_background, R.color.brand_dark_on_background),
+        Role("surface", { it.surface }, R.color.brand_light_surface, R.color.brand_dark_surface),
+        Role("onSurface", { it.onSurface }, R.color.brand_light_on_surface, R.color.brand_dark_on_surface),
+        Role("surfaceVariant", { it.surfaceVariant }, R.color.brand_light_surface_variant, R.color.brand_dark_surface_variant),
+        Role("onSurfaceVariant", { it.onSurfaceVariant }, R.color.brand_light_on_surface_variant, R.color.brand_dark_on_surface_variant),
+        Role("outline", { it.outline }, R.color.brand_light_outline, R.color.brand_dark_outline),
+        Role("outlineVariant", { it.outlineVariant }, R.color.brand_light_outline_variant, R.color.brand_dark_outline_variant),
+        Role("surfaceContainerLowest", { it.surfaceContainerLowest }, R.color.brand_light_surface_container_lowest, R.color.brand_dark_surface_container_lowest),
+        Role("surfaceContainerLow", { it.surfaceContainerLow }, R.color.brand_light_surface_container_low, R.color.brand_dark_surface_container_low),
+        Role("surfaceContainer", { it.surfaceContainer }, R.color.brand_light_surface_container, R.color.brand_dark_surface_container),
+        Role("surfaceContainerHigh", { it.surfaceContainerHigh }, R.color.brand_light_surface_container_high, R.color.brand_dark_surface_container_high),
+        Role("surfaceContainerHighest", { it.surfaceContainerHighest }, R.color.brand_light_surface_container_highest, R.color.brand_dark_surface_container_highest),
+        Role("inverseSurface", { it.inverseSurface }, R.color.brand_light_inverse_surface, R.color.brand_dark_inverse_surface),
+        Role("inverseOnSurface", { it.inverseOnSurface }, R.color.brand_light_inverse_on_surface, R.color.brand_dark_inverse_on_surface),
+        Role("inversePrimary", { it.inversePrimary }, R.color.brand_light_inverse_primary, R.color.brand_dark_inverse_primary),
+        Role("errorContainer", { it.errorContainer }, R.color.brand_light_error_container, R.color.brand_dark_error_container),
+        Role("onErrorContainer", { it.onErrorContainer }, R.color.brand_light_on_error_container, R.color.brand_dark_on_error_container),
+        Role("surfaceBright", { it.surfaceBright }, R.color.brand_light_surface_bright, R.color.brand_dark_surface_bright),
+        Role("surfaceDim", { it.surfaceDim }, R.color.brand_light_surface_dim, R.color.brand_dark_surface_dim),
+        Role("primaryFixed", { it.primaryFixed }, R.color.brand_light_primary_fixed, R.color.brand_dark_primary_fixed),
+        Role("primaryFixedDim", { it.primaryFixedDim }, R.color.brand_light_primary_fixed_dim, R.color.brand_dark_primary_fixed_dim),
+        Role("onPrimaryFixed", { it.onPrimaryFixed }, R.color.brand_light_on_primary_fixed, R.color.brand_dark_on_primary_fixed),
+        Role("onPrimaryFixedVariant", { it.onPrimaryFixedVariant }, R.color.brand_light_on_primary_fixed_variant, R.color.brand_dark_on_primary_fixed_variant),
+        Role("secondaryFixed", { it.secondaryFixed }, R.color.brand_light_secondary_fixed, R.color.brand_dark_secondary_fixed),
+        Role("secondaryFixedDim", { it.secondaryFixedDim }, R.color.brand_light_secondary_fixed_dim, R.color.brand_dark_secondary_fixed_dim),
+        Role("onSecondaryFixed", { it.onSecondaryFixed }, R.color.brand_light_on_secondary_fixed, R.color.brand_dark_on_secondary_fixed),
+        Role("onSecondaryFixedVariant", { it.onSecondaryFixedVariant }, R.color.brand_light_on_secondary_fixed_variant, R.color.brand_dark_on_secondary_fixed_variant),
+        Role("tertiaryFixed", { it.tertiaryFixed }, R.color.brand_light_tertiary_fixed, R.color.brand_dark_tertiary_fixed),
+        Role("tertiaryFixedDim", { it.tertiaryFixedDim }, R.color.brand_light_tertiary_fixed_dim, R.color.brand_dark_tertiary_fixed_dim),
+        Role("onTertiaryFixed", { it.onTertiaryFixed }, R.color.brand_light_on_tertiary_fixed, R.color.brand_dark_on_tertiary_fixed),
+        Role("onTertiaryFixedVariant", { it.onTertiaryFixedVariant }, R.color.brand_light_on_tertiary_fixed_variant, R.color.brand_dark_on_tertiary_fixed_variant),
+    )
 
     private fun mismatches(dark: Boolean): String {
         val scheme = brandColorScheme(darkTheme = dark, color = fake)
-        return roles(light = !dark)
-            .filter { (_, role, id) -> role(scheme) != fake(id) }
-            .joinToString { it.first }
+        return roles
+            .filter { it.read(scheme) != fake(if (dark) it.dark else it.light) }
+            .joinToString { it.name }
     }
 
     @Test fun `light scheme reads each role from its own resource`() {
         assertThat(mismatches(dark = false)).isEqualTo("")
+    }
+
+    @Test fun `the table covers every role`() {
+        assertThat(roles.map { it.name }.distinct().size).isEqualTo(46)
     }
 
     @Test fun `dark scheme reads each role from its own resource`() {

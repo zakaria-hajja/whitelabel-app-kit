@@ -56,7 +56,8 @@ Where Material draws with the less obvious ones:
 - **Defaults:** any role you don't override keeps the Material 3 baseline value from
   `core/designsystem/src/main/res/values/brand.xml`. Those equal Material's own
   `lightColorScheme()`/`darkColorScheme()` (a test checks it), so an app looks exactly like
-  Material wherever it sets nothing. The surface-container roles stay lilac until you set them.
+  Material wherever it sets nothing. The new roles stay Material's baseline (lilac surfaces, grey
+  hairlines, dark snackbars) until you set them.
 - **Override more than primary:** components such as the bottom-bar indicator use
   `secondary_container`. An app that only overrides the primary family, as showcase does
   today, shows the baseline lavender there. Override at least the primary, secondary and tertiary
@@ -75,6 +76,20 @@ each fixed family `on_*_fixed` on `*_fixed` and `on_*_fixed_variant` on `*_fixed
 and 16dp; 0, 2 and 4dp give a square look. A style pack that sets `corners` (Gallery
 does) replaces these; see below.
 
+Material 3 has two more steps. `brand_corner_extra_small` (snackbars, menus, tooltips) and
+`brand_corner_extra_large` (dialogs, bottom sheets) default to Material's own 4 and 28dp, so an app
+that doesn't set them looks as before. A pack's `Corners` has them as optional `extraSmall` and
+`extraLarge`; `null` (the default, Gallery included) keeps Material's shape. To give dialogs and
+sheets the pack's large radius, as design.html's Gallery does:
+
+```kotlin
+style(StylePack.Gallery.copy(corners = StylePack.Gallery.corners?.copy(extraLarge = 14.dp)))
+```
+
+Material's expressive steps (`largeIncreased`, `extraLargeIncreased`, `extraExtraLarge`) are
+experimental and keep their defaults. On iOS, alerts are the system's; sheets take
+`.presentationCornerRadius(style.pack.corners.large)` if an app wants them to match.
+
 ## Style packs (look and motion)
 
 Colors and fonts come from resources (above). Everything else about the look is a **style pack**,
@@ -89,7 +104,7 @@ appDefinition {
 
 | Part | Material (default) | Gallery |
 |---|---|---|
-| Corners | `brand_corner_*` resources | 4 / 8 / 14 dp |
+| Corners | `brand_corner_*` resources | 4 / 8 / 14 dp (extra small and extra large stay Material's 4 / 28 dp) |
 | Surfaces | elevation shadows | 1 dp hairlines (cards outlined, a rule above the bottom bar) |
 | Controls | 48 dp | 52 dp |
 | Type | Material weights; titles in the display font | display and headlines at regular weight; titles in the body font |
@@ -100,10 +115,11 @@ appDefinition {
 | Value rows (`SettingsValueRow`) | label and value on one line | the value under the label, muted |
 
 - An app that never calls `style()` gets `Material`, which is exactly the look apps had before packs.
-- **Bottom bar on the page surface:** `StylePack.Gallery.copy(bottomBarOnSurface = true)` draws
-  the bar on `surface`, under its `outline_variant` hairline, instead of on `surface_container`.
-  It is off by default and only applies to Hairline packs: a Shadow pack needs the container color
-  to set the bar apart.
+- **Bottom bar on the page surface:** `StylePack.Gallery.copy(bottomBar = BottomBarStyle.Surface)`
+  draws the bar on `surface`, under its `outline_variant` hairline, instead of on
+  `surface_container`. The default is `BottomBarStyle.Container`. `Surface` needs
+  `SurfaceStyle.Hairline` and is ignored on a Shadow pack, which needs the container color to set
+  the bar apart.
 - Vary a pack with `copy`: `StylePack.Gallery.copy(sizing = StylePack.Gallery.sizing.copy(controlHeight = 56.dp))`.
 - With Android's "Remove animations" on, every transition becomes a 150 ms crossfade, and
   `AppTheme.reducedMotion` is true so features can stop their own ambient animations.
