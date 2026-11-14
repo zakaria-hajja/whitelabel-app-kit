@@ -69,18 +69,31 @@ private struct ShellContent: View {
 
     /**
      * The lock replaces the content, so nothing of the app (its screens, banners, `gatherConsent`)
-     * runs while locked. A pending link is re-checked when the screen changes (unlock).
+     * runs while locked. SwiftUI dismisses the sheets and covers the content had open **animated**,
+     * so the lock itself shows in its own window above them (and above alerts and UIKit-presented
+     * controllers) from the first frame. A pending link is re-checked when the screen changes (unlock).
      */
     @ViewBuilder private func gated(_ driver: ContentGateDriver) -> some View {
         let screen = driver.screen(showsContent: state.showsContent(hasGate: runtime.definition.gate != nil))
         Group {
             switch screen {
             case .splash: SplashView()
-            case .lock: runtime.definition.lockScreen?() ?? AnyView(SplashView())
+            case .lock: LockBackdrop().background(LockWindowPresenter(lock: lockView))
             case .content: content
             }
         }
         .onChange(of: screen) { runtime.processPendingLink() }
+    }
+
+    /** The app's lock screen with the shell's style, theme and brand: it lives in its own window. */
+    private var lockView: AnyView {
+        AnyView(
+            (runtime.definition.lockScreen?() ?? AnyView(SplashView()))
+                .appStyle(AppStyle(pack: runtime.definition.style))
+                .preferredColorScheme(colorScheme(state.theme))
+                .environment(runtime.navigator)
+                .environment(\.appBrand, runtime.brand)
+        )
     }
 
     @ViewBuilder private var content: some View {
@@ -119,6 +132,15 @@ private struct GateView: View {
         }
         .onAppear { navigator.isGateShowing = true }
         .onDisappear { navigator.isGateShowing = false }
+    }
+}
+
+/** What the app's window shows under the lock's window: the app's background, nothing of the app. */
+private struct LockBackdrop: View {
+    @SwiftUI.Environment(\.appStyle) private var style
+
+    var body: some View {
+        style.colors.background.ignoresSafeArea()
     }
 }
 

@@ -21,8 +21,10 @@ import WhitelabelKit
     }
 
     private var root: some View {
-        RootView(definition: AppDefinition(style: .material, startTab: HomeRoutes.shared.ROOT, services: [FirebaseService(), AdsService()],
-                                              ads: [AdPlacement(name: "home", underTab: HomeRoutes.shared.ROOT)]) {
+        RootView(definition: AppDefinition(style: .material, startTab: HomeRoutes.shared.ROOT, modules: UiTestContentGateSetup.modules, services: [FirebaseService(), AdsService()],
+                                              ads: [AdPlacement(name: "home", underTab: HomeRoutes.shared.ROOT)],
+                                              // Debug UI tests only (`-uiTestContentGate`); otherwise none.
+                                              lockScreen: UiTestContentGateSetup.lockScreen) {
             Auth()
             Home(shortcuts: [
                 HomeShortcut(title: String(localized: "Browse the catalog"), systemImage: "list.bullet", route: CatalogRoutes.shared.LIST),
@@ -37,7 +39,7 @@ import WhitelabelKit
                     PrivacyChoicesRow()
                     RemoteNoteRow()
                 },
-            ]))
+            ] + (UiTestContentGateSetup.isOn ? [SettingsSection(title: nil) { UiTestPresentationsRow() }] : [])))
         })
     }
 }

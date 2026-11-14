@@ -180,7 +180,7 @@ The app's `ContentGate` (shared Kotlin, `com.whitelabel.core.shell.model`) must 
 - The shell never unlocks: the lock screen does, through the app's own implementation.
 
 What the lock holds: the lock **replaces** the app in composition, so nothing under it exists. No
-screens, dialogs, sheets or banners (so no ATT prompt either), and no deep link opens: a link that
+screens, dialogs, sheets (Compose) or banners (so no ATT prompt either), and no deep link opens: a link that
 arrives while locked waits and opens after unlock. Launch consent (UMP) waits for the first unlock.
 A consent form already open when the app relocks stays above the lock.
 
@@ -188,8 +188,13 @@ What survives a relock: the back stack, `rememberSaveable` state and ViewModels.
 state doesn't. Each unlock logs one `screen_view` for the current screen (the screen is viewed
 again; screen name only).
 
-Never put protected content in windows outside the composition (View dialogs, `PopupWindow`, toasts,
-the system share sheet; on iOS, UIKit-presented controllers): a relock doesn't hide them.
+On iOS the lock shows in its own window above everything the app presents. Sheets and full-screen
+covers the app's screens had open are dismissed under it, so they are closed after unlock; alerts and
+UIKit-presented controllers (the share sheet) stay under the lock and show again after unlock (see
+[ios.md](ios.md#content-gate-app-lock)).
+
+On Android, never put protected content in windows outside the composition (View dialogs,
+`PopupWindow`, toasts, the system share sheet): a relock doesn't hide them.
 
 ## 5. Build file and manifest
 
