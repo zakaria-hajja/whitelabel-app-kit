@@ -128,4 +128,16 @@ class AppDefinitionTest {
         assertThat(definition.tabs.map { it.routeId }.toSet().size).isEqualTo(2)
         assertThat(definition.visibleTabs(mapOf("second" to false), emptySet()).map { it.route }).containsExactly(FirstFeature.Root)
     }
+
+    @Test fun `contentGate sets the lock screen`() {
+        val definition = appDefinition {
+            add(entry("a", RouteA))
+            contentGate { androidx.compose.material3.Text("Lock") }
+        }
+        assertThat(definition.lockScreen != null).isEqualTo(true)
+    }
+
+    @Test fun `without contentGate there is no lock screen`() {
+        assertThat(appDefinition { add(entry("a", RouteA)) }.lockScreen).isNull()
+    }
 }
