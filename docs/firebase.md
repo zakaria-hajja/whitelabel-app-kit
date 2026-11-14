@@ -104,14 +104,17 @@ app in another, and give each build type its own file:
   input is missing (`debug` mode with only a Debug plist would break every Release build), and with
   dependency analysis it skips the phase when nothing declared changed, leaving a stale plist in the
   bundle after `WL_FIREBASE` turns `fake` or `off`. Running it every build costs one `cp`. (This
-  needs user script sandboxing off, XcodeGen's default.)
+  needs user script sandboxing off, XcodeGen's default.) Write into `$TARGET_BUILD_DIR`, where Copy
+  Bundle Resources writes, not `$BUILT_PRODUCTS_DIR`: the two are the same for a normal build, but
+  in an archive the app is built in `TARGET_BUILD_DIR` and `BUILT_PRODUCTS_DIR` only holds a link
+  to it, so a copy there can miss the shipped app.
 
   ```yaml
       preBuildScripts:
         - name: Copy this configuration's GoogleService-Info.plist
           basedOnDependencyAnalysis: false
           script: |
-            dst="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GoogleService-Info.plist"
+            dst="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GoogleService-Info.plist"
             if [ "${WL_FIREBASE:-off}" != on ]; then rm -f "$dst"; exit 0; fi
             src="$SRCROOT/Firebase/$CONFIGURATION/GoogleService-Info.plist"
             [ -f "$src" ] || { echo "error: $src is missing"; exit 1; }
