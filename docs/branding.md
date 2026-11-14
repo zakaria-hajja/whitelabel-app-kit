@@ -46,7 +46,8 @@ Where Material draws with the less obvious ones:
 - **Defaults:** any role you don't override keeps the Material 3 baseline value from
   `core/designsystem/src/main/res/values/brand.xml`. Those equal Material's own
   `lightColorScheme()`/`darkColorScheme()` (a test checks it), so an app looks exactly like
-  Material wherever it sets nothing. The surface-container roles stay lilac until you set them.
+  Material wherever it sets nothing. The new roles stay Material's baseline (lilac surfaces, grey
+  hairlines, dark snackbars) until you set them.
 - **Override more than primary:** components such as the bottom-bar indicator use
   `secondary_container`. An app that only overrides the primary family, as showcase does
   today, shows the baseline lavender there. Override at least the primary, secondary and tertiary
@@ -89,10 +90,11 @@ appDefinition {
 | Value rows (`SettingsValueRow`) | label and value on one line | the value under the label, muted |
 
 - An app that never calls `style()` gets `Material`, which is exactly the look apps had before packs.
-- **Bottom bar on the page surface:** `StylePack.Gallery.copy(bottomBarOnSurface = true)` draws
-  the bar on `surface`, under its `outline_variant` hairline, instead of on `surface_container`.
-  It is off by default and only applies to Hairline packs: a Shadow pack needs the container color
-  to set the bar apart.
+- **Bottom bar on the page surface:** `StylePack.Gallery.copy(bottomBar = BottomBarStyle.Surface)`
+  draws the bar on `surface`, under its `outline_variant` hairline, instead of on
+  `surface_container`. The default is `BottomBarStyle.Container`. `Surface` needs
+  `SurfaceStyle.Hairline` and is ignored on a Shadow pack, which needs the container color to set
+  the bar apart.
 - Vary a pack with `copy`: `StylePack.Gallery.copy(sizing = StylePack.Gallery.sizing.copy(controlHeight = 56.dp))`.
 - With Android's "Remove animations" on, every transition becomes a 150 ms crossfade, and
   `AppTheme.reducedMotion` is true so features can stop their own ambient animations.

@@ -26,11 +26,11 @@ data class StylePack(
     /** How a setting and its value sit in a row (`SettingsValueRow`). */
     val valueRows: ValueRowLayout = ValueRowLayout.Inline,
     /**
-     * With [SurfaceStyle.Hairline], draw the bottom bar on `surface` under its hairline instead of
-     * Material's `surfaceContainer`. Ignored with [SurfaceStyle.Shadow], whose bar needs its
-     * container color to stand apart. Off by default, so existing apps keep their bar.
+     * How the shell's bottom bar is filled. [BottomBarStyle.Surface] needs [SurfaceStyle.Hairline]
+     * and is ignored with [SurfaceStyle.Shadow]. Defaults to [BottomBarStyle.Container], so
+     * existing apps keep their bar.
      */
-    val bottomBarOnSurface: Boolean = false,
+    val bottomBar: BottomBarStyle = BottomBarStyle.Container,
 ) {
     /** This pack with "Remove animations" applied: every motion becomes [MotionSpec.Reduced]. */
     fun reduced(): StylePack = copy(motion = MotionSpec.Reduced)
@@ -108,6 +108,19 @@ enum class ValueRowLayout {
 
     /** The label, then the value under it in a muted color. */
     Stacked,
+}
+
+/** The shell's bottom navigation bar. */
+enum class BottomBarStyle {
+    /** Material's bar on `surfaceContainer`. */
+    Container,
+
+    /**
+     * On the page's `surface`, set apart only by the hairline above it. Needs
+     * [SurfaceStyle.Hairline]: a [SurfaceStyle.Shadow] pack has no hairline, so it keeps
+     * [Container].
+     */
+    Surface,
 }
 
 data class Sizing(val controlHeight: Dp, val listRowMinHeight: Dp, val screenGutter: Dp)
