@@ -64,6 +64,20 @@ Where Material draws with the less obvious ones:
 and 16dp; 0, 2 and 4dp give a square look. A style pack that sets `corners` (Gallery
 does) replaces these; see below.
 
+Material 3 has two more steps. `brand_corner_extra_small` (snackbars, menus, tooltips) and
+`brand_corner_extra_large` (dialogs, bottom sheets) default to Material's own 4 and 28dp, so an app
+that doesn't set them looks as before. A pack's `Corners` has them as optional `extraSmall` and
+`extraLarge`; `null` (the default, Gallery included) keeps Material's shape. To give dialogs and
+sheets the pack's large radius, as design.html's Gallery does:
+
+```kotlin
+style(StylePack.Gallery.copy(corners = StylePack.Gallery.corners?.copy(extraLarge = 14.dp)))
+```
+
+Material's expressive steps (`largeIncreased`, `extraLargeIncreased`, `extraExtraLarge`) are
+experimental and keep their defaults. On iOS, alerts are the system's; sheets take
+`.presentationCornerRadius(style.pack.corners.large)` if an app wants them to match.
+
 ## Style packs (look and motion)
 
 Colors and fonts come from resources (above). Everything else about the look is a **style pack**,
@@ -78,7 +92,7 @@ appDefinition {
 
 | Part | Material (default) | Gallery |
 |---|---|---|
-| Corners | `brand_corner_*` resources | 4 / 8 / 14 dp |
+| Corners | `brand_corner_*` resources | 4 / 8 / 14 dp (extra small and extra large stay Material's 4 / 28 dp) |
 | Surfaces | elevation shadows | 1 dp hairlines (cards outlined, a rule above the bottom bar) |
 | Controls | 48 dp | 52 dp |
 | Type | Material weights; titles in the display font | display and headlines at regular weight; titles in the body font |
