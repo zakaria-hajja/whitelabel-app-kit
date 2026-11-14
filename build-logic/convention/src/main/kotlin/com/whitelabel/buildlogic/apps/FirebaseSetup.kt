@@ -1,5 +1,7 @@
 package com.whitelabel.buildlogic.apps
 
+import java.io.File
+
 /**
  * What one app gets for Firebase. [dependencyConfiguration] is the Gradle configuration for the
  * Firebase libraries (`null` for none), [applyGradlePlugins] whether the google-services plugins
@@ -15,13 +17,49 @@ data class FirebaseSetup(
     val disabledTasks: List<String> = emptyList(),
 )
 
+/** The build types an app's Firebase config file can cover. */
+val FIREBASE_BUILD_TYPES: Set<String> = setOf("debug", "release")
+
 /**
- * Decides the Firebase setup from `firebase.enabled`, whether the platform's config file exists and
- * the platform's AdMob app ID [adsAppId] (Google's consent SDK needs it). [configFileName],
- * [adsAppIdKey] and [label] only shape the errors for `true` without the file or the ID. In `debug`
- * mode, debug builds are real only with both the file and the ID; otherwise they use the fake so
- * the app still runs. `false` ignores both.
+ * Decides the Firebase setup from `firebase.enabled`, the build types that have the platform's
+ * config file ([configFileBuildTypes]) and the platform's AdMob app ID [adsAppId] (Google's consent
+ * SDK needs it). [configFileName], [adsAppIdKey] and [label] only shape the errors for `true`
+ * without the files or the ID: with no file at all the error names the file, with some build types
+ * missing it also names those. In `debug` mode, debug builds are real only with a debug config file
+ * and the ID; otherwise they use the fake so the app still runs. `false` ignores both.
  */
+fun firebaseSetup(
+    mode: ServiceMode,
+    configFileBuildTypes: Set<String>,
+    adsAppId: String? = null,
+    label: String = "app",
+    configFileName: String = "google-services.json",
+    adsAppIdKey: String = "ads.android.appId",
+): FirebaseSetup {
+    val hasAppId = !adsAppId.isNullOrBlank()
+    val missing = FIREBASE_BUILD_TYPES - configFileBuildTypes
+    return when (mode) {
+        ServiceMode.OFF -> FirebaseSetup(null, false, mapOf("debug" to "off", "release" to "off"))
+        ServiceMode.ON -> when {
+            missing == FIREBASE_BUILD_TYPES ->
+                throw InvalidAppConfigException(listOf("$label: firebase.enabled=true needs $configFileName"))
+            missing.isNotEmpty() -> throw InvalidAppConfigException(
+                listOf("$label: firebase.enabled=true needs $configFileName for ${missing.sorted().joinToString(", ")}"),
+            )
+            !hasAppId -> throw InvalidAppConfigException(
+                listOf("$label: firebase.enabled=true needs $adsAppIdKey (the AdMob app ID; Google's consent SDK requires it)"),
+            )
+            else -> FirebaseSetup("implementation", true, mapOf("debug" to "on", "release" to "on"))
+        }
+        ServiceMode.DEBUG ->
+            if ("debug" in configFileBuildTypes && hasAppId) FirebaseSetup(
+                "debugImplementation", true, mapOf("debug" to "on", "release" to "off"), RELEASE_FIREBASE_TASKS,
+            )
+            else FirebaseSetup("debugImplementation", false, mapOf("debug" to "fake", "release" to "off"))
+    }
+}
+
+/** [firebaseSetup] for one config file: [configFileExists] covers every build type, otherwise none. */
 fun firebaseSetup(
     mode: ServiceMode,
     configFileExists: Boolean,
@@ -29,24 +67,18 @@ fun firebaseSetup(
     label: String = "app",
     configFileName: String = "google-services.json",
     adsAppIdKey: String = "ads.android.appId",
-): FirebaseSetup {
-    val hasAppId = !adsAppId.isNullOrBlank()
-    return when (mode) {
-        ServiceMode.OFF -> FirebaseSetup(null, false, mapOf("debug" to "off", "release" to "off"))
-        ServiceMode.ON -> when {
-            !configFileExists -> throw InvalidAppConfigException(listOf("$label: firebase.enabled=true needs $configFileName"))
-            !hasAppId -> throw InvalidAppConfigException(
-                listOf("$label: firebase.enabled=true needs $adsAppIdKey (the AdMob app ID; Google's consent SDK requires it)"),
-            )
-            else -> FirebaseSetup("implementation", true, mapOf("debug" to "on", "release" to "on"))
-        }
-        ServiceMode.DEBUG ->
-            if (configFileExists && hasAppId) FirebaseSetup(
-                "debugImplementation", true, mapOf("debug" to "on", "release" to "off"), RELEASE_FIREBASE_TASKS,
-            )
-            else FirebaseSetup("debugImplementation", false, mapOf("debug" to "fake", "release" to "off"))
-    }
-}
+): FirebaseSetup = firebaseSetup(
+    mode, if (configFileExists) FIREBASE_BUILD_TYPES else emptySet(), adsAppId, label, configFileName, adsAppIdKey,
+)
+
+/**
+ * The build types an Android app module at [projectDir] has a `google-services.json` for: the file at
+ * the module root covers every build type, `src/<buildType>/google-services.json` covers that build
+ * type (the google-services plugin's own lookup).
+ */
+fun androidFirebaseConfigBuildTypes(projectDir: File): Set<String> =
+    if (projectDir.resolve("google-services.json").isFile) FIREBASE_BUILD_TYPES
+    else FIREBASE_BUILD_TYPES.filterTo(linkedSetOf()) { projectDir.resolve("src/$it/google-services.json").isFile }
 
 /** The `admobAppId` manifest placeholder: the app's AdMob app ID, or an empty string so merging never fails. */
 fun admobManifestPlaceholder(adsAppId: String?): String = adsAppId.orEmpty()
