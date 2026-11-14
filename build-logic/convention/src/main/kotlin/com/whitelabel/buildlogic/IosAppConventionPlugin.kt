@@ -32,10 +32,14 @@ abstract class IosAppExtension {
     /** The app's `GoogleService-Info.plist`; defaults to `<iosConfigDir>/../<project dir>/GoogleService-Info.plist`. */
     abstract val firebaseConfigFile: RegularFileProperty
 
-    /** The Debug configuration's `GoogleService-Info.plist` (its own Firebase project); defaults to [firebaseConfigFile]. */
+    /**
+     * The Debug configuration's `GoogleService-Info.plist` (its own Firebase project); defaults to
+     * [firebaseConfigFile]. Set both or neither of this and [releaseFirebaseConfigFile]: with only one
+     * set, a plist at the default path still counts for the other configuration.
+     */
     abstract val debugFirebaseConfigFile: RegularFileProperty
 
-    /** The Release configuration's `GoogleService-Info.plist` (its own Firebase project); defaults to [firebaseConfigFile]. */
+    /** The Release configuration's `GoogleService-Info.plist`; defaults to [firebaseConfigFile]. See [debugFirebaseConfigFile]. */
     abstract val releaseFirebaseConfigFile: RegularFileProperty
 }
 

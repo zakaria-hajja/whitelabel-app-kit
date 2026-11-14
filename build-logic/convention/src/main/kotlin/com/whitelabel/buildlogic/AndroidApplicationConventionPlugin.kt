@@ -13,8 +13,8 @@ import com.whitelabel.buildlogic.apps.debugGuestResValues
 import com.whitelabel.buildlogic.apps.Platform
 import com.whitelabel.buildlogic.apps.adsSetup
 import com.whitelabel.buildlogic.apps.adsUnitsString
-import com.whitelabel.buildlogic.apps.resolvedAdmobAppId
 import com.whitelabel.buildlogic.apps.androidFirebaseConfigBuildTypes
+import com.whitelabel.buildlogic.apps.resolvedAdmobAppId
 import com.whitelabel.buildlogic.apps.firebaseSetup
 import com.whitelabel.buildlogic.apps.resourceNameFor
 import org.gradle.api.Plugin
