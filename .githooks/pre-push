@@ -1,6 +1,6 @@
 #!/bin/sh
 # Refuses pushes to main; runs the quality gate (unit tests + lint) before any other push, and on
-# macOS the iOS gate too when the push touches iOS or shared Kotlin code.
+# macOS the iOS gate too when the push touches iOS or shared Kotlin code, or this hook.
 set -eu
 
 zero=0000000000000000000000000000000000000000
@@ -22,8 +22,17 @@ while read -r _local_ref local_sha remote_ref remote_sha; do
 done
 
 root="$(git rev-parse --show-toplevel)"
+
+# Git exports its repo-location variables to hooks; in a linked worktree GIT_DIR is absolute
+# (<repo>/.git/worktrees/<name>). The checks must not inherit them: SwiftPM's own git commands
+# (via xcodebuild) would act on this repo instead of the package checkout. The hook's own git
+# commands are done, so drop them.
+# shellcheck disable=SC2046
+unset $(git rev-parse --local-env-vars)
+
 sh "$root/scripts/check.sh"
 
-if [ "$(uname)" = "Darwin" ] && printf '%s\n' $changed | grep -qE '^(ios/|core/|feature/|apps/[^/]+/shared/|build-logic/|gradle/)'; then
+# The iOS gate also runs when this hook changes, since the hook decides how it runs.
+if [ "$(uname)" = "Darwin" ] && printf '%s\n' $changed | grep -qE '^(ios/|core/|feature/|apps/[^/]+/shared/|build-logic/|gradle/|\.githooks/pre-push)'; then
   sh "$root/scripts/check-ios.sh"
 fi
