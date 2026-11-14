@@ -32,6 +32,7 @@ jobs:
           HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           scripts/test-ci-needs-build.sh
+          scripts/test-pre-push-env.sh
           if [ "$EVENT" = pull_request ]; then build=$(scripts/ci-needs-build.sh "$BASE" "$HEAD"); else build=true; fi
           echo "build=$build" >> "$GITHUB_OUTPUT"
           echo "Gradle jobs needed: $build"
