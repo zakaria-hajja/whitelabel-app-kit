@@ -38,6 +38,29 @@ final class AppDefinitionTests: XCTestCase {
         }
         XCTAssertEqual(definition.validationError, "Only one feature may gate the app: g1, g2")
     }
+
+    // MARK: Content gate (app lock)
+
+    func testLockScreen_defaultsToNil() {
+        let definition = AppDefinition(style: .material) { StubFeature("a", tab: "a") }
+        XCTAssertNil(definition.lockScreen)
+        XCTAssertNil(definition.contentGateProblem(bindsGate: false))
+        XCTAssertEqual(definition.contentGateProblem(bindsGate: true), "a ContentGate is bound but the app definition doesn't call contentGate()")
+    }
+
+    func testLockScreen_needsABoundGate() {
+        let definition = AppDefinition(style: .material, lockScreen: { AnyView(Text("Lock")) }) { StubFeature("a", tab: "a") }
+        XCTAssertNotNil(definition.lockScreen)
+        XCTAssertEqual(definition.contentGateProblem(bindsGate: false), "contentGate() needs a ContentGate bound in the app's modules")
+        XCTAssertNil(definition.contentGateProblem(bindsGate: true))
+    }
+
+    /** Munch's call shape: `AppDefinition(…, ads: ads) { … }` still binds the closure to the features. */
+    func testTrailingClosure_stillBuildsFeatures() {
+        let definition = AppDefinition(style: .material, ads: []) { StubFeature("a", tab: "a") }
+        XCTAssertEqual(definition.features.count, 1)
+        XCTAssertNil(definition.lockScreen)
+    }
 }
 
 /** Swift finds which feature a link belongs to; the shared policy decides what happens to it. */

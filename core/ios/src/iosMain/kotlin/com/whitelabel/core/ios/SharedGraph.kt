@@ -43,6 +43,8 @@ import com.whitelabel.core.network.ModuleContributor
 import com.whitelabel.core.network.NetworkConfig
 import com.whitelabel.core.network.defaultHttpEngine
 import com.whitelabel.core.network.di.networkModule
+import com.whitelabel.core.shell.model.ContentGate
+import com.whitelabel.core.shell.model.ContentGateState
 import com.whitelabel.core.shell.model.DefinitionSpec
 import com.whitelabel.core.shell.model.ShellViewModel
 import com.whitelabel.core.shell.model.shellModelModule
@@ -64,6 +66,7 @@ import com.whitelabel.feature.settings.presentation.SettingsViewModel
 import com.whitelabel.feature.settings.settingsModule
 import io.ktor.client.engine.HttpClientEngine
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import org.koin.core.Koin
@@ -222,6 +225,18 @@ object SharedGraph {
 
     /** The app's consent, or null when the app has neither a Firebase service nor ads (nothing to ask). */
     fun consentOrNull(): Consent? = koin.getOrNull()
+
+    /** The app's lock (`AppDefinition(lockScreen:)` plus a bound [ContentGate]), or null for an app without one. */
+    fun contentGateOrNull(): ContentGate? = koin.getOrNull()
+
+    /**
+     * [gate]'s state now. Swift sees the protocol's `state` as an untyped Kotlin flow; this gives it
+     * the Swift enum.
+     */
+    fun contentGateState(gate: ContentGate): ContentGateState = gate.state.value
+
+    /** [gate]'s state as a flow Swift can `for await` (each change; read the value with [contentGateState]). */
+    fun contentGateChanges(gate: ContentGate): StateFlow<ContentGateState> = gate.state
 
     /**
      * Starts the graph for [definition], once; later calls are ignored. Fails, with the rule's
