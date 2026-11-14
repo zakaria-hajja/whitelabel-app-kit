@@ -176,7 +176,7 @@ The app's `ContentGate` (shared Kotlin, `com.whitelabel.core.shell.model`) must 
   fails startup; the app never runs unlocked because of wiring.
 - `protectsAppSwitcher`: true while `PENDING` and whenever the lock is on. On Android the shell then
   hides the recents snapshot (API 33+ `setRecentsScreenshotEnabled(false)`, API 26–32 `FLAG_SECURE`,
-  which also blocks the user's own screenshots). On iOS the app draws its own switcher cover.
+  which also blocks the user's own screenshots; the shell clears only a `FLAG_SECURE` it set). On iOS the app draws its own switcher cover.
 - The shell never unlocks: the lock screen does, through the app's own implementation.
 
 What the lock holds: the lock **replaces** the app in composition, so nothing under it exists. No

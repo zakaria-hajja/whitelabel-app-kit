@@ -87,7 +87,10 @@ class FoundationActivity : AppCompatActivity() {
             // Collected for the activity's whole life (Main.immediate: the first value applies now), so
             // the flag is set before onPause takes the recents snapshot.
             lifecycleScope.launch {
-                gate.protectsAppSwitcher.collect { applyRecentsProtection(recentsProtection(Build.VERSION.SDK_INT, it)) }
+                var secureSetByGate = false
+                gate.protectsAppSwitcher.collect {
+                    secureSetByGate = applyRecentsProtection(recentsProtection(Build.VERSION.SDK_INT, it), secureSetByGate)
+                }
             }
         }
         enableEdgeToEdge()

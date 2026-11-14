@@ -20,4 +20,18 @@ class RecentsProtectionTest {
         assertThat(recentsProtection(sdkInt = 36, on = false)).isEqualTo(RecentsProtection.NONE)
         assertThat(recentsProtection(sdkInt = 26, on = false)).isEqualTo(RecentsProtection.NONE)
     }
+
+    @Test fun `the gate adds FLAG_SECURE only when the window doesn't have it`() {
+        assertThat(secureFlagChange(RecentsProtection.FLAG_SECURE, flagSet = false, setByGate = false)).isEqualTo(SecureFlagChange.ADD)
+        assertThat(secureFlagChange(RecentsProtection.FLAG_SECURE, flagSet = true, setByGate = false)).isEqualTo(SecureFlagChange.NONE)
+        assertThat(secureFlagChange(RecentsProtection.FLAG_SECURE, flagSet = true, setByGate = true)).isEqualTo(SecureFlagChange.NONE)
+    }
+
+    @Test fun `the gate clears FLAG_SECURE only when it set the flag`() {
+        assertThat(secureFlagChange(RecentsProtection.NONE, flagSet = true, setByGate = true)).isEqualTo(SecureFlagChange.CLEAR)
+        assertThat(secureFlagChange(RecentsProtection.NO_SCREENSHOT, flagSet = true, setByGate = true)).isEqualTo(SecureFlagChange.CLEAR)
+        // The app (or another screen) set it: the gate leaves it alone.
+        assertThat(secureFlagChange(RecentsProtection.NONE, flagSet = true, setByGate = false)).isEqualTo(SecureFlagChange.NONE)
+        assertThat(secureFlagChange(RecentsProtection.NONE, flagSet = false, setByGate = false)).isEqualTo(SecureFlagChange.NONE)
+    }
 }
