@@ -13,6 +13,7 @@ import com.whitelabel.buildlogic.apps.debugGuestResValues
 import com.whitelabel.buildlogic.apps.Platform
 import com.whitelabel.buildlogic.apps.adsSetup
 import com.whitelabel.buildlogic.apps.adsUnitsString
+import com.whitelabel.buildlogic.apps.androidFirebaseConfigBuildTypes
 import com.whitelabel.buildlogic.apps.resolvedAdmobAppId
 import com.whitelabel.buildlogic.apps.firebaseSetup
 import com.whitelabel.buildlogic.apps.resourceNameFor
@@ -97,11 +98,12 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         mockApiDependency(mapOf(MOCK_API_PROPERTY to providers.gradleProperty(MOCK_API_PROPERTY).orNull))
             ?.let { (configuration, module) -> dependencies.add(configuration, project(module)) }
 
-        // Firebase: libraries per build type, the google-services plugins when the config file is
-        // there, and the mode the shell reads. Release never gets the libraries in `debug` mode.
+        // Firebase: libraries per build type, the google-services plugins when the config files are
+        // there (one at the module root or one per build type in src/<buildType>/), and the mode the
+        // shell reads. Release never gets the libraries in `debug` mode.
         val firebase = firebaseSetup(
             app.firebase,
-            configFileExists = projectDir.resolve("google-services.json").isFile,
+            configFileBuildTypes = androidFirebaseConfigBuildTypes(projectDir),
             adsAppId = app.adsAndroidAppId,
             label = rootDir.toPath().relativize(projectDir.toPath()).toString(),
         )

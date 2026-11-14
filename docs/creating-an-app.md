@@ -70,7 +70,7 @@ The build validates this file and reports every problem at once, naming the file
 | `defaults.legal.privacyPolicyUrl` | `https://globex.example/privacy` | `https` |
 | `defaults.legal.termsUrl` | `https://globex.example/terms` | `https` |
 | `defaults.features` | `catalog,profile` | Optional. Flagged features that are on when remote config is unavailable |
-| `firebase.enabled` | `debug` | Optional: `false` (default), `true` or `debug`. `true` needs `apps/<name>/google-services.json` and the two AdMob app IDs below; `debug` runs a fake Firebase in Debug unless the file and the ID exist. See [firebase.md](firebase.md) |
+| `firebase.enabled` | `debug` | Optional: `false` (default), `true` or `debug`. `true` needs `apps/<name>/google-services.json` (or one per build type in `src/debug/` and `src/release/`, each from its own Firebase project) and the two AdMob app IDs below; `debug` runs a fake Firebase in Debug unless the Debug file and the ID exist. See [firebase.md](firebase.md) |
 | `ads.android.appId`, `ads.ios.appId` | `ca-app-pub-1234567890123456~1234567890` | The app's AdMob app IDs (Google's consent SDK needs them). Required with `firebase.enabled=true` or `ads.enabled=true`; validated when present |
 | `ads.enabled` | `debug` | Optional: `false` (default), `true` or `debug` (Debug builds, Google's test units). `true` needs both app IDs and `ads.android.banner.<placement>` / `ads.ios.banner.<placement>` units. See [ads.md](ads.md) |
 | `ads.ios.requestTracking`, `ads.ios.trackingMessage` | `true`, `We use this to show relevant ads.` | Optional iOS App Tracking Transparency prompt; the message is required when it is on |

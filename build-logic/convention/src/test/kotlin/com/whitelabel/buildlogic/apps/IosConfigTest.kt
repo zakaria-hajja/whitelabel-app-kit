@@ -58,21 +58,54 @@ class IosConfigTest {
     @Test fun `writes WL_FIREBASE per build type`() {
         val config = app().copy(firebase = ServiceMode.DEBUG)
 
-        assertThat(iosXcconfig(config, "debug", firebaseConfigFileExists = false)).contains("WL_FIREBASE = fake\n")
-        assertThat(iosXcconfig(config, "release", firebaseConfigFileExists = false)).contains("WL_FIREBASE = off\n")
-        assertThat(iosXcconfig(config, "debug", firebaseConfigFileExists = true)).contains("WL_FIREBASE = fake\n")
+        assertThat(iosXcconfig(config, "debug", firebaseConfigBuildTypes = emptySet())).contains("WL_FIREBASE = fake\n")
+        assertThat(iosXcconfig(config, "release", firebaseConfigBuildTypes = emptySet())).contains("WL_FIREBASE = off\n")
+        assertThat(iosXcconfig(config, "debug", firebaseConfigBuildTypes = FIREBASE_BUILD_TYPES)).contains("WL_FIREBASE = fake\n")
         val withId = config.copy(adsIosAppId = IOS_ID)
-        assertThat(iosXcconfig(withId, "debug", firebaseConfigFileExists = true)).contains("WL_FIREBASE = on\n")
-        assertThat(iosXcconfig(withId, "release", firebaseConfigFileExists = true)).contains("WL_FIREBASE = off\n")
+        assertThat(iosXcconfig(withId, "debug", firebaseConfigBuildTypes = FIREBASE_BUILD_TYPES)).contains("WL_FIREBASE = on\n")
+        assertThat(iosXcconfig(withId, "release", firebaseConfigBuildTypes = FIREBASE_BUILD_TYPES)).contains("WL_FIREBASE = off\n")
         assertThat(iosXcconfig(app(), "debug")).contains("WL_FIREBASE = off\n")
     }
 
     @Test fun `a missing plist with firebase on fails generation`() {
         val e = assertThrows(InvalidAppConfigException::class.java) {
-            iosXcconfig(app().copy(firebase = ServiceMode.ON, adsIosAppId = IOS_ID), "debug", firebaseConfigFileExists = false)
+            iosXcconfig(app().copy(firebase = ServiceMode.ON, adsIosAppId = IOS_ID), "debug", firebaseConfigBuildTypes = emptySet())
         }
 
         assertThat(e.message!!).contains("apps/showcase: firebase.enabled=true needs GoogleService-Info.plist")
+    }
+
+    @Test fun `firebase on with both plists writes on in both`() {
+        val config = app().copy(firebase = ServiceMode.ON, adsIosAppId = IOS_ID)
+
+        assertThat(iosXcconfig(config, "debug", firebaseConfigBuildTypes = setOf("debug", "release"))).contains("WL_FIREBASE = on\n")
+        assertThat(iosXcconfig(config, "release", firebaseConfigBuildTypes = setOf("debug", "release"))).contains("WL_FIREBASE = on\n")
+    }
+
+    @Test fun `firebase on with only the debug plist fails naming release`() {
+        val config = app().copy(firebase = ServiceMode.ON, adsIosAppId = IOS_ID)
+
+        for (buildType in listOf("debug", "release")) {
+            val e = assertThrows(InvalidAppConfigException::class.java) {
+                iosXcconfig(config, buildType, firebaseConfigBuildTypes = setOf("debug"))
+            }
+
+            assertThat(e.message!!).contains("apps/showcase: firebase.enabled=true needs GoogleService-Info.plist for release")
+        }
+    }
+
+    @Test fun `debug mode with only the debug plist is on in debug, off in release`() {
+        val config = app().copy(firebase = ServiceMode.DEBUG, adsIosAppId = IOS_ID)
+
+        assertThat(iosXcconfig(config, "debug", firebaseConfigBuildTypes = setOf("debug"))).contains("WL_FIREBASE = on\n")
+        assertThat(iosXcconfig(config, "release", firebaseConfigBuildTypes = setOf("debug"))).contains("WL_FIREBASE = off\n")
+    }
+
+    @Test fun `each plist covers its own configuration`() {
+        assertThat(iosFirebaseConfigBuildTypes(debugExists = false, releaseExists = false)).isEqualTo(emptySet())
+        assertThat(iosFirebaseConfigBuildTypes(debugExists = true, releaseExists = false)).isEqualTo(setOf("debug"))
+        assertThat(iosFirebaseConfigBuildTypes(debugExists = false, releaseExists = true)).isEqualTo(setOf("release"))
+        assertThat(iosFirebaseConfigBuildTypes(debugExists = true, releaseExists = true)).isEqualTo(FIREBASE_BUILD_TYPES)
     }
 
     @Test fun `writes WL_ADMOB_APP_ID, empty when absent, in both build types`() {
@@ -89,7 +122,7 @@ class IosConfigTest {
 
     @Test fun `firebase on without the ios app id fails generation naming the key`() {
         val e = assertThrows(InvalidAppConfigException::class.java) {
-            iosXcconfig(app().copy(firebase = ServiceMode.ON), "debug", firebaseConfigFileExists = true)
+            iosXcconfig(app().copy(firebase = ServiceMode.ON), "debug", firebaseConfigBuildTypes = FIREBASE_BUILD_TYPES)
         }
 
         assertThat(e.message!!).contains("apps/showcase: firebase.enabled=true needs ads.ios.appId (the AdMob app ID; Google's consent SDK requires it)")
@@ -98,7 +131,7 @@ class IosConfigTest {
     @Test fun `debug with the plist but no ios app id writes fake`() {
         val config = app().copy(firebase = ServiceMode.DEBUG)
 
-        assertThat(iosXcconfig(config, "debug", firebaseConfigFileExists = true)).contains("WL_FIREBASE = fake\n")
+        assertThat(iosXcconfig(config, "debug", firebaseConfigBuildTypes = FIREBASE_BUILD_TYPES)).contains("WL_FIREBASE = fake\n")
     }
 
     @Test fun `an app without firebase exports the consent and firebase types WhitelabelKit names, but no crashlytics`() {

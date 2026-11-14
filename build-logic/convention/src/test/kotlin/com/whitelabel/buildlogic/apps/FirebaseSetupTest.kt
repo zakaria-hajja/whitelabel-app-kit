@@ -2,9 +2,13 @@ package com.whitelabel.buildlogic.apps
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.isFalse
+import assertk.assertions.isTrue
 import assertk.assertions.isEqualTo
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.File
 
 class FirebaseSetupTest {
 
@@ -121,5 +125,107 @@ class FirebaseSetupTest {
     @Test fun `the manifest placeholder is the app id or an empty string`() {
         assertThat(admobManifestPlaceholder(ID)).isEqualTo(ID)
         assertThat(admobManifestPlaceholder(null)).isEqualTo("")
+    }
+
+    // One config file per build type.
+
+    @Test fun `on with a file per build type uses implementation and the plugins`() {
+        assertThat(firebaseSetup(ServiceMode.ON, setOf("debug", "release"), adsAppId = ID)).isEqualTo(
+            FirebaseSetup("implementation", true, mapOf("debug" to "on", "release" to "on")),
+        )
+    }
+
+    @Test fun `on with only the debug file fails naming release`() {
+        val e = assertThrows(InvalidAppConfigException::class.java) {
+            firebaseSetup(ServiceMode.ON, setOf("debug"), adsAppId = ID, label = "apps/sample")
+        }
+
+        assertThat(e.problems).isEqualTo(listOf("apps/sample: firebase.enabled=true needs google-services.json for release"))
+    }
+
+    @Test fun `on with only the release file fails naming debug`() {
+        val e = assertThrows(InvalidAppConfigException::class.java) {
+            firebaseSetup(
+                ServiceMode.ON, setOf("release"), adsAppId = ID, label = "apps/sample",
+                configFileName = "GoogleService-Info.plist",
+            )
+        }
+
+        assertThat(e.problems).isEqualTo(listOf("apps/sample: firebase.enabled=true needs GoogleService-Info.plist for debug"))
+    }
+
+    @Test fun `on with no file at all keeps the message without build types`() {
+        val e = assertThrows(InvalidAppConfigException::class.java) {
+            firebaseSetup(ServiceMode.ON, emptySet(), adsAppId = ID, label = "apps/sample")
+        }
+
+        assertThat(e.problems).isEqualTo(listOf("apps/sample: firebase.enabled=true needs google-services.json"))
+    }
+
+    @Test fun `on with a partial set reports the missing file before a missing app id`() {
+        val e = assertThrows(InvalidAppConfigException::class.java) {
+            firebaseSetup(ServiceMode.ON, setOf("debug"), adsAppId = null)
+        }
+
+        assertThat(e.problems.single()).contains("needs google-services.json for release")
+    }
+
+    @Test fun `debug mode with only a release file is fake in debug`() {
+        val setup = firebaseSetup(ServiceMode.DEBUG, setOf("release"), adsAppId = ID)
+
+        assertThat(setup.modeFor).isEqualTo(mapOf("debug" to "fake", "release" to "off"))
+        assertThat(setup.applyGradlePlugins).isFalse()
+    }
+
+    @Test fun `debug mode with a debug file is real in debug and skips release tasks`() {
+        val setup = firebaseSetup(ServiceMode.DEBUG, setOf("debug"), adsAppId = ID)
+
+        assertThat(setup.applyGradlePlugins).isTrue()
+        assertThat(setup.modeFor).isEqualTo(mapOf("debug" to "on", "release" to "off"))
+        assertThat(setup.disabledTasks).contains("processReleaseGoogleServices")
+    }
+
+    @Test fun `the boolean overload means every build type or none`() {
+        assertThat(firebaseSetup(ServiceMode.ON, configFileExists = true, adsAppId = ID))
+            .isEqualTo(firebaseSetup(ServiceMode.ON, FIREBASE_BUILD_TYPES, adsAppId = ID))
+        assertThat(firebaseSetup(ServiceMode.DEBUG, configFileExists = false, adsAppId = ID))
+            .isEqualTo(firebaseSetup(ServiceMode.DEBUG, emptySet(), adsAppId = ID))
+    }
+
+    // Android config file lookup.
+
+    @TempDir
+    lateinit var moduleDir: File
+
+    private fun file(path: String) = File(moduleDir, path).apply { parentFile.mkdirs(); writeText("{}") }
+
+    @Test fun `no android config file covers no build type`() {
+        assertThat(androidFirebaseConfigBuildTypes(moduleDir)).isEqualTo(emptySet())
+    }
+
+    @Test fun `the root android config file covers every build type`() {
+        file("google-services.json")
+
+        assertThat(androidFirebaseConfigBuildTypes(moduleDir)).isEqualTo(setOf("debug", "release"))
+    }
+
+    @Test fun `a build type's own android config file covers only that build type`() {
+        file("src/debug/google-services.json")
+
+        assertThat(androidFirebaseConfigBuildTypes(moduleDir)).isEqualTo(setOf("debug"))
+    }
+
+    @Test fun `an android config file per build type covers both`() {
+        file("src/debug/google-services.json")
+        file("src/release/google-services.json")
+
+        assertThat(androidFirebaseConfigBuildTypes(moduleDir)).isEqualTo(setOf("debug", "release"))
+    }
+
+    @Test fun `a directory named like the android config file does not count`() {
+        File(moduleDir, "google-services.json").mkdirs()
+        File(moduleDir, "src/release/google-services.json").mkdirs()
+
+        assertThat(androidFirebaseConfigBuildTypes(moduleDir)).isEqualTo(emptySet())
     }
 }
