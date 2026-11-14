@@ -67,11 +67,15 @@ reminders.schedule(
   ```
 
   Pass `postPast = false` when the list may be stale by the time `setAll` runs, for example a replan
-  at app start that can race a reminder's alarm or a boot broadcast. Then `setAll` never posts: a
-  reminder whose time has passed is left exactly as stored (its alarm shows it once, even if the new
-  list changed it) or, if it isn't stored, dropped as already shown or missed. A reminder can't show
-  twice because an alarm fired between the app's read and its `setAll`. The default (`true`) keeps the
-  late rule below.
+  at app start that can race a reminder's alarm or a boot broadcast. Then `setAll` never posts. For a
+  reminder in the list whose time has passed: a stored reminder that is still due is left for its
+  alarm (exactly as stored, even if the list changed it; on iOS, one beyond the 64 armed waits for
+  the next launch); one that isn't due yet is cancelled; one that isn't stored is dropped as already
+  shown or missed. A reminder can't show twice because an alarm fired between the app's read and its
+  `setAll`. The default (`true`) keeps the late rule below.
+
+  In both modes, a stored reminder left out of the list is cancelled, even one that is already due:
+  leave a due reminder out and it's never shown.
 - `cancel(id)`, `cancelAll()` and `pending()` do what they say.
 
 `at` is a local date and time. It's read in the phone's current time zone, so a 09:00 reminder
