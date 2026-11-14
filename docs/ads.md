@@ -37,6 +37,7 @@ imports the ads SDK.
 | `ads.android.appId`, `ads.ios.appId` | `ca-app-pub-<16 digits>~<10 digits>` | Same keys Firebase uses ([firebase.md](firebase.md)). Required with `ads.enabled=true` |
 | `ads.android.banner.<placement>` | `ca-app-pub-<16 digits>/<10 digits>` | The real AdMob banner unit for that placement on Android |
 | `ads.ios.banner.<placement>` | same | The same on iOS |
+| `ads.nonPersonalized` | `false` (default) or `true` | Every ad request asks for a non-personalized ad, on both platforms (see "Non-personalized ads") |
 | `ads.ios.requestTracking` | `false` (default) or `true` | Ask for App Tracking Transparency (see below) |
 | `ads.ios.trackingMessage` | text | The ATT prompt's explanation. Required with `requestTracking=true`; must not contain `$(` or `${` |
 
@@ -165,9 +166,32 @@ try await SharedGraph.shared.adFree()?.clear()
 
 Off by default. With `ads.ios.requestTracking=true` (and the message), the prompt is shown the first
 time a banner would load: after consent is resolved, never at startup and never on launch 1. Banners
-wait for the answer. The foundation never forces non-personalized requests; whatever the user and
-UMP decide applies. Without the key, the app never asks and doesn't need
+wait for the answer. Unless the app sets `ads.nonPersonalized=true` (below), the foundation doesn't
+force non-personalized requests; whatever the user and UMP decide applies. Without the key, the app never asks and doesn't need
 `NSUserTrackingUsageDescription`.
+
+## Non-personalized ads
+
+`ads.nonPersonalized=true` in `app.properties` makes every banner request carry AdMob's `npa=1`
+extra, whatever consent and ATT allow:
+
+| | How the request carries it |
+|---|---|
+| Android | `AdRequest.Builder().addNetworkExtrasBundle(AdMobAdapter::class.java, bundle)` with `npa` = `"1"` |
+| iOS | `Request.register(Extras)` with `additionalParameters = ["npa": "1"]` (`GADExtras` in Objective-C) |
+
+- Default `false`: the request is the plain `AdRequest.Builder().build()` / `Request()` it was
+  before, so an app that doesn't set the key sends the same requests as before.
+- The setting is published only for a build type where ads are on (Android's
+  `foundation_ads_non_personalized`, iOS's `WL_ADS_NON_PERSONALIZED`, which the `WhitelabelAdsApp`
+  template's phase copies to `WLAdsNonPersonalized` in the built Info.plist). The app's own
+  Info.plist needs nothing new.
+- What it does: Google doesn't use the request to personalize the ad. What it doesn't do: consent is
+  still gathered (UMP's storage and measurement choices still apply), and Google still uses the
+  request for frequency capping, fraud prevention and measurement. Sensitive ad categories and the
+  maximum content rating are AdMob console settings, not code.
+- Analytics user properties never carry health data ([firebase.md](firebase.md)), with or without
+  this switch.
 
 ## Privacy choices
 

@@ -81,7 +81,7 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
 - **Sign-in:** set `requiresSignIn = true` when the feature calls endpoints that need a session.
   An app that adds the feature without `auth()` then fails at startup with a message naming
   `auth()`. Read the user and session from `:core:domain` (`UserRepository`, `SessionRepository`).
-- **Analytics:** inject `Analytics` (`:core:analytics`) and use the names in `AnalyticsEvents`.
+- **Analytics:** inject `Analytics` (`:core:analytics`) and use the names in `AnalyticsEvents`. User properties (`setUserProperty`) never carry health or personal data; see [firebase.md](firebase.md#user-properties).
   Event params never contain an email, a name, a token or text the user typed. The shell already
   tracks `screen_view`.
 - **Feature flags:** if the feature can be switched off remotely, give it a `flagKey`. Then document
