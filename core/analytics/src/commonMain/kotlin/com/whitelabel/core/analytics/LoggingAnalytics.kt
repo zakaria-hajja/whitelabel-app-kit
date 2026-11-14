@@ -6,6 +6,9 @@ class LoggingAnalytics(private val log: (String) -> Unit) : Analytics {
         val params = event.params.entries.sortedBy { it.key }.joinToString(", ") { "${it.key}=${it.value}" }
         log("${event.name} {$params}")
     }
+
+    /** Writes `user_property name=value`. */
+    override fun setUserProperty(property: UserProperty) = log("user_property ${property.name}=${property.value}")
 }
 
 /** Writes each recorded failure to [log]. */

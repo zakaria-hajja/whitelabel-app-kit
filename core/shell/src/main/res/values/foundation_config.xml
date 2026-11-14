@@ -20,4 +20,5 @@
     <string name="foundation_ads" translatable="false">off</string>
     <string name="foundation_ads_declared" translatable="false">false</string>
     <string name="foundation_ads_units" translatable="false"></string>
+    <string name="foundation_ads_non_personalized" translatable="false">false</string>
 </resources>

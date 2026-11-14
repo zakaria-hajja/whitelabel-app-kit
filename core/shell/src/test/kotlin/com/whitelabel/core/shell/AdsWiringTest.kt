@@ -8,6 +8,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNull
 import com.whitelabel.core.ads.AdPlacement
+import com.whitelabel.core.ads.AdRequestPolicy
 import com.whitelabel.core.ads.AdsController
 import com.whitelabel.core.ads.AdsServicesContributor
 import com.whitelabel.core.ads.AdsWiring
@@ -168,6 +169,18 @@ class AdsWiringTest {
     @Test fun `on in release uses the built units`() {
         val wiring = adsWiring(withHome, declared = true, mode = "on", units = "home=$UNIT", contributorPresent = true, debugBuild = false)
         assertThat(wiring).isEqualTo(AdsWiring(enabled = true, units = mapOf("home" to UNIT)))
+    }
+
+    @Test fun `the non-personalized setting reaches the wiring and is off by default`() {
+        val npa = adsWiring(withHome, declared = true, mode = "on", units = "home=$UNIT", contributorPresent = true, debugBuild = false, nonPersonalized = true)
+        assertThat(npa.request).isEqualTo(AdRequestPolicy(nonPersonalized = true))
+        val plain = adsWiring(withHome, declared = true, mode = "on", units = "home=$UNIT", contributorPresent = true, debugBuild = false)
+        assertThat(plain.request).isEqualTo(AdRequestPolicy.DEFAULT)
+    }
+
+    @Test fun `the graph binds the wiring's request policy for the banner host`() {
+        val koin = graph(withHome, AdsWiring(enabled = true, units = mapOf("home" to UNIT), request = AdRequestPolicy(nonPersonalized = true)))
+        assertThat(koin.get<AdRequestPolicy>()).isEqualTo(AdRequestPolicy(nonPersonalized = true))
     }
 
     @Test fun `a unit without a placement fails, in release and in debug`() {

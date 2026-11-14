@@ -200,6 +200,37 @@ val title = values.string("home_title", "Welcome")   // the default is always yo
   Release, so a console change shows at once in Debug and within a day in Release.
 - `RemoteValues` is separate from the backend's `app/config` feature flags.
 
+## User properties
+
+A user property is an attribute of the user that Firebase groups later events by (an audience, a
+funnel split). Set it from shared code with the injected `Analytics`:
+
+```kotlin
+analytics.setUserProperty("garden_size_bucket", "3_5")          // or setUserProperty(UserProperty(name, value))
+```
+
+> **Never health data, never personal data.** A user property is stored by Google with the user's
+> analytics profile and joined to every later event. Only coarse buckets of app usage belong in one
+> (`garden_size_bucket=3_5`). Never a date, a cycle or period detail, a symptom, a mood, a note, a
+> name, an email or anything the user typed. Reviewers reject a property that carries any of it.
+
+- **Consent:** exactly the same gate as `track()`. Before consent is resolved, or when it failed,
+  the call is dropped, not queued. Set the property again on a later launch (once per app start is
+  the usual pattern), so a launch where consent was missing doesn't leave the property unset.
+- **Without Firebase** (`firebase.enabled=false`, or a Release build of `debug`) nothing is sent:
+  the shell's logging `Analytics` writes `user_property name=value` to the log, as it does for events.
+  The fake Firebase logs the same line behind the consent gate.
+- **Limits** (Firebase's): the name is lowercase snake case, 1 to 24 characters, starting with a
+  letter, and must not start with `firebase_`, `google_` or `ga_`. The value is 1 to 36 characters
+  (UTF-16 units, so an emoji counts as two). Anything else throws `IllegalArgumentException` when the
+  `UserProperty` is built, like an invalid event name. Firebase allows 25 user properties per project.
+- **iOS:** the same Kotlin call; `FirebaseAnalyticsAdapter` forwards it to
+  `Analytics.setUserProperty(_:forName:)`. A Swift type that implements `Shared.Analytics` itself
+  must implement `setUserProperty(property:)` (Kotlin's default body doesn't reach Swift).
+- **Tests:** `RecordingAnalytics` (`:core:analytics`) records events and user properties in order,
+  and `userPropertyValues` gives the latest value of each. Use it instead of a hand-written fake.
+  An existing `Analytics` implementation keeps compiling: the interface's default does nothing.
+
 ## Consent
 
 Where the law requires it (EEA/UK, as UMP decides), the user is asked once per launch, after the

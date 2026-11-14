@@ -26,6 +26,8 @@ data class AppConfig(
     /** Banner unit IDs per placement, from `ads.android.banner.<placement>` and `ads.ios.banner.<placement>`. */
     val adsAndroidUnits: Map<String, String> = emptyMap(),
     val adsIosUnits: Map<String, String> = emptyMap(),
+    /** `ads.nonPersonalized`: every ad request asks for a non-personalized ad (AdMob's `npa=1`), on both platforms. */
+    val adsNonPersonalized: Boolean = false,
     /** `ads.ios.requestTracking`: whether iOS asks for App Tracking Transparency; needs [iosTrackingMessage]. */
     val iosRequestTracking: Boolean = false,
     val iosTrackingMessage: String? = null,

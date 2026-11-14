@@ -81,3 +81,19 @@ fun adsUnitsString(units: Map<String, String>): String =
  */
 fun resolvedAdmobAppId(ads: AdsSetup, appId: String?, buildType: String): String =
     ads.admobAppIdFor[buildType] ?: admobManifestPlaceholder(appId)
+
+/**
+ * The ads resources the Android shell reads for [buildType]: `foundation_ads` (`on`/`off`),
+ * `foundation_ads_declared`, `foundation_ads_units` and `foundation_ads_non_personalized`
+ * (`ads.nonPersonalized`, published as `true` only where ads are on, like iOS's
+ * `WL_ADS_NON_PERSONALIZED`).
+ */
+fun androidAdsResValues(ads: AdsSetup, nonPersonalized: Boolean, buildType: String): Map<String, String> {
+    val on = ads.modeFor.getValue(buildType) == "on"
+    return mapOf(
+        "foundation_ads" to ads.modeFor.getValue(buildType),
+        "foundation_ads_declared" to ads.declared.toString(),
+        "foundation_ads_units" to adsUnitsString(ads.unitsFor.getValue(buildType)),
+        "foundation_ads_non_personalized" to (on && nonPersonalized).toString(),
+    )
+}

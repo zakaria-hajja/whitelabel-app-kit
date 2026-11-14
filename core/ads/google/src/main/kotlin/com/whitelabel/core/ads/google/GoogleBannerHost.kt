@@ -19,12 +19,15 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.os.Bundle
+import com.google.ads.mediation.admob.AdMobAdapter
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
+import com.whitelabel.core.ads.AdRequestPolicy
 import com.whitelabel.core.ads.BannerHost
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
@@ -35,9 +38,10 @@ import kotlinx.coroutines.withContext
 
 /**
  * Google Mobile Ads banners: an adaptive anchored [AdView] for the available width. The SDK starts
- * on the first banner the rules let load (consent is resolved by then), never at app startup.
+ * on the first banner the rules let load (consent is resolved by then), never at app startup. Every
+ * request follows [request] (`ads.nonPersonalized`).
  */
-internal object GoogleBannerHost : BannerHost {
+internal class GoogleBannerHost(val request: AdRequestPolicy) : BannerHost {
     @Composable
     override fun Banner(unitId: String, onRequested: () -> Unit, onLoaded: () -> Unit, onFailed: () -> Unit) {
         val context = LocalContext.current
@@ -67,7 +71,7 @@ internal object GoogleBannerHost : BannerHost {
                                 override fun onAdLoaded() = currentOnLoaded()
                                 override fun onAdFailedToLoad(error: LoadAdError) = currentOnFailed()
                             }
-                            loadAd(AdRequest.Builder().build())
+                            loadAd(adRequest(request))
                         }.also { view = it }
                     },
                     onRelease = { it.destroy() },
@@ -77,6 +81,17 @@ internal object GoogleBannerHost : BannerHost {
             }
         }
     }
+}
+
+/** The banner's request: AdMob's network extras from [policy] (`npa=1` when non-personalized), else a plain request. */
+internal fun adRequest(policy: AdRequestPolicy): AdRequest {
+    val builder = AdRequest.Builder()
+    val extras = policy.extras
+    if (extras.isNotEmpty()) {
+        val bundle = Bundle().apply { extras.forEach { (key, value) -> putString(key, value) } }
+        builder.addNetworkExtrasBundle(AdMobAdapter::class.java, bundle)
+    }
+    return builder.build()
 }
 
 /** Pauses [view] while the screen is in the background, as the SDK asks. */

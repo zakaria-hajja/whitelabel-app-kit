@@ -9,7 +9,8 @@ import WhitelabelKit
  * `WL_ADS` (`WLAds` in Info.plist):
  * - `on`: hands the shared graph the UMP consent port and the tracking prompt (ATT when
  *   `ads.ios.requestTracking` is on, `WLAdsTracking` yes; otherwise none) and registers Google's
- *   banner host. The SDK itself starts lazily, on the first banner the rules let load. The app's
+ *   banner host, whose requests carry `npa=1` with `ads.nonPersonalized` (`WLAdsNonPersonalized` yes).
+ *   The SDK itself starts lazily, on the first banner the rules let load. The app's
  *   Info.plist must carry the AdMob app ID (`GADApplicationIdentifier`), and with tracking on the
  *   prompt's text (the WhitelabelAdsApp template adds it), or the app stops at launch.
  * - `off` (also Release with `ads.enabled=debug`): nothing; every banner stays hidden.
@@ -21,12 +22,21 @@ public struct AdsService: AppService {
     public var kind: AppServiceKind { .ads }
 
     @MainActor public func install(mode: String) {
+        install(mode: mode, info: Bundle.main.infoDictionary ?? [:])
+    }
+
+    /** [install] with the Info.plist values given (tests). */
+    @MainActor func install(mode: String, info: [String: Any]) {
         guard mode == "on" else { return }
-        let info = Bundle.main.infoDictionary ?? [:]
         if let problem = Self.problem(info) { fatalError(problem) }
         SharedGraph.shared.useConsent(port: UmpConsentPort())
         SharedGraph.shared.useAds(tracking: Self.trackingPort(info))
-        AdBanners.register(GoogleBannerHost())
+        AdBanners.register(GoogleBannerHost(policy: Self.requestPolicy(info)))
+    }
+
+    /** `WLAdsNonPersonalized` (`$(WL_ADS_NON_PERSONALIZED)`, from `ads.nonPersonalized`) is `yes` only with ads on and the setting true. */
+    static func requestPolicy(_ info: [String: Any]) -> AdRequestPolicy {
+        AdRequestPolicy(nonPersonalized: (info["WLAdsNonPersonalized"] as? String) == "yes")
     }
 
     /** `WLAdsTracking` (`$(WL_ADS_TRACKING)`) is `yes` only for a build with ads and tracking on. */

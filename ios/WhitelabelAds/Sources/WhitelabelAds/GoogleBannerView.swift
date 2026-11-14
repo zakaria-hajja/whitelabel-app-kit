@@ -1,4 +1,5 @@
 import GoogleMobileAds
+import Shared
 import SwiftUI
 import WhitelabelKit
 
@@ -6,16 +7,31 @@ import WhitelabelKit
  * Google Mobile Ads banners for the kit's `AdBanner`: a large anchored adaptive banner for the
  * available width. The SDK starts on the first banner the rules let load (consent is resolved by
  * then), never at app startup. `MobileAds.shared.start` doesn't throw today, so `StartOnce`'s retry
- * only matters if a start ever can fail.
+ * only matters if a start ever can fail. Every request follows [policy] (`ads.nonPersonalized`).
  */
 struct GoogleBannerHost: BannerHost {
+    let policy: AdRequestPolicy
+
     func banner(unitId: String, onRequested: @escaping () -> Void, onLoaded: @escaping () -> Void, onFailed: @escaping () -> Void) -> AnyView {
-        AnyView(GoogleBanner(unitId: unitId, onRequested: onRequested, onLoaded: onLoaded, onFailed: onFailed))
+        AnyView(GoogleBanner(unitId: unitId, policy: policy, onRequested: onRequested, onLoaded: onLoaded, onFailed: onFailed))
+    }
+
+    /** The banner's request: Google's `Extras` from [policy] (`npa=1` when non-personalized), else a plain request. */
+    static func request(policy: AdRequestPolicy) -> Request {
+        let request = Request()
+        let extras = policy.extras
+        if !extras.isEmpty {
+            let networkExtras = Extras()
+            networkExtras.additionalParameters = extras
+            request.register(networkExtras)
+        }
+        return request
     }
 }
 
 private struct GoogleBanner: View {
     let unitId: String
+    let policy: AdRequestPolicy
     let onRequested: () -> Void
     let onLoaded: () -> Void
     let onFailed: () -> Void
@@ -33,7 +49,7 @@ private struct GoogleBanner: View {
             if started, width > 0 {
                 let size = largeAnchoredAdaptiveBanner(width: width)
                 // A new unit or width is a new banner view and a new request: the slot collapses until it loads.
-                GoogleBannerRepresentable(unitId: unitId, size: size, onLoaded: onLoaded, onFailed: onFailed)
+                GoogleBannerRepresentable(unitId: unitId, size: size, policy: policy, onLoaded: onLoaded, onFailed: onFailed)
                     .frame(width: size.size.width, height: size.size.height)
                     .id(BannerRequests.key(unitId: unitId, width: width))
                     .onAppear { if requests.appeared(unitId: unitId, width: width) { onRequested() } }
@@ -49,6 +65,7 @@ private struct GoogleBanner: View {
 private struct GoogleBannerRepresentable: UIViewRepresentable {
     let unitId: String
     let size: AdSize
+    let policy: AdRequestPolicy
     let onLoaded: () -> Void
     let onFailed: () -> Void
 
@@ -59,7 +76,7 @@ private struct GoogleBannerRepresentable: UIViewRepresentable {
         banner.adUnitID = unitId
         context.coordinator.update(onLoaded: onLoaded, onFailed: onFailed)
         banner.delegate = context.coordinator
-        banner.load(Request())
+        banner.load(GoogleBannerHost.request(policy: policy))
         return banner
     }
 

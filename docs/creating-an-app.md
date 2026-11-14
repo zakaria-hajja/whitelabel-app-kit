@@ -74,6 +74,7 @@ The build validates this file and reports every problem at once, naming the file
 | `ads.android.appId`, `ads.ios.appId` | `ca-app-pub-1234567890123456~1234567890` | The app's AdMob app IDs (Google's consent SDK needs them). Required with `firebase.enabled=true` or `ads.enabled=true`; validated when present |
 | `ads.enabled` | `debug` | Optional: `false` (default), `true` or `debug` (Debug builds, Google's test units). `true` needs both app IDs and `ads.android.banner.<placement>` / `ads.ios.banner.<placement>` units. See [ads.md](ads.md) |
 | `ads.ios.requestTracking`, `ads.ios.trackingMessage` | `true`, `We use this to show relevant ads.` | Optional iOS App Tracking Transparency prompt; the message is required when it is on |
+| `ads.nonPersonalized` | `true` | Optional: `false` (default) or `true`. Every ad request on both platforms asks for a non-personalized ad (AdMob's `npa=1`). See [ads.md](ads.md) |
 
 - **Base URLs** are the versioned API root. A missing trailing `/` is added for you.
 - **No backend:** leave out both base URLs (and `api.tenant`) for a local-only app. The shell then

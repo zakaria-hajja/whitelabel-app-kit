@@ -140,4 +140,22 @@ class AdsSetupTest {
         assertThat(resolvedAdmobAppId(off, APP_ID, "debug")).isEqualTo(APP_ID)
         assertThat(resolvedAdmobAppId(off, null, "debug")).isEqualTo("")
     }
+
+    @Test fun `android res values publish the mode, declaration, units and non-personalized setting per build type`() {
+        val debugMode = adsSetup(ServiceMode.DEBUG, null, units, Platform.ANDROID, "apps/sample")
+        assertThat(androidAdsResValues(debugMode, nonPersonalized = true, buildType = "debug")).isEqualTo(
+            mapOf(
+                "foundation_ads" to "on",
+                "foundation_ads_declared" to "true",
+                "foundation_ads_units" to "catalog=$TEST_UNIT;home=$TEST_UNIT",
+                "foundation_ads_non_personalized" to "true",
+            ),
+        )
+        // Ads off for the build type: nothing to request, so the setting is published as false.
+        assertThat(androidAdsResValues(debugMode, nonPersonalized = true, buildType = "release").getValue("foundation_ads_non_personalized"))
+            .isEqualTo("false")
+        val on = adsSetup(ServiceMode.ON, APP_ID, units, Platform.ANDROID, "apps/sample")
+        assertThat(androidAdsResValues(on, nonPersonalized = false, buildType = "release").getValue("foundation_ads_non_personalized"))
+            .isEqualTo("false")
+    }
 }

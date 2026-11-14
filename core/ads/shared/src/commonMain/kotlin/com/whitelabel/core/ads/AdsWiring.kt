@@ -12,10 +12,24 @@ enum class AdsPlatform(val bannerKeyPrefix: String, val testBannerUnit: String) 
 }
 
 /**
- * How the ads part of the graph is wired: whether ads are on in this build, and the banner unit of
- * each declared placement (resolved for the build type).
+ * What every ad request carries. With [nonPersonalized] (`ads.nonPersonalized=true` in
+ * app.properties) that is AdMob's `npa=1` extra, so Google serves only non-personalized ads whatever
+ * consent allows; otherwise nothing, and personalization follows consent (UMP) and ATT.
  */
-data class AdsWiring(val enabled: Boolean, val units: Map<String, String>) {
+data class AdRequestPolicy(val nonPersonalized: Boolean) {
+    /** The network extras for AdMob: `npa=1` when [nonPersonalized], else none. */
+    val extras: Map<String, String> get() = if (nonPersonalized) mapOf("npa" to "1") else emptyMap()
+
+    companion object {
+        val DEFAULT = AdRequestPolicy(nonPersonalized = false)
+    }
+}
+
+/**
+ * How the ads part of the graph is wired: whether ads are on in this build, the banner unit of
+ * each declared placement (resolved for the build type), and what each request carries.
+ */
+data class AdsWiring(val enabled: Boolean, val units: Map<String, String>, val request: AdRequestPolicy = AdRequestPolicy.DEFAULT) {
     companion object {
         val OFF = AdsWiring(enabled = false, units = emptyMap())
     }
@@ -36,6 +50,7 @@ fun parseAdsUnits(value: String): Map<String, String> =
  * unit needs its placement, and in a release build a placement needs its unit. In a debug build a
  * placement without a unit gets the [platform]'s test unit. With ads on, [sdkLinked] says whether
  * the platform's Google Mobile Ads piece is there; without it startup fails with [sdkMissing].
+ * [nonPersonalized] is `ads.nonPersonalized` (see [AdRequestPolicy]).
  */
 fun adsWiring(
     usesAds: Boolean,
@@ -47,6 +62,7 @@ fun adsWiring(
     sdkMissing: String,
     debugBuild: Boolean,
     platform: AdsPlatform,
+    nonPersonalized: Boolean = false,
 ): AdsWiring {
     check(!declared || usesAds) { "ads.enabled is set but the app definition doesn't call ads { }" }
     check(declared || !usesAds) { "ads { } needs ads.enabled=true or debug in app.properties" }
@@ -61,6 +77,7 @@ fun adsWiring(
         units = placements.associateWith { name ->
             built[name] ?: if (debugBuild) platform.testBannerUnit else error("placement '$name' has no $prefix$name")
         },
+        request = AdRequestPolicy(nonPersonalized),
     )
 }
 

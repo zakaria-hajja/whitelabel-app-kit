@@ -4,7 +4,8 @@
 # It runs after Xcode processed the Info.plist and before signing. Argument: the built Info.plist
 # (default: $TARGET_BUILD_DIR/$INFOPLIST_PATH).
 # - Always: the settings PlatformFactory and AdsService read, from the generated xcconfig: WLAds
-#   (WL_ADS), WLAdsUnits (WL_ADS_UNITS), WLAdsDeclared (WL_ADS_DECLARED), WLAdsTracking (WL_ADS_TRACKING).
+#   (WL_ADS), WLAdsUnits (WL_ADS_UNITS), WLAdsDeclared (WL_ADS_DECLARED), WLAdsTracking (WL_ADS_TRACKING),
+#   WLAdsNonPersonalized (WL_ADS_NON_PERSONALIZED).
 # - WL_ADS on: Google's SKAdNetworkItems (the plist fragment at the end of this script). An app that
 #   lists its own SKAdNetworkItems keeps its list.
 # - WL_ADS on and WL_ADS_TRACKING yes: NSUserTrackingUsageDescription = WL_ADS_TRACKING_MESSAGE, the
@@ -22,6 +23,7 @@ plutil -replace WLAds -string "${WL_ADS:-off}" "$plist"
 plutil -replace WLAdsUnits -string "${WL_ADS_UNITS:-}" "$plist"
 plutil -replace WLAdsDeclared -string "${WL_ADS_DECLARED:-false}" "$plist"
 plutil -replace WLAdsTracking -string "${WL_ADS_TRACKING:-no}" "$plist"
+plutil -replace WLAdsNonPersonalized -string "${WL_ADS_NON_PERSONALIZED:-no}" "$plist"
 if [ "${WL_ADS:-off}" != "on" ]; then
   exit 0
 fi
