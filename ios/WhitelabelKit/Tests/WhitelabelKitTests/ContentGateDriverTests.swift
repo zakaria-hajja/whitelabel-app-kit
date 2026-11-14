@@ -1,3 +1,4 @@
+import Foundation
 import UIKit
 import XCTest
 import Shared
@@ -13,7 +14,7 @@ final class ContentGateDriverTests: XCTestCase {
     private var current = ContentGateState.open
     private var backgrounds = 0
     private var foregrounds = 0
-    private let center = NotificationCenter()
+    private let center = Foundation.NotificationCenter()
 
     private func makeDriver(onForeground: @escaping () -> Void = {}, onBackground: @escaping () -> Void = {}) -> ContentGateDriver {
         ContentGateDriver(

@@ -1,3 +1,4 @@
+import Foundation
 import UIKit
 import Shared
 
@@ -28,7 +29,8 @@ final class ContentGateDriver {
         read: @escaping () -> ContentGateState,
         foreground: @escaping () -> Void,
         background: @escaping () -> Void,
-        center: NotificationCenter = .default
+        // Qualified: an app's Shared framework may export its own `NotificationCenter` (Munch's reminders do).
+        center: Foundation.NotificationCenter = .default
     ) {
         self.read = read
         self.foreground = foreground
