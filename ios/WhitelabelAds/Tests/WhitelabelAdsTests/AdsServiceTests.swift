@@ -41,4 +41,15 @@ final class AdsServiceTests: XCTestCase {
         XCTAssertFalse(AdsService.trackingPort(["WLAdsTracking": "no"]) is AttTrackingPort)
         XCTAssertFalse(AdsService.trackingPort([:]) is AttTrackingPort)
     }
+
+    func testTheRequestPolicyFollowsTheNonPersonalizedSetting() {
+        XCTAssertTrue(AdsService.requestPolicy(["WLAdsNonPersonalized": "yes"]).nonPersonalized)
+        XCTAssertFalse(AdsService.requestPolicy(["WLAdsNonPersonalized": "no"]).nonPersonalized)
+        XCTAssertFalse(AdsService.requestPolicy([:]).nonPersonalized)
+    }
+
+    func testOnModeRegistersAHostWithTheSettingsPolicy() {
+        AdsService().install(mode: "on", info: ["GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511", "WLAdsNonPersonalized": "yes"])
+        XCTAssertEqual((AdBanners.host as? GoogleBannerHost)?.policy, AdRequestPolicy(nonPersonalized: true))
+    }
 }
