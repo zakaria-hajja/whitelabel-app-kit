@@ -6,6 +6,8 @@ import assertk.assertions.isEmpty
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.CrashReporter
+import com.whitelabel.core.analytics.RecordingAnalytics
+import com.whitelabel.core.analytics.UserProperty
 import com.whitelabel.core.consent.ConsentState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.test.Test
@@ -45,5 +47,21 @@ class ConsentGatedAnalyticsTest {
         state.value = ConsentState.Resolved(false, false)
         gated.record(late)
         assertThat(inner.crashes).containsExactly(late)
+    }
+
+    @Test fun `user properties before consent is resolved are dropped and not queued`() {
+        val inner = RecordingAnalytics()
+        val state = MutableStateFlow<ConsentState>(ConsentState.Unknown)
+        val gated = ConsentGatedAnalytics(inner, state)
+        gated.setUserProperty(UserProperty("bucket", "early"))
+        state.value = ConsentState.Resolved(canRequestAds = false, analyticsAllowed = true)
+        gated.setUserProperty(UserProperty("bucket", "late"))
+        assertThat(inner.userProperties).containsExactly(UserProperty("bucket", "late"))
+    }
+
+    @Test fun `failed consent drops user properties`() {
+        val inner = RecordingAnalytics()
+        ConsentGatedAnalytics(inner, MutableStateFlow(ConsentState.Failed)).setUserProperty(UserProperty("bucket", "x"))
+        assertThat(inner.userProperties).isEmpty()
     }
 }
