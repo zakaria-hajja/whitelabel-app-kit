@@ -40,6 +40,11 @@ abstract class FoundationApplication : Application() {
     /** The app's lock, resolved once by [startFoundation]; the activity reads this instance. */
     internal val contentGate: ContentGate? get() = gateLifecycle?.gate
 
+    /** The gated shell shows its content: the windows covered in the background may show again. */
+    internal fun onGatedContentShown() {
+        gateLifecycle?.onContentShown()
+    }
+
     override fun onCreate() {
         super.onCreate()
         startFoundation()

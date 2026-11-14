@@ -138,7 +138,7 @@ class FoundationActivity : AppCompatActivity() {
         ShellRoot(
             screen = shellScreen(state.showsContent(hasGate), gateState),
             lockScreen = checkNotNull(definition.lockScreen),
-            onContentShown = ::requestConsentIfDue,
+            onContentShown = ::onContentShown,
         ) {
             ShellNavHost(
                 definition = definition,
@@ -160,6 +160,12 @@ class FoundationActivity : AppCompatActivity() {
     private fun requestConsent() {
         consentRequested = true
         window.decorView.post { consent.gatherOnLaunch() }
+    }
+
+    /** Gate path: the content shows (unlock, or a return within the gate's grace). */
+    private fun onContentShown() {
+        (application as FoundationApplication).onGatedContentShown()
+        requestConsentIfDue()
     }
 
     /**
