@@ -4,6 +4,7 @@ import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import assertk.assertions.isEqualTo
 import assertk.assertions.messageContains
@@ -134,7 +135,7 @@ class AppDefinitionTest {
             add(entry("a", RouteA))
             contentGate { androidx.compose.material3.Text("Lock") }
         }
-        assertThat(definition.lockScreen != null).isEqualTo(true)
+        assertThat(definition.lockScreen).isNotNull()
     }
 
     @Test fun `without contentGate there is no lock screen`() {
