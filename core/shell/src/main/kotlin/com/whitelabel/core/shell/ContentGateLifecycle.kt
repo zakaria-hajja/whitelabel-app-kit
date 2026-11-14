@@ -6,17 +6,33 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.whitelabel.core.shell.model.ContentGate
+import com.whitelabel.core.shell.model.ContentGateState
 import com.whitelabel.core.shell.model.contentGateProblem
 import org.koin.core.Koin
 
 /**
  * Reports the app's foreground and background to [gate]. Observes the **process** lifecycle: it
  * ignores rotation (ON_STOP is debounced) and holds across every activity of the app. Process
- * ON_START comes before the first activity's `onResume`, so the gate decides before the first frame.
+ * ON_START comes before the first activity's `onResume`, so the gate decides before the activity's
+ * first frame. The app's other windows (dialogs, sheets) draw earlier than that on return, so they are
+ * covered while in the background and uncovered only once the gate is OPEN ([AppWindowCover]).
  */
-internal class ContentGateLifecycle(val gate: ContentGate) : DefaultLifecycleObserver {
-    override fun onStart(owner: LifecycleOwner) = gate.onAppForeground()
-    override fun onStop(owner: LifecycleOwner) = gate.onAppBackground()
+internal class ContentGateLifecycle(
+    val gate: ContentGate,
+    private val windows: AppWindows = AppWindowCover(),
+) : DefaultLifecycleObserver {
+    override fun onStart(owner: LifecycleOwner) {
+        gate.onAppForeground()
+        if (gate.state.value == ContentGateState.OPEN) windows.uncover()
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        gate.onAppBackground()
+        windows.cover()
+    }
+
+    /** The gated shell shows the content (the unlock after a relock): windows that outlived the lock show again. */
+    fun onContentShown() = windows.uncover()
 }
 
 /**

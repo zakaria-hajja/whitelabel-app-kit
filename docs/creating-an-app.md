@@ -182,8 +182,8 @@ The app's `ContentGate` (shared Kotlin, `com.whitelabel.core.shell.model`) must 
 What the lock holds: the lock **replaces** the app in composition, so nothing under it exists. No
 screens, dialogs, sheets (Compose) or banners (so no ATT prompt either), and no deep link opens: a link that
 arrives while locked waits and opens after unlock. Launch consent (UMP) waits for the first unlock.
-A consent form already open when the app relocks stays above the lock on Android (it's a Dialog
-window). On iOS it stays open **under** the lock and is still there after unlock.
+A consent form already open when the app relocks is hidden under the lock on Android and shows
+again after unlock. On iOS it stays open **under** the lock and is still there after unlock.
 
 What survives a relock: the back stack, `rememberSaveable` state and ViewModels. Plain `remember`
 state doesn't. Each unlock logs one `screen_view` for the current screen (the screen is viewed
@@ -197,8 +197,17 @@ unlock. The lock window doesn't inherit the environment around `RootView`: injec
 screen needs inside the `lockScreen` closure (see
 [ios.md](ios.md#content-gate-app-lock)).
 
-On Android, never put protected content in windows outside the composition (View dialogs,
-`PopupWindow`, toasts, the system share sheet): a relock doesn't hide them.
+On Android, every window of the app besides the activity's own (Compose dialogs and bottom sheets,
+View dialogs, `PopupWindow`s) is hidden from the moment the app goes to the background: on return the
+system shows those windows before the gate can decide, so they would flash their old content above or
+before the lock. A return the gate lets through (within its grace period) shows them again at once,
+state kept; after a relock the composition's ones are gone and any other shows again after unlock.
+Two cases are not covered yet and are tracked as a follow-up: a window created after the app went to
+the background (for example a dialog a ViewModel event opens while the app is in the background), and
+a hidden window something shows again while the app is in the background. Either can still flash on
+return. On API 26–28 the hiding is best effort (it reads the window list by reflection; if that fails,
+nothing is hidden).
+Never put protected content in toasts or the system share sheet: they are not the app's windows.
 
 ## 5. Build file and manifest
 
