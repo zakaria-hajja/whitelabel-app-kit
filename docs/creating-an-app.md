@@ -170,8 +170,10 @@ The app's `ContentGate` (shared Kotlin, `com.whitelabel.core.shell.model`) must 
   after returning is already the lock. Android calls it once at launch too and iOS doesn't; the
   result must not depend on that. `onAppBackground()` is the app going to the background (process
   level: not on rotation, not for one iPad scene).
-- The binding is resolved while the app starts (Android: `Application.onCreate`), so creating it
-  must be cheap and must not throw.
+- Bind it as a `single`: the lock screen, the shell and the lifecycle must hold the same instance.
+  The shell resolves it once while the app starts (Android: `Application.onCreate`) and reads that
+  instance afterwards, so creating it must be cheap and must not throw. A gate that fails to build
+  fails startup; the app never runs unlocked because of wiring.
 - `protectsAppSwitcher`: true while `PENDING` and whenever the lock is on. On Android the shell then
   hides the recents snapshot (API 33+ `setRecentsScreenshotEnabled(false)`, API 26–32 `FLAG_SECURE`,
   which also blocks the user's own screenshots). On iOS the app draws its own switcher cover.

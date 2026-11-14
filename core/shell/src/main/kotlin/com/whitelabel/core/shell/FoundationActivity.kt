@@ -17,7 +17,6 @@ import com.whitelabel.core.shell.model.ShellScreen
 import com.whitelabel.core.shell.model.ShellState
 import com.whitelabel.core.shell.model.shellScreen
 import kotlinx.coroutines.launch
-import org.koin.android.ext.android.getKoin
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.whitelabel.core.analytics.Analytics
@@ -48,8 +47,14 @@ class FoundationActivity : AppCompatActivity() {
     private val viewModel: ShellViewModel by viewModel()
     private var consentRequested = false
 
-    /** The app's lock, when it binds one ([AppDefinitionBuilder.contentGate]); null runs the shell as it always did. */
-    private val contentGate: ContentGate? by lazy { getKoin().getOrNull() }
+    /**
+     * The app's lock, when it binds one ([AppDefinitionBuilder.contentGate]); null runs the shell as it
+     * always did. It is the instance [FoundationApplication] resolved and the process lifecycle drives,
+     * never a second Koin lookup. A lock screen without that instance fails here instead of opening.
+     */
+    private val contentGate: ContentGate? by lazy {
+        (application as FoundationApplication).contentGate.also { checkContentGate(definition, it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()

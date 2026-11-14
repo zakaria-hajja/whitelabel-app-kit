@@ -7,15 +7,29 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.whitelabel.core.shell.model.ContentGate
 import com.whitelabel.core.shell.model.contentGateProblem
+import org.koin.core.Koin
 
 /**
  * Reports the app's foreground and background to [gate]. Observes the **process** lifecycle: it
  * ignores rotation (ON_STOP is debounced) and holds across every activity of the app. Process
  * ON_START comes before the first activity's `onResume`, so the gate decides before the first frame.
  */
-internal class ContentGateLifecycle(private val gate: ContentGate) : DefaultLifecycleObserver {
+internal class ContentGateLifecycle(val gate: ContentGate) : DefaultLifecycleObserver {
     override fun onStart(owner: LifecycleOwner) = gate.onAppForeground()
     override fun onStop(owner: LifecycleOwner) = gate.onAppBackground()
+}
+
+/**
+ * Resolves the app's gate **once** for the process and wraps it in the lifecycle that drives it.
+ * The activity reads this same instance ([FoundationApplication.contentGate]), never Koin again, so a
+ * `factory` binding can't split the lock the user sees from the one the lifecycle relocks. A gate
+ * that fails to build (Koin's `InstanceCreationException`) or a half-done wiring fails here, at
+ * startup: the app never runs unlocked because of wiring.
+ */
+internal fun resolveContentGate(koin: Koin, definition: AppDefinition): ContentGateLifecycle? {
+    val gate = koin.getOrNull<ContentGate>()
+    checkContentGate(definition, gate)
+    return gate?.let(::ContentGateLifecycle)
 }
 
 /** Fails at startup when the app's lock wiring is half done: a lock screen without a gate, or the reverse. */

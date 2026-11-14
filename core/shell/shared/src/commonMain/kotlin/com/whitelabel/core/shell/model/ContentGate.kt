@@ -10,8 +10,9 @@ enum class ContentGateState { PENDING, LOCKED, OPEN }
  * reads [state], reports the app's foreground/background, and applies [protectsAppSwitcher].
  * The shell never unlocks: the app's lock screen does that through its own implementation.
  *
- * Resolved from Koin while the app starts (Android: `Application.onCreate`), so creating it must
- * be cheap and must not throw.
+ * Bind it as a **`single`**: the lock screen that unlocks it, the shell and the lifecycle must all
+ * hold the same instance. Resolved from Koin once while the app starts (Android:
+ * `Application.onCreate`), so creating it must be cheap and must not throw.
  */
 interface ContentGate {
     /**

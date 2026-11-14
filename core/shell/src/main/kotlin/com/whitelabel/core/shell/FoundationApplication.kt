@@ -37,6 +37,9 @@ abstract class FoundationApplication : Application() {
     /** Forwards the app's foreground/background to its content gate, if it binds one. */
     private var gateLifecycle: ContentGateLifecycle? = null
 
+    /** The app's lock, resolved once by [startFoundation]; the activity reads this instance. */
+    internal val contentGate: ContentGate? get() = gateLifecycle?.gate
+
     override fun onCreate() {
         super.onCreate()
         startFoundation()
@@ -58,9 +61,7 @@ abstract class FoundationApplication : Application() {
             androidContext(this@FoundationApplication)
             modules(foundationModules(definition, contributors, firebase, ads, buildTypeModules(this@FoundationApplication)))
         }
-        val gate = GlobalContext.get().getOrNull<ContentGate>()
-        checkContentGate(definition, gate)
-        if (gate != null) gateLifecycle = ContentGateLifecycle(gate).also(::registerContentGateLifecycle)
+        gateLifecycle = resolveContentGate(GlobalContext.get(), definition)?.also(::registerContentGateLifecycle)
     }
 
     /**
