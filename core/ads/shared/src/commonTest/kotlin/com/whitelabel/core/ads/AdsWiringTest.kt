@@ -21,7 +21,8 @@ class AdsWiringTest {
         units: String = "home=$unit",
         sdkLinked: Boolean = true,
         debugBuild: Boolean = false,
-    ) = adsWiring(usesAds, placements, declared, mode, units, sdkLinked, "no sdk", debugBuild, AdsPlatform.IOS)
+        nonPersonalized: Boolean = false,
+    ) = adsWiring(usesAds, placements, declared, mode, units, sdkLinked, "no sdk", debugBuild, AdsPlatform.IOS, nonPersonalized)
 
     @Test fun `the declaration and the setting must agree in every build type`() {
         listOf(true, false).forEach { debugBuild ->
@@ -100,5 +101,17 @@ class AdsWiringTest {
         val placements = listOf(AdPlacement("own", null), AdPlacement("top", "home"))
         assertThat(tabPlacementFor(placements) { it == "home" }).isEqualTo("top")
         assertThat(tabPlacementFor(placements) { it == "settings" }).isNull()
+    }
+
+    @Test fun `a non-personalized request carries AdMob's npa extra and a default one carries none`() {
+        assertThat(AdRequestPolicy(nonPersonalized = true).extras).isEqualTo(mapOf("npa" to "1"))
+        assertThat(AdRequestPolicy(nonPersonalized = false).extras).isEqualTo(emptyMap())
+        assertThat(AdRequestPolicy.DEFAULT.nonPersonalized).isEqualTo(false)
+    }
+
+    @Test fun `the wiring carries the non-personalized setting and defaults to personalization by consent`() {
+        assertThat(wiring(nonPersonalized = true).request).isEqualTo(AdRequestPolicy(nonPersonalized = true))
+        assertThat(wiring().request).isEqualTo(AdRequestPolicy.DEFAULT)
+        assertThat(AdsWiring.OFF.request).isEqualTo(AdRequestPolicy.DEFAULT)
     }
 }

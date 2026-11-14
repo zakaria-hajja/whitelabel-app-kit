@@ -23,7 +23,7 @@ internal fun adsContributorPresent(contributors: List<ModuleContributor>): Boole
  * Checks the definition's `ads { }` against the app's setting ([declared]: `ads.enabled` isn't
  * `false`), this build's [mode] (`foundation_ads`) and [units] (`foundation_ads_units`), and resolves
  * each declared placement's unit: the shared [com.whitelabel.core.ads.adsWiring], with
- * `:core:ads:google` as the SDK piece.
+ * `:core:ads:google` as the SDK piece. [nonPersonalized] is `foundation_ads_non_personalized`.
  */
 internal fun adsWiring(
     definition: AppDefinition,
@@ -32,6 +32,7 @@ internal fun adsWiring(
     units: String,
     contributorPresent: Boolean,
     debugBuild: Boolean,
+    nonPersonalized: Boolean = false,
 ): AdsWiring = adsWiring(
     usesAds = definition.usesAds,
     placements = definition.adPlacements.map { it.name },
@@ -42,11 +43,12 @@ internal fun adsWiring(
     sdkMissing = "ads are on but :core:ads:google isn't linked",
     debugBuild = debugBuild,
     platform = AdsPlatform.ANDROID,
+    nonPersonalized = nonPersonalized,
 )
 
 /**
- * Reads the app's `foundation_ads_declared`, `foundation_ads` and `foundation_ads_units` strings
- * (false, off and none until the app plugin writes them).
+ * Reads the app's `foundation_ads_declared`, `foundation_ads`, `foundation_ads_units` and
+ * `foundation_ads_non_personalized` strings (false, off, none and false until the app plugin writes them).
  */
 internal fun adsWiringFor(context: Context, definition: AppDefinition, contributors: List<ModuleContributor>): AdsWiring {
     fun string(name: String, fallback: String): String {
@@ -60,5 +62,6 @@ internal fun adsWiringFor(context: Context, definition: AppDefinition, contribut
         units = string("foundation_ads_units", ""),
         contributorPresent = adsContributorPresent(contributors),
         debugBuild = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0,
+        nonPersonalized = string("foundation_ads_non_personalized", "false") == "true",
     )
 }

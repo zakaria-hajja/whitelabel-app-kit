@@ -38,4 +38,14 @@ class AdsKoinTest {
         app.close()
         FileSystem.SYSTEM.deleteRecursively(dir)
     }
+
+    @Test
+    fun `the module binds the request policy it is given and the default without one`() {
+        val npa = koinApplication(createEagerInstances = false) { modules(adsModule(true, emptyMap(), AdRequestPolicy(nonPersonalized = true))) }
+        assertThat(npa.koin.get<AdRequestPolicy>()).isEqualTo(AdRequestPolicy(nonPersonalized = true))
+        npa.close()
+        val plain = koinApplication(createEagerInstances = false) { modules(adsModule(true, emptyMap())) }
+        assertThat(plain.koin.get<AdRequestPolicy>()).isEqualTo(AdRequestPolicy.DEFAULT)
+        plain.close()
+    }
 }
