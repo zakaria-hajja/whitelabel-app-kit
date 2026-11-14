@@ -143,6 +143,12 @@ class ShellNavHostTest {
     }
 
     @Test
+    fun galleryBar_isSurfaceContainerByDefault_dark() {
+        val (pixel, scheme) = barPixel(StylePack.Gallery, dark = true)
+        assertThat(pixel).isEqualTo(scheme.second.toArgb())
+    }
+
+    @Test
     fun galleryBarOnSurface_isSurface_light() {
         val (pixel, scheme) = barPixel(StylePack.Gallery.copy(bottomBar = BottomBarStyle.Surface), dark = false)
         assertThat(pixel).isEqualTo(scheme.first.toArgb())
