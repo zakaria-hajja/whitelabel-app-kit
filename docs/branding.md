@@ -27,16 +27,34 @@ in-app light/dark choice works whatever the system setting. The roles are:
 `primary on_primary primary_container on_primary_container secondary on_secondary
 secondary_container on_secondary_container tertiary on_tertiary tertiary_container
 on_tertiary_container error on_error background on_background surface on_surface
-surface_variant on_surface_variant outline`
+surface_variant on_surface_variant outline outline_variant surface_container_lowest
+surface_container_low surface_container surface_container_high surface_container_highest
+inverse_surface inverse_on_surface inverse_primary`
+
+Where Material draws with the less obvious ones:
+
+| Role | Drawn by |
+|---|---|
+| `surface_container` | the bottom bar, dropdown menus, the Material pack's scrolled top bar |
+| `surface_container_low` | bottom sheets (the Settings pickers) |
+| `surface_container_high` | dialogs (`AppConfirmDialog`) |
+| `surface_container_highest` | a switch's unchecked track, filled cards (Material pack `AppCard`) |
+| `surface_container_lowest` | nothing in the foundation yet; set it so the family stays complete |
+| `outline_variant` | hairlines: the rule above the bottom bar and outlined cards (Gallery), dividers, filter-chip borders |
+| `inverse_surface`, `inverse_on_surface`, `inverse_primary` | snackbars: container, text and action |
 
 - **Defaults:** any role you don't override keeps the Material 3 baseline value from
-  `core/designsystem/src/main/res/values/brand.xml`.
+  `core/designsystem/src/main/res/values/brand.xml`. Those equal Material's own
+  `lightColorScheme()`/`darkColorScheme()` (a test checks it), so an app looks exactly like
+  Material wherever it sets nothing. The surface-container roles stay lilac until you set them.
 - **Override more than primary:** components such as the bottom-bar indicator use
   `secondary_container`. An app that only overrides the primary family, as showcase does
   today, shows the baseline lavender there. Override at least the primary, secondary and tertiary
   families for a fully branded look.
 - **Contrast:** every `on_*` color must reach WCAG AA (4.5:1) against its base color, in both light
-  and dark. Write the ratios in a comment in your `brand.xml`.
+  and dark; so must `on_surface_variant` on `surface_container` (bar labels), `on_surface` on
+  `surface_container_high` (dialogs) and `inverse_on_surface` on `inverse_surface` (snackbars).
+  `outline_variant` is a decorative hairline and is exempt. Write the ratios in a comment in your `brand.xml`.
   `contrastRatio()` in `:core:designsystem` computes them.
 - **Dynamic color is off,** so the brand always applies.
 
@@ -71,6 +89,10 @@ appDefinition {
 | Value rows (`SettingsValueRow`) | label and value on one line | the value under the label, muted |
 
 - An app that never calls `style()` gets `Material`, which is exactly the look apps had before packs.
+- **Bottom bar on the page surface:** `StylePack.Gallery.copy(bottomBarOnSurface = true)` draws
+  the bar on `surface`, under its `outline_variant` hairline, instead of on `surface_container`.
+  It is off by default and only applies to Hairline packs: a Shadow pack needs the container color
+  to set the bar apart.
 - Vary a pack with `copy`: `StylePack.Gallery.copy(sizing = StylePack.Gallery.sizing.copy(controlHeight = 56.dp))`.
 - With Android's "Remove animations" on, every transition becomes a 150 ms crossfade, and
   `AppTheme.reducedMotion` is true so features can stop their own ambient animations.

@@ -25,6 +25,12 @@ data class StylePack(
     val sectionHeader: SectionHeaderStyle = SectionHeaderStyle.Accent,
     /** How a setting and its value sit in a row (`SettingsValueRow`). */
     val valueRows: ValueRowLayout = ValueRowLayout.Inline,
+    /**
+     * With [SurfaceStyle.Hairline], draw the bottom bar on `surface` under its hairline instead of
+     * Material's `surfaceContainer`. Ignored with [SurfaceStyle.Shadow], whose bar needs its
+     * container color to stand apart. Off by default, so existing apps keep their bar.
+     */
+    val bottomBarOnSurface: Boolean = false,
 ) {
     /** This pack with "Remove animations" applied: every motion becomes [MotionSpec.Reduced]. */
     fun reduced(): StylePack = copy(motion = MotionSpec.Reduced)

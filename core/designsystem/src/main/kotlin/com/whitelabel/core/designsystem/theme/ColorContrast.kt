@@ -28,4 +28,8 @@ fun ColorScheme.contrastPairs(): List<ContrastPair> = listOf(
     ContrastPair("onBackground/background", onBackground, background),
     ContrastPair("onSurface/surface", onSurface, surface),
     ContrastPair("onSurfaceVariant/surfaceVariant", onSurfaceVariant, surfaceVariant),
+    // Bottom-bar labels, dialog text, snackbar text.
+    ContrastPair("onSurfaceVariant/surfaceContainer", onSurfaceVariant, surfaceContainer),
+    ContrastPair("onSurface/surfaceContainerHigh", onSurface, surfaceContainerHigh),
+    ContrastPair("inverseOnSurface/inverseSurface", inverseOnSurface, inverseSurface),
 )

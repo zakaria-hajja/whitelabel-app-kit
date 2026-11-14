@@ -4,7 +4,9 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import com.whitelabel.core.designsystem.R
 
 /**
@@ -12,53 +14,79 @@ import com.whitelabel.core.designsystem.R
  * A client re-skins the app by overriding those names in its own `res/values/brand.xml`.
  */
 @Composable
-fun brandColorScheme(darkTheme: Boolean): ColorScheme =
+fun brandColorScheme(darkTheme: Boolean): ColorScheme {
+    // Read like colorResource does, so a configuration change (night mode, locale) recomposes.
+    val resources = LocalResources.current
+    val theme = LocalContext.current.theme
+    return brandColorScheme(darkTheme) { id -> Color(resources.getColor(id, theme)) }
+}
+
+/** The color scheme with each `R.color` id resolved through [color]; pure, so a JVM test can check the wiring. */
+internal fun brandColorScheme(darkTheme: Boolean, color: (Int) -> Color): ColorScheme =
     if (darkTheme) {
         darkColorScheme(
-            primary = colorResource(R.color.brand_dark_primary),
-            onPrimary = colorResource(R.color.brand_dark_on_primary),
-            primaryContainer = colorResource(R.color.brand_dark_primary_container),
-            onPrimaryContainer = colorResource(R.color.brand_dark_on_primary_container),
-            secondary = colorResource(R.color.brand_dark_secondary),
-            onSecondary = colorResource(R.color.brand_dark_on_secondary),
-            secondaryContainer = colorResource(R.color.brand_dark_secondary_container),
-            onSecondaryContainer = colorResource(R.color.brand_dark_on_secondary_container),
-            tertiary = colorResource(R.color.brand_dark_tertiary),
-            onTertiary = colorResource(R.color.brand_dark_on_tertiary),
-            tertiaryContainer = colorResource(R.color.brand_dark_tertiary_container),
-            onTertiaryContainer = colorResource(R.color.brand_dark_on_tertiary_container),
-            error = colorResource(R.color.brand_dark_error),
-            onError = colorResource(R.color.brand_dark_on_error),
-            background = colorResource(R.color.brand_dark_background),
-            onBackground = colorResource(R.color.brand_dark_on_background),
-            surface = colorResource(R.color.brand_dark_surface),
-            onSurface = colorResource(R.color.brand_dark_on_surface),
-            surfaceVariant = colorResource(R.color.brand_dark_surface_variant),
-            onSurfaceVariant = colorResource(R.color.brand_dark_on_surface_variant),
-            outline = colorResource(R.color.brand_dark_outline),
+            primary = color(R.color.brand_dark_primary),
+            onPrimary = color(R.color.brand_dark_on_primary),
+            primaryContainer = color(R.color.brand_dark_primary_container),
+            onPrimaryContainer = color(R.color.brand_dark_on_primary_container),
+            secondary = color(R.color.brand_dark_secondary),
+            onSecondary = color(R.color.brand_dark_on_secondary),
+            secondaryContainer = color(R.color.brand_dark_secondary_container),
+            onSecondaryContainer = color(R.color.brand_dark_on_secondary_container),
+            tertiary = color(R.color.brand_dark_tertiary),
+            onTertiary = color(R.color.brand_dark_on_tertiary),
+            tertiaryContainer = color(R.color.brand_dark_tertiary_container),
+            onTertiaryContainer = color(R.color.brand_dark_on_tertiary_container),
+            error = color(R.color.brand_dark_error),
+            onError = color(R.color.brand_dark_on_error),
+            background = color(R.color.brand_dark_background),
+            onBackground = color(R.color.brand_dark_on_background),
+            surface = color(R.color.brand_dark_surface),
+            onSurface = color(R.color.brand_dark_on_surface),
+            surfaceVariant = color(R.color.brand_dark_surface_variant),
+            onSurfaceVariant = color(R.color.brand_dark_on_surface_variant),
+            outline = color(R.color.brand_dark_outline),
+            outlineVariant = color(R.color.brand_dark_outline_variant),
+            surfaceContainerLowest = color(R.color.brand_dark_surface_container_lowest),
+            surfaceContainerLow = color(R.color.brand_dark_surface_container_low),
+            surfaceContainer = color(R.color.brand_dark_surface_container),
+            surfaceContainerHigh = color(R.color.brand_dark_surface_container_high),
+            surfaceContainerHighest = color(R.color.brand_dark_surface_container_highest),
+            inverseSurface = color(R.color.brand_dark_inverse_surface),
+            inverseOnSurface = color(R.color.brand_dark_inverse_on_surface),
+            inversePrimary = color(R.color.brand_dark_inverse_primary),
         )
     } else {
         lightColorScheme(
-            primary = colorResource(R.color.brand_light_primary),
-            onPrimary = colorResource(R.color.brand_light_on_primary),
-            primaryContainer = colorResource(R.color.brand_light_primary_container),
-            onPrimaryContainer = colorResource(R.color.brand_light_on_primary_container),
-            secondary = colorResource(R.color.brand_light_secondary),
-            onSecondary = colorResource(R.color.brand_light_on_secondary),
-            secondaryContainer = colorResource(R.color.brand_light_secondary_container),
-            onSecondaryContainer = colorResource(R.color.brand_light_on_secondary_container),
-            tertiary = colorResource(R.color.brand_light_tertiary),
-            onTertiary = colorResource(R.color.brand_light_on_tertiary),
-            tertiaryContainer = colorResource(R.color.brand_light_tertiary_container),
-            onTertiaryContainer = colorResource(R.color.brand_light_on_tertiary_container),
-            error = colorResource(R.color.brand_light_error),
-            onError = colorResource(R.color.brand_light_on_error),
-            background = colorResource(R.color.brand_light_background),
-            onBackground = colorResource(R.color.brand_light_on_background),
-            surface = colorResource(R.color.brand_light_surface),
-            onSurface = colorResource(R.color.brand_light_on_surface),
-            surfaceVariant = colorResource(R.color.brand_light_surface_variant),
-            onSurfaceVariant = colorResource(R.color.brand_light_on_surface_variant),
-            outline = colorResource(R.color.brand_light_outline),
+            primary = color(R.color.brand_light_primary),
+            onPrimary = color(R.color.brand_light_on_primary),
+            primaryContainer = color(R.color.brand_light_primary_container),
+            onPrimaryContainer = color(R.color.brand_light_on_primary_container),
+            secondary = color(R.color.brand_light_secondary),
+            onSecondary = color(R.color.brand_light_on_secondary),
+            secondaryContainer = color(R.color.brand_light_secondary_container),
+            onSecondaryContainer = color(R.color.brand_light_on_secondary_container),
+            tertiary = color(R.color.brand_light_tertiary),
+            onTertiary = color(R.color.brand_light_on_tertiary),
+            tertiaryContainer = color(R.color.brand_light_tertiary_container),
+            onTertiaryContainer = color(R.color.brand_light_on_tertiary_container),
+            error = color(R.color.brand_light_error),
+            onError = color(R.color.brand_light_on_error),
+            background = color(R.color.brand_light_background),
+            onBackground = color(R.color.brand_light_on_background),
+            surface = color(R.color.brand_light_surface),
+            onSurface = color(R.color.brand_light_on_surface),
+            surfaceVariant = color(R.color.brand_light_surface_variant),
+            onSurfaceVariant = color(R.color.brand_light_on_surface_variant),
+            outline = color(R.color.brand_light_outline),
+            outlineVariant = color(R.color.brand_light_outline_variant),
+            surfaceContainerLowest = color(R.color.brand_light_surface_container_lowest),
+            surfaceContainerLow = color(R.color.brand_light_surface_container_low),
+            surfaceContainer = color(R.color.brand_light_surface_container),
+            surfaceContainerHigh = color(R.color.brand_light_surface_container_high),
+            surfaceContainerHighest = color(R.color.brand_light_surface_container_highest),
+            inverseSurface = color(R.color.brand_light_inverse_surface),
+            inverseOnSurface = color(R.color.brand_light_inverse_on_surface),
+            inversePrimary = color(R.color.brand_light_inverse_primary),
         )
     }

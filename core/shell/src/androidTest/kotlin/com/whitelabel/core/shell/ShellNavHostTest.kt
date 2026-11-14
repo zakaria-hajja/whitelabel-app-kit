@@ -10,7 +10,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.platform.testTag
 import kotlin.math.roundToInt
 import androidx.compose.material3.Text
@@ -25,6 +30,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.composable
 import com.whitelabel.core.designsystem.theme.AppTheme
+import com.whitelabel.core.designsystem.theme.StylePack
 import com.whitelabel.core.shell.test.R
 import kotlinx.serialization.Serializable
 import org.junit.Rule
@@ -111,5 +117,46 @@ class ShellNavHostTest {
 
         val contentTop = rule.onNodeWithTag("content").fetchSemanticsNode().positionInRoot.y.roundToInt()
         assertThat(contentTop).isEqualTo(statusBarTop)
+    }
+
+    /** Shows two tabs under [pack] and returns the bar's own color at its top centre, plus the scheme. */
+    private fun barPixel(pack: StylePack, dark: Boolean): Pair<Int, Pair<Color, Color>> {
+        var surface = Color.Unspecified
+        var surfaceContainer = Color.Unspecified
+        rule.setContent {
+            AppTheme(darkTheme = dark, stylePack = pack) {
+                surface = MaterialTheme.colorScheme.surface
+                surfaceContainer = MaterialTheme.colorScheme.surfaceContainer
+                ShellNavHost(definition = appDefinition { add(one); add(two) }, visibleTabs = listOf(one.tab!!, two.tab!!), deepLinkScheme = "test")
+            }
+        }
+        val image = rule.onNodeWithTag(BOTTOM_BAR_TAG).captureToImage().toPixelMap()
+        // Above the items' indicators: only the bar's container is drawn there.
+        return image[image.width / 2, 4].toArgb() to (surface to surfaceContainer)
+    }
+
+    @Test
+    fun galleryBar_isSurfaceContainerByDefault() {
+        val (pixel, scheme) = barPixel(StylePack.Gallery, dark = false)
+        assertThat(pixel).isEqualTo(scheme.second.toArgb())
+    }
+
+    @Test
+    fun galleryBarOnSurface_isSurface_light() {
+        val (pixel, scheme) = barPixel(StylePack.Gallery.copy(bottomBarOnSurface = true), dark = false)
+        assertThat(pixel).isEqualTo(scheme.first.toArgb())
+    }
+
+    @Test
+    fun galleryBarOnSurface_isSurface_dark() {
+        val (pixel, scheme) = barPixel(StylePack.Gallery.copy(bottomBarOnSurface = true), dark = true)
+        assertThat(pixel).isEqualTo(scheme.first.toArgb())
+    }
+
+    /** A Shadow pack has no hairline to separate a surface bar, so it ignores the flag. */
+    @Test
+    fun materialBar_ignoresOnSurfaceFlag() {
+        val (pixel, scheme) = barPixel(StylePack.Material.copy(bottomBarOnSurface = true), dark = false)
+        assertThat(pixel).isEqualTo(scheme.second.toArgb())
     }
 }
