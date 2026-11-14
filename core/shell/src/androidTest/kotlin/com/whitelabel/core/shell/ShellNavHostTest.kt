@@ -30,6 +30,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.composable
 import com.whitelabel.core.designsystem.theme.AppTheme
+import com.whitelabel.core.designsystem.theme.BottomBarStyle
 import com.whitelabel.core.designsystem.theme.StylePack
 import com.whitelabel.core.shell.test.R
 import kotlinx.serialization.Serializable
@@ -142,21 +143,27 @@ class ShellNavHostTest {
     }
 
     @Test
+    fun galleryBar_isSurfaceContainerByDefault_dark() {
+        val (pixel, scheme) = barPixel(StylePack.Gallery, dark = true)
+        assertThat(pixel).isEqualTo(scheme.second.toArgb())
+    }
+
+    @Test
     fun galleryBarOnSurface_isSurface_light() {
-        val (pixel, scheme) = barPixel(StylePack.Gallery.copy(bottomBarOnSurface = true), dark = false)
+        val (pixel, scheme) = barPixel(StylePack.Gallery.copy(bottomBar = BottomBarStyle.Surface), dark = false)
         assertThat(pixel).isEqualTo(scheme.first.toArgb())
     }
 
     @Test
     fun galleryBarOnSurface_isSurface_dark() {
-        val (pixel, scheme) = barPixel(StylePack.Gallery.copy(bottomBarOnSurface = true), dark = true)
+        val (pixel, scheme) = barPixel(StylePack.Gallery.copy(bottomBar = BottomBarStyle.Surface), dark = true)
         assertThat(pixel).isEqualTo(scheme.first.toArgb())
     }
 
-    /** A Shadow pack has no hairline to separate a surface bar, so it ignores the flag. */
+    /** A Shadow pack has no hairline to separate a surface bar, so it ignores [BottomBarStyle.Surface]. */
     @Test
-    fun materialBar_ignoresOnSurfaceFlag() {
-        val (pixel, scheme) = barPixel(StylePack.Material.copy(bottomBarOnSurface = true), dark = false)
+    fun materialBar_ignoresSurfaceBarStyle() {
+        val (pixel, scheme) = barPixel(StylePack.Material.copy(bottomBar = BottomBarStyle.Surface), dark = false)
         assertThat(pixel).isEqualTo(scheme.second.toArgb())
     }
 }

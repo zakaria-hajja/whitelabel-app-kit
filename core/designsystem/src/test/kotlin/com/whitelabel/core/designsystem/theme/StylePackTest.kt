@@ -41,9 +41,9 @@ class StylePackTest {
     }
 
     @Test fun `bottom bar stays on surface container unless an app opts in`() {
-        assertThat(StylePack.Material.bottomBarOnSurface).isFalse()
-        assertThat(StylePack.Gallery.bottomBarOnSurface).isFalse()
-        assertThat(StylePack.Gallery.copy(bottomBarOnSurface = true).bottomBarOnSurface).isTrue()
+        assertThat(StylePack.Material.bottomBar).isEqualTo(BottomBarStyle.Container)
+        assertThat(StylePack.Gallery.bottomBar).isEqualTo(BottomBarStyle.Container)
+        assertThat(StylePack.Gallery.copy(bottomBar = BottomBarStyle.Surface).bottomBar).isEqualTo(BottomBarStyle.Surface)
     }
 
     @Test fun `gallery chrome follows the design`() {
