@@ -37,6 +37,24 @@
     <color name="brand_light_inverse_surface">#322F35</color>
     <color name="brand_light_inverse_on_surface">#F5EFF7</color>
     <color name="brand_light_inverse_primary">#D0BCFF</color>
+    <!-- Error container (validation summaries), surface bright/dim, and the fixed roles, which keep
+         the same color in light and dark. Defaults are Material's baseline. -->
+    <color name="brand_light_error_container">#F9DEDC</color>
+    <color name="brand_light_on_error_container">#410E0B</color>
+    <color name="brand_light_surface_bright">#FEF7FF</color>
+    <color name="brand_light_surface_dim">#DED8E1</color>
+    <color name="brand_light_primary_fixed">#EADDFF</color>
+    <color name="brand_light_primary_fixed_dim">#D0BCFF</color>
+    <color name="brand_light_on_primary_fixed">#21005D</color>
+    <color name="brand_light_on_primary_fixed_variant">#4F378B</color>
+    <color name="brand_light_secondary_fixed">#E8DEF8</color>
+    <color name="brand_light_secondary_fixed_dim">#CCC2DC</color>
+    <color name="brand_light_on_secondary_fixed">#1D192B</color>
+    <color name="brand_light_on_secondary_fixed_variant">#4A4458</color>
+    <color name="brand_light_tertiary_fixed">#FFD8E4</color>
+    <color name="brand_light_tertiary_fixed_dim">#EFB8C8</color>
+    <color name="brand_light_on_tertiary_fixed">#31111D</color>
+    <color name="brand_light_on_tertiary_fixed_variant">#633B48</color>
     <color name="brand_dark_primary">#D0BCFF</color>
     <color name="brand_dark_on_primary">#381E72</color>
     <color name="brand_dark_primary_container">#4F378B</color>
@@ -67,6 +85,22 @@
     <color name="brand_dark_inverse_surface">#E6E0E9</color>
     <color name="brand_dark_inverse_on_surface">#322F35</color>
     <color name="brand_dark_inverse_primary">#6750A4</color>
+    <color name="brand_dark_error_container">#8C1D18</color>
+    <color name="brand_dark_on_error_container">#F9DEDC</color>
+    <color name="brand_dark_surface_bright">#3B383E</color>
+    <color name="brand_dark_surface_dim">#141218</color>
+    <color name="brand_dark_primary_fixed">#EADDFF</color>
+    <color name="brand_dark_primary_fixed_dim">#D0BCFF</color>
+    <color name="brand_dark_on_primary_fixed">#21005D</color>
+    <color name="brand_dark_on_primary_fixed_variant">#4F378B</color>
+    <color name="brand_dark_secondary_fixed">#E8DEF8</color>
+    <color name="brand_dark_secondary_fixed_dim">#CCC2DC</color>
+    <color name="brand_dark_on_secondary_fixed">#1D192B</color>
+    <color name="brand_dark_on_secondary_fixed_variant">#4A4458</color>
+    <color name="brand_dark_tertiary_fixed">#FFD8E4</color>
+    <color name="brand_dark_tertiary_fixed_dim">#EFB8C8</color>
+    <color name="brand_dark_on_tertiary_fixed">#31111D</color>
+    <color name="brand_dark_on_tertiary_fixed_variant">#633B48</color>
 
     <dimen name="brand_corner_small">8dp</dimen>
     <dimen name="brand_corner_medium">12dp</dimen>
