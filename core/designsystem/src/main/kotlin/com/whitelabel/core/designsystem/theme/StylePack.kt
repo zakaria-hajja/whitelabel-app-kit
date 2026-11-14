@@ -78,7 +78,18 @@ data class TypeTweaks(
     val titlesUseBodyFont: Boolean,
 )
 
-data class Corners(val small: Dp, val medium: Dp, val large: Dp)
+/**
+ * Corner radii for Material's shape scale. [small], [medium] and [large] drive buttons, fields and
+ * cards. [extraSmall] (snackbars, menus, tooltips) and [extraLarge] (dialogs, bottom sheets) are
+ * optional: `null` keeps Material's 4 and 28 dp, so a pack only changes them when an app opts in.
+ */
+data class Corners(
+    val small: Dp,
+    val medium: Dp,
+    val large: Dp,
+    val extraSmall: Dp? = null,
+    val extraLarge: Dp? = null,
+)
 
 /** How containers separate from the background: elevation shadows, or 1 dp hairline outlines. */
 enum class SurfaceStyle { Shadow, Hairline }
