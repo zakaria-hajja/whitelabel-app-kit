@@ -158,6 +158,11 @@ object AppConfigLoader {
             }.toMap()
         val adsAndroidUnits = units("ads.android.banner.")
         val adsIosUnits = units("ads.ios.banner.")
+        val adsNonPersonalized = when (val raw = value("ads.nonPersonalized")) {
+            null, "false" -> false
+            "true" -> true
+            else -> { fail("ads.nonPersonalized", "'$raw' must be false or true"); false }
+        }
         val iosRequestTracking = when (val raw = value("ads.ios.requestTracking")) {
             null, "false" -> false
             "true" -> true
@@ -193,6 +198,7 @@ object AppConfigLoader {
             ads = ads!!,
             adsAndroidUnits = adsAndroidUnits,
             adsIosUnits = adsIosUnits,
+            adsNonPersonalized = adsNonPersonalized,
             iosRequestTracking = iosRequestTracking,
             iosTrackingMessage = iosTrackingMessage,
             signing = signing,

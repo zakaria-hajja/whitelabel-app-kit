@@ -175,6 +175,14 @@ class IosConfigTest {
         assertThat(iosXcconfig(config, "debug")).contains("WL_ADS_UNITS = catalog=ca-app-pub-3940256099942544/2435281174;home=ca-app-pub-3940256099942544/2435281174\n")
     }
 
+    @Test fun `the non-personalized setting is published only where ads are on`() {
+        val config = app().copy(ads = ServiceMode.DEBUG, adsNonPersonalized = true)
+        assertThat(iosXcconfig(config, "debug")).contains("WL_ADS_NON_PERSONALIZED = yes\n")
+        assertThat(iosXcconfig(config, "release")).contains("WL_ADS_NON_PERSONALIZED = no\n")
+        assertThat(iosXcconfig(app().copy(ads = ServiceMode.DEBUG), "debug")).contains("WL_ADS_NON_PERSONALIZED = no\n")
+        assertThat(iosXcconfig(app(), "debug")).contains("WL_ADS_NON_PERSONALIZED = no\n")
+    }
+
     @Test fun `ads in debug mode is off in release, with no tracking and no message`() {
         val config = app().copy(ads = ServiceMode.DEBUG, iosRequestTracking = true, iosTrackingMessage = "Msg")
 

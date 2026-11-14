@@ -12,7 +12,7 @@ import com.whitelabel.buildlogic.apps.debugGuestOverride
 import com.whitelabel.buildlogic.apps.debugGuestResValues
 import com.whitelabel.buildlogic.apps.Platform
 import com.whitelabel.buildlogic.apps.adsSetup
-import com.whitelabel.buildlogic.apps.adsUnitsString
+import com.whitelabel.buildlogic.apps.androidAdsResValues
 import com.whitelabel.buildlogic.apps.androidFirebaseConfigBuildTypes
 import com.whitelabel.buildlogic.apps.resolvedAdmobAppId
 import com.whitelabel.buildlogic.apps.firebaseSetup
@@ -155,12 +155,11 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 }
                 // Resources only, not BuildConfig: they are build-wiring state for the shell, not
                 // app identity, so the apps' identity tests stay as they are.
-                mapOf(
-                    "foundation_firebase" to firebase.modeFor.getValue(buildType),
-                    "foundation_firebase_declared" to (app.firebase != ServiceMode.OFF).toString(),
-                    "foundation_ads" to ads.modeFor.getValue(buildType),
-                    "foundation_ads_declared" to ads.declared.toString(),
-                    "foundation_ads_units" to adsUnitsString(ads.unitsFor.getValue(buildType)),
+                (
+                    mapOf(
+                        "foundation_firebase" to firebase.modeFor.getValue(buildType),
+                        "foundation_firebase_declared" to (app.firebase != ServiceMode.OFF).toString(),
+                    ) + androidAdsResValues(ads, app.adsNonPersonalized, buildType)
                 ).forEach { (name, value) ->
                     variant.resValues.put(variant.makeResValueKey("string", name), ResValue(value, null))
                 }

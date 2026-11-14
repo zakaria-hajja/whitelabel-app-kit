@@ -515,6 +515,18 @@ class AppConfigLoaderTest {
     }
 
     @Test
+    fun `non-personalized ads is a boolean and defaults to false`() {
+        writeApp(emptyMap())
+        assertThat(AppConfigLoader.load(appDir).adsNonPersonalized).isEqualTo(false)
+
+        writeApp(mapOf("ads.nonPersonalized" to "true"))
+        assertThat(AppConfigLoader.load(appDir).adsNonPersonalized).isEqualTo(true)
+
+        writeApp(mapOf("ads.nonPersonalized" to "yes"))
+        assertThat(problems().single()).contains("apps/sample/app.properties: ads.nonPersonalized")
+    }
+
+    @Test
     fun `the tracking message is required with tracking on`() {
         writeApp(mapOf("ads.ios.requestTracking" to "true"))
 
