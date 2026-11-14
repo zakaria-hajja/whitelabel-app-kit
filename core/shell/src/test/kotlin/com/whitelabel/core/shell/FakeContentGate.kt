@@ -12,8 +12,13 @@ class FakeContentGate(initial: ContentGateState = ContentGateState.OPEN) : Conte
     override val state = MutableStateFlow(initial)
     override val protectsAppSwitcher = MutableStateFlow(false)
 
+    /** The next [onAppForeground] locks, as a gate past its grace period does. */
+    var lockOnNextForeground = false
+
     override fun onAppForeground() {
         calls += Call.FOREGROUND
+        if (lockOnNextForeground) state.value = ContentGateState.LOCKED
+        lockOnNextForeground = false
     }
 
     override fun onAppBackground() {
