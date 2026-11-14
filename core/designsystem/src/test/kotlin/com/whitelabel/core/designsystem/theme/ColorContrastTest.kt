@@ -43,4 +43,18 @@ class ColorContrastTest {
             ContrastPair("inverseOnSurface/inverseSurface", s.inverseOnSurface, s.inverseSurface),
         )
     }
+
+    @Test
+    fun contrastPairs_coverErrorContainerAndFixedText() {
+        val s = lightColorScheme()
+        assertThat(s.contrastPairs()).containsAll(
+            ContrastPair("onErrorContainer/errorContainer", s.onErrorContainer, s.errorContainer),
+            ContrastPair("onPrimaryFixed/primaryFixed", s.onPrimaryFixed, s.primaryFixed),
+            ContrastPair("onPrimaryFixedVariant/primaryFixedDim", s.onPrimaryFixedVariant, s.primaryFixedDim),
+            ContrastPair("onSecondaryFixed/secondaryFixed", s.onSecondaryFixed, s.secondaryFixed),
+            ContrastPair("onSecondaryFixedVariant/secondaryFixedDim", s.onSecondaryFixedVariant, s.secondaryFixedDim),
+            ContrastPair("onTertiaryFixed/tertiaryFixed", s.onTertiaryFixed, s.tertiaryFixed),
+            ContrastPair("onTertiaryFixedVariant/tertiaryFixedDim", s.onTertiaryFixedVariant, s.tertiaryFixedDim),
+        )
+    }
 }
