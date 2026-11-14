@@ -29,7 +29,14 @@ secondary_container on_secondary_container tertiary on_tertiary tertiary_contain
 on_tertiary_container error on_error background on_background surface on_surface
 surface_variant on_surface_variant outline outline_variant surface_container_lowest
 surface_container_low surface_container surface_container_high surface_container_highest
-inverse_surface inverse_on_surface inverse_primary`
+inverse_surface inverse_on_surface inverse_primary error_container on_error_container
+surface_bright surface_dim primary_fixed primary_fixed_dim on_primary_fixed
+on_primary_fixed_variant secondary_fixed secondary_fixed_dim on_secondary_fixed
+on_secondary_fixed_variant tertiary_fixed tertiary_fixed_dim on_tertiary_fixed
+on_tertiary_fixed_variant`
+
+That is every color role of Material's `ColorScheme` except `surface_tint`, which follows
+`primary`, and `scrim`, which stays black.
 
 Where Material draws with the less obvious ones:
 
@@ -42,6 +49,9 @@ Where Material draws with the less obvious ones:
 | `surface_container_lowest` | nothing in the foundation yet; set it so the family stays complete |
 | `outline_variant` | hairlines: the rule above the bottom bar and outlined cards (Gallery), dividers, filter-chip borders |
 | `inverse_surface`, `inverse_on_surface`, `inverse_primary` | snackbars: container, text and action |
+| `error_container`, `on_error_container` | error banners and validation summaries an app draws; nothing in the foundation yet |
+| `surface_bright`, `surface_dim` | nothing in the foundation yet; Material keeps them for surfaces brighter or dimmer than `surface` |
+| `*_fixed`, `*_fixed_dim`, `on_*_fixed`, `on_*_fixed_variant` | nothing in the foundation yet; they keep the same tone in light and dark, so set both themes to the same values |
 
 - **Defaults:** any role you don't override keeps the Material 3 baseline value from
   `core/designsystem/src/main/res/values/brand.xml`. Those equal Material's own
@@ -53,7 +63,8 @@ Where Material draws with the less obvious ones:
   families for a fully branded look.
 - **Contrast:** every `on_*` color must reach WCAG AA (4.5:1) against its base color, in both light
   and dark; so must `on_surface_variant` on `surface_container` (bar labels), `on_surface` on
-  `surface_container_high` (dialogs) and `inverse_on_surface` on `inverse_surface` (snackbars).
+  `surface_container_high` (dialogs), `inverse_on_surface` on `inverse_surface` (snackbars), and for
+each fixed family `on_*_fixed` on `*_fixed` and `on_*_fixed_variant` on `*_fixed_dim`.
   `outline_variant` is a decorative hairline and is exempt. Write the ratios in a comment in your `brand.xml`.
   `contrastRatio()` in `:core:designsystem` computes them.
 - **Dynamic color is off,** so the brand always applies.
