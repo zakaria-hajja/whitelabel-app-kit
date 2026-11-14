@@ -31,8 +31,8 @@ Kotlin 2.4 metadata, which this build's Kotlin 2.2.20 can't read. Upgrade both t
 | `firebase.enabled` | Effect |
 |---|---|
 | `false` (default) | No Firebase: no SDK in the Android build, no CrashKiOS in the iOS framework |
-| `true` | Every build type. A missing config file or AdMob app ID **fails the build** |
-| `debug` | Debug builds only. Debug is real only with the platform's config file **and** its AdMob app ID; if either is missing, Debug runs on a fake Firebase. A Release build has no Firebase on Android and never starts it on iOS |
+| `true` | Every build type. A missing config file (for any build type) or AdMob app ID **fails the build** |
+| `debug` | Debug builds only. Debug is real only with the platform's config file for Debug **and** its AdMob app ID; if either is missing, Debug runs on a fake Firebase. A Release build has no Firebase on Android and never starts it on iOS |
 
 The AdMob app IDs are also keys in `app.properties` (the ads plan reuses them):
 
@@ -64,8 +64,51 @@ Debug IDs end in `.debug`, so register that ID for a `debug` app):
 
 | Platform | Put it at | Missing with `true` fails with |
 |---|---|---|
-| Android | `apps/<name>/google-services.json` | `apps/<name>: firebase.enabled=true needs google-services.json` |
-| iOS | `ios/<App>/<App>/GoogleService-Info.plist` | `apps/<name>: firebase.enabled=true needs GoogleService-Info.plist` (from `generateIosConfig`) |
+| Android | `apps/<name>/google-services.json` (every build type), or one per build type (below) | `apps/<name>: firebase.enabled=true needs google-services.json` |
+| iOS | `ios/<App>/<App>/GoogleService-Info.plist` (every configuration), or one per configuration (below) | `apps/<name>: firebase.enabled=true needs GoogleService-Info.plist` (from `generateIosConfig`) |
+
+With files for only some build types, `true` fails naming the ones without a file:
+`apps/<name>: firebase.enabled=true needs google-services.json for release` (and the same with
+`GoogleService-Info.plist` from `generateIosConfig`). In `debug` mode only the Debug file counts; a
+Release-only file leaves Debug on the fake.
+
+**One Firebase project per build type.** To keep Debug analytics and crashes out of the production
+project, register the Debug app (`<applicationId>.debug`) in one Firebase project and the Release
+app in another, and give each build type its own file:
+
+- **Android:** `apps/<name>/src/debug/google-services.json` and
+  `apps/<name>/src/release/google-services.json`. This is the google-services plugin's own lookup
+  (the most specific file wins), and the foundation counts a build type as covered when its folder
+  has the file. Don't also keep a file at the module root unless you mean it as a fallback: it covers
+  every build type that lacks its own file, so a forgotten per-build-type file silently uses the
+  root one.
+- **iOS:** point the framework module at the two plists:
+
+  ```kotlin
+  iosApp {
+      debugFirebaseConfigFile.set(rootProject.layout.projectDirectory.file("iosApp/Firebase/Debug/GoogleService-Info.plist"))
+      releaseFirebaseConfigFile.set(rootProject.layout.projectDirectory.file("iosApp/Firebase/Release/GoogleService-Info.plist"))
+  }
+  ```
+
+  Both default to `firebaseConfigFile`. That only tells `generateIosConfig` which configurations
+  have a plist; Xcode still has to bundle the right one. Keep the plists **outside** the app
+  target's source folder (XcodeGen bundles every plist there, in both configurations) and copy the
+  configuration's plist into the bundle with a pre-build script on the app target. It must be a
+  *pre*-build script: the template's dSYM upload (post-build) reads the plist from the built bundle.
+
+  ```yaml
+      preBuildScripts:
+        - name: Copy this configuration's GoogleService-Info.plist
+          inputFiles: [$(SRCROOT)/Firebase/$(CONFIGURATION)/GoogleService-Info.plist]
+          outputFiles: [$(BUILT_PRODUCTS_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist]
+          script: |
+            dst="$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GoogleService-Info.plist"
+            if [ "${WL_FIREBASE:-off}" != on ]; then rm -f "$dst"; exit 0; fi
+            src="$SRCROOT/Firebase/$CONFIGURATION/GoogleService-Info.plist"
+            [ -f "$src" ] || { echo "error: $src is missing"; exit 1; }
+            mkdir -p "$(dirname "$dst")" && cp "$src" "$dst"
+  ```
 
 Showcase has no AdMob IDs yet (the owner adds them), so showcase Debug runs on the fake Firebase even
 with both files present, until `ads.android.appId` and `ads.ios.appId` are set.
@@ -114,7 +157,9 @@ RootView(definition: AppDefinition(style: .material, services: [FirebaseService(
   rule). With `firebase.enabled=debug` a Release build is legitimately off.
 - The framework module gets `:core:firebase:crashlytics` and the CrashKiOS link plugin from
   `whitelabel.ios.app` by itself. Showcase's `iosApp { firebaseConfigFile.set(...) }` points at its
-  plist; the default is `<project dir>/<project dir name>/GoogleService-Info.plist`.
+  plist; the default is `<project dir>/<project dir name>/GoogleService-Info.plist`. For one plist
+  per configuration, set `debugFirebaseConfigFile` and `releaseFirebaseConfigFile` instead (see
+  "One Firebase project per build type" above).
 
 **5. In an app's own repo,** add the two Gradle plugins to the root `build.gradle.kts`, declared but
 not applied, next to the other aliases (the convention plugins apply them by id):
@@ -217,7 +262,11 @@ Without the switch, no event appears in DebugView. Release collects normally, on
 
 - **Android:** the Crashlytics plugin uploads the R8 mapping with a release build.
 - **iOS:** an Xcode build phase uploads the dSYMs when `WL_FIREBASE` is `on`. Fake and off builds do
-  nothing. The script comes from the firebase-ios-sdk package checkout, and the build only warns if
+  nothing.
+- **One project per build type:** nothing extra. The Release mapping goes to the project in the
+  release `google-services.json` (the plugin reads the variant's app ID), and the dSYMs to the
+  project of the plist bundled in that build. An upload needs network, so a CI build that is never
+  shipped can skip it with `-x uploadCrashlyticsMappingFileRelease`. The script comes from the firebase-ios-sdk package checkout, and the build only warns if
   it isn't there, so check that a real upload shows in the console (see the manual checklist).
 - Kotlin exceptions reach Crashlytics with their Kotlin frames on iOS, through CrashKiOS. Both
   uncaught ones and `CrashReporter.record(throwable)`.

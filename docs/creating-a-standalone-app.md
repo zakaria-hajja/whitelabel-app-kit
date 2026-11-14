@@ -88,7 +88,9 @@ too (the build fails with "Plugin with id … not found" until you do). For Fire
 ```
 
 An app that also builds the iOS framework needs `alias(libs.plugins.crashkios.crashlyticslink) apply false`
-as well. The app's `google-services.json` goes in the app module's folder. See
+as well. The app's `google-services.json` goes in the app module's folder, or, for one Firebase
+project per build type, in `src/debug/` and `src/release/` of that module (iOS:
+`debugFirebaseConfigFile` / `releaseFirebaseConfigFile` in `iosApp {}`). See
 [firebase.md](firebase.md). Firebase also needs `ads.android.appId` (and `ads.ios.appId` for iOS) in
 `app.properties`: the AdMob app IDs that Google's consent SDK requires. Add
 `GADApplicationIdentifier` = `$(WL_ADMOB_APP_ID)` to the iOS app's Info.plist.
