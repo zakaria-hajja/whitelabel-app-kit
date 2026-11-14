@@ -1,6 +1,7 @@
 package com.whitelabel.buildlogic
 
 import com.whitelabel.buildlogic.apps.AppConfigLoader
+import com.whitelabel.buildlogic.apps.iosFirebaseConfigBuildTypes
 import com.whitelabel.buildlogic.apps.iosFirebaseFramework
 import com.whitelabel.buildlogic.apps.iosXcconfig
 import org.gradle.api.DefaultTask
@@ -100,10 +101,7 @@ class IosAppConventionPlugin : Plugin<Project> {
             fun exists(file: RegularFileProperty) = providers.fileContents(file).asBytes.map { true }.orElse(false)
             firebaseConfigBuildTypes.set(
                 exists(debugFirebaseConfigFile).zip(exists(releaseFirebaseConfigFile)) { debug, release ->
-                    buildSet {
-                        if (debug) add("debug")
-                        if (release) add("release")
-                    }
+                    iosFirebaseConfigBuildTypes(debugExists = debug, releaseExists = release)
                 },
             )
         }

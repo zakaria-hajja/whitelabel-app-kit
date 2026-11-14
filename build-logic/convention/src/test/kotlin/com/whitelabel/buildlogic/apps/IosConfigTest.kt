@@ -101,6 +101,13 @@ class IosConfigTest {
         assertThat(iosXcconfig(config, "release", firebaseConfigBuildTypes = setOf("debug"))).contains("WL_FIREBASE = off\n")
     }
 
+    @Test fun `each plist covers its own configuration`() {
+        assertThat(iosFirebaseConfigBuildTypes(debugExists = false, releaseExists = false)).isEqualTo(emptySet())
+        assertThat(iosFirebaseConfigBuildTypes(debugExists = true, releaseExists = false)).isEqualTo(setOf("debug"))
+        assertThat(iosFirebaseConfigBuildTypes(debugExists = false, releaseExists = true)).isEqualTo(setOf("release"))
+        assertThat(iosFirebaseConfigBuildTypes(debugExists = true, releaseExists = true)).isEqualTo(FIREBASE_BUILD_TYPES)
+    }
+
     @Test fun `writes WL_ADMOB_APP_ID, empty when absent, in both build types`() {
         assertThat(iosXcconfig(app().copy(adsIosAppId = IOS_ID), "debug")).contains("WL_ADMOB_APP_ID = $IOS_ID\n")
         assertThat(iosXcconfig(app().copy(adsIosAppId = IOS_ID), "release")).contains("WL_ADMOB_APP_ID = $IOS_ID\n")

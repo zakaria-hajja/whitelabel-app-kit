@@ -44,6 +44,12 @@ internal fun iosXcconfig(app: AppConfig, buildType: String, firebaseConfigBuildT
     }
 }
 
+/** The configurations with a `GoogleService-Info.plist`: each plist covers only its own configuration. */
+fun iosFirebaseConfigBuildTypes(debugExists: Boolean, releaseExists: Boolean): Set<String> = buildSet {
+    if (debugExists) add("debug")
+    if (releaseExists) add("release")
+}
+
 /**
  * One xcconfig value on one line: line breaks and tabs become spaces, and every `//` (also in a run
  * such as `///`) is split as `/$()/`, since xcconfig reads `//` as a comment. The loader rejects
