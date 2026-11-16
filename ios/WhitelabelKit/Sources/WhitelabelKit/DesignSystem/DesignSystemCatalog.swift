@@ -62,6 +62,11 @@ private struct PackSection: View {
             AppTextField("Email", text: $email)
             AppTextField("Password", text: $password, error: "Use at least 10 characters.", isSecure: true)
             AppValueRow("Theme", value: "System") {}
+            Button {} label: {
+                Text("Pressable row").font(style.typography.body).foregroundStyle(style.colors.onSurface)
+                    .frame(maxWidth: .infinity, minHeight: style.pack.sizing.listRowMinHeight, alignment: .leading)
+            }
+            .buttonStyle(RowButtonStyle())
             AppToggleRow("Push notifications", isOn: $notifications)
             EmptyStateView(title: "No items yet", message: "Add your first one to see it here.").frame(height: 140)
             ErrorStateView(message: "No internet connection. Check your connection and try again.") {}.frame(height: 140)

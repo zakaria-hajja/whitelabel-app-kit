@@ -86,6 +86,9 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
   - `PrimaryButtonStyle`/`SecondaryButtonStyle`/`TextButtonStyle`, `AppCard`, `AppTextField`
     (announces its error);
   - `AppValueRow` (inline or stacked, per the pack), `AppToggleRow`, `AppChoiceSheet`, `AppSectionHeader`;
+  - `RowButtonStyle` for a full-width tappable row outside a `List`: it tints on press (no scale) on
+    the pack's `press` curve. `AppValueRow` keeps the native List highlight. Munch's `CreatureRow`
+    adopts it in the foundation bump;
   - `LoadingView`, `EmptyStateView`, `ErrorStateView`, `.appConfirm(…)`.
 
   Labels wrap at every Dynamic Type size.
