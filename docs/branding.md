@@ -108,7 +108,7 @@ appDefinition {
 | Surfaces | elevation shadows | 1 dp hairlines (cards outlined, a rule above the bottom bar) |
 | Controls | 48 dp | 52 dp |
 | Type | Material weights; titles in the display font | display and headlines at regular weight; titles in the body font |
-| Motion | Navigation's default 700 ms fades | 420 ms pushes and shared elements, 320 ms back, a 210 ms fade-through between tabs |
+| Motion | Navigation's default 700 ms fades | 420 ms pushes and shared elements, 320 ms back, a 150 ms crossfade between tabs, a 120 ms press to 0.97 (iOS buttons) |
 | Haptics | none | a tick on confirm, a confirm on success, a toggle click |
 | Top bar (`AppScaffold`) | Material's raised bar on the surface color | flat on the page background, title in the headline (display) font |
 | Section headers (`AppSectionHeader`) | `titleSmall` in the primary color | a small uppercase caption, letter-spaced, muted |

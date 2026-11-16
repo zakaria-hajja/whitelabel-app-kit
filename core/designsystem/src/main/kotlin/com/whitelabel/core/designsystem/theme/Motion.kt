@@ -17,7 +17,10 @@ sealed interface MotionCurve {
 /**
  * The named motion of a style pack. [screenEnter]/[screenExit] are pushes and pops,
  * [sharedElement] moves elements between screens, [tabSwitch] (with [tabSwitchScale]) is the
- * fade-through between tabs, [emphasis] is for small interactions, [snackbar] for feedback.
+ * fade between tabs (Gallery's is a plain crossfade, no zoom), [emphasis] is for small
+ * interactions, [snackbar] for feedback. [press] (with [pressScale]) is a button or chip press:
+ * Android buttons keep the Material ripple, so it drives the iOS buttons and any pressable view
+ * an app draws itself.
  */
 data class MotionSpec(
     val screenEnter: MotionCurve,
@@ -27,6 +30,8 @@ data class MotionSpec(
     val tabSwitchScale: Float,
     val emphasis: MotionCurve,
     val snackbar: MotionCurve,
+    val press: MotionCurve,
+    val pressScale: Float,
 ) {
     companion object {
         private val FastOutSlowIn = CubicBezier(0.4f, 0f, 0.2f, 1f)
@@ -34,6 +39,7 @@ data class MotionSpec(
         private val Emphasized = CubicBezier(0.2f, 0f, 0f, 1f)
         private val EmphasizedAccelerate = CubicBezier(0.3f, 0f, 0.8f, 0.15f)
         private val Linear = CubicBezier(0f, 0f, 1f, 1f)
+        private val EaseOut = CubicBezier(0.32f, 0.72f, 0f, 1f)
 
         /** Navigation Compose's default transitions (a 700 ms fade), i.e. how apps behaved before packs. */
         val Material = MotionSpec(
@@ -44,22 +50,33 @@ data class MotionSpec(
             tabSwitchScale = 1f,
             emphasis = MotionCurve.Spring(dampingRatio = 1f, stiffness = 400f),
             snackbar = MotionCurve.Tween(250, FastOutSlowIn),
+            press = MotionCurve.Spring(dampingRatio = 1f, stiffness = 400f),
+            pressScale = 0.98f,
         )
 
-        /** Soft, quick motion: shared elements and pushes at 420 ms, a short tab fade-through. */
+        /** Soft, quick motion: shared elements and pushes at 420 ms, a 150 ms tab crossfade, a steady 120 ms press. */
         val Gallery = MotionSpec(
             screenEnter = MotionCurve.Tween(420, Emphasized),
             screenExit = MotionCurve.Tween(320, EmphasizedAccelerate),
             sharedElement = MotionCurve.Tween(420, Emphasized),
-            tabSwitch = MotionCurve.Tween(210, Standard),
-            tabSwitchScale = 0.96f,
+            tabSwitch = MotionCurve.Tween(150, Standard),
+            tabSwitchScale = 1f,
             emphasis = MotionCurve.Spring(dampingRatio = 0.55f, stiffness = 380f),
             snackbar = MotionCurve.Tween(200, Standard),
+            press = MotionCurve.Tween(120, EaseOut),
+            pressScale = 0.97f,
         )
 
-        /** "Remove animations": every movement becomes a short crossfade. */
+        /** "Remove animations": every movement becomes a short crossfade; a press is instant and never scales. */
         val Reduced: MotionSpec = MotionCurve.Tween(150, Linear).let { fade ->
-            MotionSpec(fade, fade, fade, fade, tabSwitchScale = 1f, emphasis = fade, snackbar = fade)
+            MotionSpec(
+                fade, fade, fade, fade,
+                tabSwitchScale = 1f,
+                emphasis = fade,
+                snackbar = fade,
+                press = MotionCurve.Tween(0, Linear),
+                pressScale = 1f,
+            )
         }
     }
 }

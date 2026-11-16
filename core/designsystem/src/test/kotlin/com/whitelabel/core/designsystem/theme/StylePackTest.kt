@@ -31,6 +31,8 @@ class StylePackTest {
         assertThat(m.motion.screenExit).isEqualTo(navDefault)
         assertThat(m.motion.tabSwitch).isEqualTo(navDefault)
         assertThat(m.motion.tabSwitchScale).isEqualTo(1f)
+        assertThat(m.motion.press).isEqualTo(Spring(dampingRatio = 1f, stiffness = 400f))
+        assertThat(m.motion.pressScale).isEqualTo(0.98f)
     }
 
     @Test fun `material keeps today's chrome`() {
@@ -63,8 +65,10 @@ class StylePackTest {
         assertThat(g.motion.sharedElement).isEqualTo(emphasized)
         assertThat(g.motion.screenEnter).isEqualTo(emphasized)
         assertThat(g.motion.screenExit).isEqualTo(Tween(320, CubicBezier(0.3f, 0f, 0.8f, 0.15f)))
-        assertThat(g.motion.tabSwitch).isEqualTo(Tween(210, standard))
-        assertThat(g.motion.tabSwitchScale).isEqualTo(0.96f)
+        assertThat(g.motion.tabSwitch).isEqualTo(Tween(150, standard))
+        assertThat(g.motion.tabSwitchScale).isEqualTo(1f)
+        assertThat(g.motion.press).isEqualTo(Tween(120, CubicBezier(0.32f, 0.72f, 0f, 1f)))
+        assertThat(g.motion.pressScale).isEqualTo(0.97f)
         assertThat(g.motion.emphasis).isEqualTo(Spring(dampingRatio = 0.55f, stiffness = 380f))
         assertThat(g.motion.snackbar).isEqualTo(Tween(200, standard))
         assertThat(g.haptics).isEqualTo(
@@ -83,6 +87,14 @@ class StylePackTest {
             reduced.motion.curves().forEach { assertThat(it).isEqualTo(crossfade) }
             assertThat(reduced.motion.tabSwitchScale).isEqualTo(1f)
             assertThat(reduced.copy(motion = pack.motion)).isEqualTo(pack)
+        }
+    }
+
+    @Test fun `reduced press is instant and never scales`() {
+        for (pack in listOf(StylePack.Material, StylePack.Gallery)) {
+            val reduced = pack.reduced().motion
+            assertThat(reduced.press).isEqualTo(Tween(0, CubicBezier(0f, 0f, 1f, 1f)))
+            assertThat(reduced.pressScale).isEqualTo(1f)
         }
     }
 
