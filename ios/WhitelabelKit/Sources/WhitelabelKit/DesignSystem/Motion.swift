@@ -29,7 +29,7 @@ public enum MotionCurve: Equatable {
 
 /**
  * A pack's named motion (Kotlin: `MotionSpec`): pushes and pops, shared elements, the tab switch
- * (with its scale), small emphasis, and feedback.
+ * (with its scale), small emphasis, feedback, and a button press (with its scale).
  */
 public struct MotionSpec: Equatable {
     public var screenEnter: MotionCurve
@@ -39,11 +39,15 @@ public struct MotionSpec: Equatable {
     public var tabSwitchScale: Double
     public var emphasis: MotionCurve
     public var snackbar: MotionCurve
+    public var press: MotionCurve
+    public var pressScale: Double
 
     private static let fastOutSlowIn = CubicBezier(0.4, 0, 0.2, 1)
     private static let standard = CubicBezier(0.2, 0, 0, 1)
     private static let emphasized = CubicBezier(0.2, 0, 0, 1)
     private static let emphasizedAccelerate = CubicBezier(0.3, 0, 0.8, 0.15)
+    private static let linear = CubicBezier(0, 0, 1, 1)
+    private static let easeOut = CubicBezier(0.32, 0.72, 0, 1)
 
     // Kotlin: MotionSpec.Material
     public static let material = MotionSpec(
@@ -53,7 +57,9 @@ public struct MotionSpec: Equatable {
         tabSwitch: .tween(milliseconds: 700, fastOutSlowIn),
         tabSwitchScale: 1,
         emphasis: .spring(dampingRatio: 1, stiffness: 400),
-        snackbar: .tween(milliseconds: 250, fastOutSlowIn)
+        snackbar: .tween(milliseconds: 250, fastOutSlowIn),
+        press: .spring(dampingRatio: 1, stiffness: 400),
+        pressScale: 0.98
     )
 
     // Kotlin: MotionSpec.Gallery
@@ -61,15 +67,20 @@ public struct MotionSpec: Equatable {
         screenEnter: .tween(milliseconds: 420, emphasized),
         screenExit: .tween(milliseconds: 320, emphasizedAccelerate),
         sharedElement: .tween(milliseconds: 420, emphasized),
-        tabSwitch: .tween(milliseconds: 210, standard),
-        tabSwitchScale: 0.96,
+        tabSwitch: .tween(milliseconds: 150, standard),
+        tabSwitchScale: 1,
         emphasis: .spring(dampingRatio: 0.55, stiffness: 380),
-        snackbar: .tween(milliseconds: 200, standard)
+        snackbar: .tween(milliseconds: 200, standard),
+        press: .tween(milliseconds: 120, easeOut),
+        pressScale: 0.97
     )
 
     // Kotlin: MotionSpec.Reduced
     public static let reduced: MotionSpec = {
-        let fade = MotionCurve.tween(milliseconds: 150, CubicBezier(0, 0, 1, 1))
-        return MotionSpec(screenEnter: fade, screenExit: fade, sharedElement: fade, tabSwitch: fade, tabSwitchScale: 1, emphasis: fade, snackbar: fade)
+        let fade = MotionCurve.tween(milliseconds: 150, linear)
+        return MotionSpec(
+            screenEnter: fade, screenExit: fade, sharedElement: fade, tabSwitch: fade, tabSwitchScale: 1,
+            emphasis: fade, snackbar: fade, press: .tween(milliseconds: 0, linear), pressScale: 1
+        )
     }()
 }

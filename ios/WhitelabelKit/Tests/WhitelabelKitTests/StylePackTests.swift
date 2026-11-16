@@ -15,8 +15,10 @@ final class StylePackTests: XCTestCase {
         XCTAssertEqual(gallery.motion.screenEnter, .tween(milliseconds: 420, CubicBezier(0.2, 0, 0, 1)))
         XCTAssertEqual(gallery.motion.screenExit, .tween(milliseconds: 320, CubicBezier(0.3, 0, 0.8, 0.15)))
         XCTAssertEqual(gallery.motion.sharedElement, .tween(milliseconds: 420, CubicBezier(0.2, 0, 0, 1)))
-        XCTAssertEqual(gallery.motion.tabSwitch, .tween(milliseconds: 210, CubicBezier(0.2, 0, 0, 1)))
-        XCTAssertEqual(gallery.motion.tabSwitchScale, 0.96)
+        XCTAssertEqual(gallery.motion.tabSwitch, .tween(milliseconds: 150, CubicBezier(0.2, 0, 0, 1)))
+        XCTAssertEqual(gallery.motion.tabSwitchScale, 1)
+        XCTAssertEqual(gallery.motion.press, .tween(milliseconds: 120, CubicBezier(0.32, 0.72, 0, 1)))
+        XCTAssertEqual(gallery.motion.pressScale, 0.97)
         XCTAssertEqual(gallery.motion.emphasis, .spring(dampingRatio: 0.55, stiffness: 380))
         XCTAssertEqual(gallery.motion.snackbar, .tween(milliseconds: 200, CubicBezier(0.2, 0, 0, 1)))
         XCTAssertEqual(gallery.haptics, [.confirm: .tick, .success: .confirm, .toggle: .toggle])
@@ -37,6 +39,8 @@ final class StylePackTests: XCTestCase {
         XCTAssertFalse(material.type.titlesUseBodyFont)
         XCTAssertEqual(material.motion.screenEnter, .tween(milliseconds: 700, CubicBezier(0.4, 0, 0.2, 1)))
         XCTAssertEqual(material.motion.emphasis, .spring(dampingRatio: 1, stiffness: 400))
+        XCTAssertEqual(material.motion.press, .spring(dampingRatio: 1, stiffness: 400))
+        XCTAssertEqual(material.motion.pressScale, 0.98)
         XCTAssertTrue(material.haptics.isEmpty)
     }
 
@@ -49,6 +53,8 @@ final class StylePackTests: XCTestCase {
         let reduced = StylePack.gallery.reduced().motion
         XCTAssertEqual([reduced.screenEnter, reduced.screenExit, reduced.sharedElement, reduced.tabSwitch, reduced.emphasis, reduced.snackbar], Array(repeating: fade, count: 6))
         XCTAssertEqual(reduced.tabSwitchScale, 1)
+        XCTAssertEqual(reduced.press, .tween(milliseconds: 0, CubicBezier(0, 0, 1, 1)))
+        XCTAssertEqual(reduced.pressScale, 1)
     }
 
     func testASpringKeepsItsStiffnessAsSwiftUIResponse() {

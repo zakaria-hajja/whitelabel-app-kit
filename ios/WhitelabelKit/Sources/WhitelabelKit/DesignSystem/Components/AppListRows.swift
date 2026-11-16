@@ -18,8 +18,10 @@ public struct AppValueRow: View {
 
     public var body: some View {
         if let action {
+            // The system style: inside a List (Settings) the whole cell highlights on press, insets
+            // included; a label-sized tint (RowButtonStyle) would stop short of the cell's edges.
             Button(action: action) { content(chevron: true) }
-                .buttonStyle(.plain)
+                .buttonStyle(.automatic)
                 .accessibilityLabel(label)
                 .accessibilityValue(value)
         } else {

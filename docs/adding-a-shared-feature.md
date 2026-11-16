@@ -95,9 +95,9 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
   - mark an element that moves to the next screen with `Modifier.sharedElementTransition(key)`
     (same content, e.g. an avatar) or a container that morphs with `Modifier.sharedBoundsTransition(key)`,
     using the same `key` on both screens. Both do nothing outside the shell;
-  - time in-screen animations with `AppTheme.style.motion` (`emphasis`, `snackbar`, …) and
-    `toAnimationSpec()`, never with hard-coded durations, and skip ambient animations when
-    `AppTheme.reducedMotion` is true;
+  - time in-screen animations with `AppTheme.style.motion` (`emphasis`, `snackbar`, `press` with
+    `pressScale`, …) and `toAnimationSpec()`, never with hard-coded durations, and skip ambient
+    animations when `AppTheme.reducedMotion` is true;
   - play feedback with `val haptics = rememberHaptics()` then `haptics(HapticEvent.Confirm)`; the
     app's pack decides whether anything plays.
 

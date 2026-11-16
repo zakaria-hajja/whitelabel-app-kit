@@ -43,4 +43,20 @@ final class ComponentTests: XCTestCase {
             XCTAssertGreaterThan(height, pack.sizing.controlHeight + 12, pack.name)
         }
     }
+
+    /** A row tints on press (Material's 10 % pressed layer) instead of scaling, and clears on release. */
+    func testARowTintsOnlyWhilePressed() {
+        XCTAssertEqual(RowButtonStyle.tintOpacity(pressed: true), 0.1)
+        XCTAssertEqual(RowButtonStyle.tintOpacity(pressed: false), 0)
+    }
+
+    /** The row style never changes the row's size: no scale, no padding of its own. */
+    func testARowStyleKeepsTheLabelsSize() {
+        for pack in [StylePack.material, .gallery] {
+            let label = Text("Theme").frame(maxWidth: .infinity, minHeight: pack.sizing.listRowMinHeight)
+            let bare = size(label, width: 320, dynamicType: .large, pack: pack)
+            let styled = size(Button {} label: { label }.buttonStyle(RowButtonStyle()), width: 320, dynamicType: .large, pack: pack)
+            XCTAssertEqual(styled, bare, pack.name)
+        }
+    }
 }
