@@ -78,11 +78,11 @@ struct AnyInsettableShape: InsettableShape {
 }
 
 extension View {
-    /** The pack's emphasis motion on press (Gallery's soft spring; Reduce Motion: a fade). */
+    /** The pack's press: Gallery scales to 0.97 in 120 ms with no bounce; Reduce Motion: no scale, instant. */
     func pressEffect(_ pressed: Bool, style: AppStyle) -> some View {
-        scaleEffect(pressed && style.pack.motion != .reduced ? 0.98 : 1)
+        scaleEffect(pressed ? style.pack.motion.pressScale : 1)
             .opacity(pressed ? 0.9 : 1)
-            .animation(style.pack.motion.emphasis.animation, value: pressed)
+            .animation(style.pack.motion.press.animation, value: pressed)
     }
 }
 
