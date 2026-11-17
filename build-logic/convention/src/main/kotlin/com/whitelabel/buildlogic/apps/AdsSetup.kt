@@ -1,18 +1,40 @@
 package com.whitelabel.buildlogic.apps
 
 /** The platform an [adsSetup] is for: it picks the test IDs and the property keys named in errors. */
-enum class Platform(val appIdKey: String, val unitKeyPrefix: String, val testAppId: String, val testBannerUnit: String) {
-    // Google's public test IDs (https://developers.google.com/admob/android/test-ads and .../ios/test-ads).
-    // The runtime copy of the banner units is AdsPlatform in core/ads; keep the two in sync.
-    ANDROID("ads.android.appId", "ads.android.banner.", "ca-app-pub-3940256099942544~3347511713", "ca-app-pub-3940256099942544/9214589741"),
-    IOS("ads.ios.appId", "ads.ios.banner.", "ca-app-pub-3940256099942544~1458002511", "ca-app-pub-3940256099942544/2435281174"),
+enum class Platform(
+    val appIdKey: String,
+    val unitKeyPrefix: String,
+    val testAppId: String,
+    val testBannerUnit: String,
+    val nativeUnitKeyPrefix: String,
+    val testNativeUnit: String,
+) {
+    // Google's public test IDs (https://developers.google.com/admob/android/test-ads and .../ios/test-ads;
+    // native advanced checked 2026-11-17). The runtime copy of the banner and native units is AdsPlatform
+    // in core/ads; keep the two in sync.
+    ANDROID(
+        "ads.android.appId", "ads.android.banner.", "ca-app-pub-3940256099942544~3347511713", "ca-app-pub-3940256099942544/9214589741",
+        "ads.android.native.", "ca-app-pub-3940256099942544/2247696110",
+    ),
+    IOS(
+        "ads.ios.appId", "ads.ios.banner.", "ca-app-pub-3940256099942544~1458002511", "ca-app-pub-3940256099942544/2435281174",
+        "ads.ios.native.", "ca-app-pub-3940256099942544/3986624511",
+    ),
 }
+
+/**
+ * The key a native placement's unit has in the units string (`native.<placement>=unit`). Placement
+ * names can't hold `.`, so it never collides with a banner's key. The runtime twin is
+ * `NATIVE_UNIT_KEY_PREFIX` in core/ads; keep the two in sync.
+ */
+const val NATIVE_UNIT_KEY_PREFIX = "native."
 
 /**
  * What one app gets for ads on one platform. [dependencyConfiguration] is the Gradle configuration
  * for the Google Mobile Ads module (`null` for none). Everything else is per build type
  * (`debug`/`release`): [modeFor] is `on` or `off` (`foundation_ads` on Android, `WL_ADS` on iOS),
- * [unitsFor] the banner unit per placement (the units string is [adsUnitsString]), and
+ * [unitsFor] the unit per key: a banner's under its placement, a native one's under
+ * `native.<placement>` (the units string is [adsUnitsString]), and
  * [admobAppIdFor] the AdMob app ID to publish, present only for build types where ads are on.
  * [declared] is true when `ads.enabled` isn't `false` (`foundation_ads_declared`, the same in every
  * build type), so the shell can tell `ads { }` without the setting from a build type with ads off.
@@ -27,19 +49,41 @@ data class AdsSetup(
 }
 
 /**
- * Decides the ads setup from `ads.enabled` ([mode]), the platform's AdMob [appId] and its banner
- * [units] (placement to unit ID, from `<platform>.banner.<placement>`). Placements are known only
- * to the app definition at runtime, so the build can't check that each one has a unit; it checks
- * that a `true` app has an app ID and at least one unit (Release needs one).
+ * Decides the ads setup from `ads.enabled` ([mode]), the platform's AdMob [appId], its banner
+ * [units] (placement to unit ID, from `<platform>.banner.<placement>`) and its [nativeUnits]
+ * (from `<platform>.native.<placement>`). Placements are known only to the app definition at
+ * runtime, so the build can't check that each one has a unit; it checks that a `true` app has an
+ * app ID and at least one unit of either kind (Release needs one), and that no placement name has
+ * both a banner and a native unit (a name is one kind).
  * - `false`: off everywhere.
  * - `true`: on in both build types. Release uses the real units; Debug replaces every unit with
  *   Google's test unit.
  * - `debug`: on in Debug with test units, off in Release, and no ID is needed. Debug keeps a real
  *   app ID when there is one (so the consent message is found) and otherwise uses the test one.
  */
-fun adsSetup(mode: ServiceMode, appId: String?, units: Map<String, String>, platform: Platform, label: String): AdsSetup {
-    val testUnits = units.mapValues { platform.testBannerUnit }
+fun adsSetup(
+    mode: ServiceMode,
+    appId: String?,
+    units: Map<String, String>,
+    nativeUnits: Map<String, String>,
+    platform: Platform,
+    label: String,
+): AdsSetup {
     val none = emptyMap<String, String>()
+    if (mode != ServiceMode.OFF) {
+        val clashes = units.keys.intersect(nativeUnits.keys).sorted()
+        if (clashes.isNotEmpty()) {
+            throw InvalidAppConfigException(
+                clashes.map { name ->
+                    "$label: ${platform.unitKeyPrefix}$name and ${platform.nativeUnitKeyPrefix}$name name the same placement; " +
+                        "a placement is a banner or a native ad, not both"
+                },
+            )
+        }
+    }
+    val realUnits = units + nativeUnits.mapKeys { NATIVE_UNIT_KEY_PREFIX + it.key }
+    val testUnits = units.mapValues { platform.testBannerUnit } +
+        nativeUnits.keys.associate { NATIVE_UNIT_KEY_PREFIX + it to platform.testNativeUnit }
     return when (mode) {
         ServiceMode.OFF -> AdsSetup(
             null, mapOf("debug" to "off", "release" to "off"), mapOf("debug" to none, "release" to none), emptyMap(),
@@ -47,12 +91,14 @@ fun adsSetup(mode: ServiceMode, appId: String?, units: Map<String, String>, plat
         ServiceMode.ON -> {
             val problems = buildList {
                 if (appId.isNullOrBlank()) add("$label: ads.enabled=true needs ${platform.appIdKey}")
-                if (units.isEmpty()) add("$label: ads.enabled=true needs at least one ${platform.unitKeyPrefix}<placement>")
+                if (realUnits.isEmpty()) {
+                    add("$label: ads.enabled=true needs at least one ${platform.unitKeyPrefix}<placement> or ${platform.nativeUnitKeyPrefix}<placement>")
+                }
             }
             if (problems.isNotEmpty()) throw InvalidAppConfigException(problems)
             AdsSetup(
                 "implementation", mapOf("debug" to "on", "release" to "on"),
-                mapOf("debug" to testUnits, "release" to units),
+                mapOf("debug" to testUnits, "release" to realUnits),
                 mapOf("debug" to appId!!, "release" to appId),
             )
         }
@@ -69,7 +115,7 @@ fun adsSetup(mode: ServiceMode, appId: String?, units: Map<String, String>, plat
     }
 }
 
-/** `placement=unit;placement=unit`, sorted by placement; empty for none. Placement names never contain `=` or `;`. */
+/** `key=unit;key=unit` (a key is a placement or `native.<placement>`), sorted by key; empty for none. Placement names never contain `=` or `;`. */
 fun adsUnitsString(units: Map<String, String>): String =
     units.toSortedMap().entries.joinToString(";") { "${it.key}=${it.value}" }
 

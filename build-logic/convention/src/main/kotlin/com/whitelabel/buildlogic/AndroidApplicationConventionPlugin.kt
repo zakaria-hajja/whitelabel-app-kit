@@ -121,7 +121,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
         // for the build type (the real ID, or Google's test ID in Debug without one), else the
         // plain ads.android.appId Firebase's consent needs, else empty so merging never fails.
         val ads = adsSetup(
-            app.ads, app.adsAndroidAppId, app.adsAndroidUnits, Platform.ANDROID,
+            app.ads, app.adsAndroidAppId, app.adsAndroidUnits, app.adsAndroidNativeUnits, Platform.ANDROID,
             label = rootDir.toPath().relativize(projectDir.toPath()).toString(),
         )
         if (app.ads != ServiceMode.OFF) {

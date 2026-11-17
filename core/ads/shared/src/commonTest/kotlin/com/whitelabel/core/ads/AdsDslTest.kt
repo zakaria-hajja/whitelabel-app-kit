@@ -5,6 +5,7 @@ import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.hasMessage
 import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import kotlin.test.Test
 
@@ -41,5 +42,36 @@ class AdsDslTest {
                 placement("home", underTab = HomeTab)
             }
         }.isInstanceOf<IllegalArgumentException>().hasMessage("placement 'home' is declared twice")
+    }
+
+    @Test fun `native declares a native placement without a tab`() {
+        assertThat(AdsBuilder().apply { native("list") }.build()).containsExactly(AdPlacement("list", null, AdKind.NATIVE))
+    }
+
+    @Test fun `placement stays a banner`() {
+        assertThat(AdsBuilder().apply { placement("home") }.build().single().kind).isEqualTo(AdKind.BANNER)
+    }
+
+    @Test fun `a name is unique across kinds`() {
+        assertFailure {
+            AdsBuilder().apply {
+                placement("x")
+                native("x")
+            }
+        }.isInstanceOf<IllegalArgumentException>().hasMessage("placement 'x' is declared twice")
+        assertFailure {
+            AdsBuilder().apply {
+                native("y")
+                placement("y")
+            }
+        }.isInstanceOf<IllegalArgumentException>().hasMessage("placement 'y' is declared twice")
+    }
+
+    @Test fun `native applies the name rule`() {
+        listOf("1x", "list.top", "").forEach { name ->
+            assertFailure { AdsBuilder().native(name) }
+                .isInstanceOf<IllegalArgumentException>()
+                .hasMessage("placement '$name' must start with a letter and use only letters, digits, '_' and '-'")
+        }
     }
 }

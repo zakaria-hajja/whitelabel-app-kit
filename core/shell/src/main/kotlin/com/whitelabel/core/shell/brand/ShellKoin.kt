@@ -89,7 +89,7 @@ internal fun foundationModules(
         firebaseModules(definition, firebase) +
         // An app with ads { } always gets the controller, so its AdBanner and AdFree calls resolve even
         // in a build with ads off (ads.enabled=debug in release), where every banner stays hidden.
-        (if (definition.usesAds) listOf(adsModule(ads.enabled, ads.units, ads.request)) else emptyList()) +
+        (if (definition.usesAds) listOf(adsModule(ads.enabled, ads.units, ads.request, ads.natives)) else emptyList()) +
         buildTypeModules +
         contributors.flatMap { it.modules() } +
         fakeOverrides(definition, firebase)

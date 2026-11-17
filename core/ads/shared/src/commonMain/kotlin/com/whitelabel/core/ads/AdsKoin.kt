@@ -12,9 +12,14 @@ private val applicationScope = named("applicationScope")
 
 /**
  * Binds [AdsController], [AdFree], [LaunchCounter] and the [request] policy the banner host builds requests with. Needs [Consent], [StorePaths] and the application
- * scope. A [TrackingPort] is optional (none means [NoTracking]). Apps resolve [AdFree] for their rewards.
+ * scope. [natives] are the native placements, whose rotations the controller follows. A [TrackingPort] is optional (none means [NoTracking]). Apps resolve [AdFree] for their rewards.
  */
-fun adsModule(enabled: Boolean, units: Map<String, String>, request: AdRequestPolicy = AdRequestPolicy.DEFAULT): Module = module {
+fun adsModule(
+    enabled: Boolean,
+    units: Map<String, String>,
+    request: AdRequestPolicy = AdRequestPolicy.DEFAULT,
+    natives: Set<String> = emptySet(),
+): Module = module {
     single { request }
     single { LaunchCounter(get<StorePaths>().path("ads-launches"), get(applicationScope)) }
     single { AdFree(get<StorePaths>().path("ads-free"), Clock.System, get(applicationScope)) }
@@ -22,7 +27,7 @@ fun adsModule(enabled: Boolean, units: Map<String, String>, request: AdRequestPo
     single(createdAtStart = true) {
         AdsController(
             enabled, units, get<Consent>(), get(), get(),
-            getOrNull<TrackingPort>() ?: NoTracking, Clock.System, get(applicationScope),
+            getOrNull<TrackingPort>() ?: NoTracking, Clock.System, get(applicationScope), natives,
         )
     }
 }

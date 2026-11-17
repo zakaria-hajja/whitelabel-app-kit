@@ -21,6 +21,8 @@ dependencies {
     api(project(":core:ads"))
     api(project(":core:consent:google"))
     implementation(project(":core:network"))
+    // The native template's spacing (AppTheme.spacing).
+    implementation(project(":core:designsystem"))
     implementation(libs.play.services.ads)
     implementation(libs.androidx.lifecycle.runtime.compose)
 

@@ -175,6 +175,14 @@ class IosConfigTest {
         assertThat(iosXcconfig(config, "debug")).contains("WL_ADS_UNITS = catalog=ca-app-pub-3940256099942544/2435281174;home=ca-app-pub-3940256099942544/2435281174\n")
     }
 
+    @Test fun `native units join the units string under native keys`() {
+        val config = app().copy(ads = ServiceMode.ON, adsIosAppId = IOS_ID, adsIosUnits = mapOf("home" to unit), adsIosNativeUnits = mapOf("list" to unit))
+
+        assertThat(iosXcconfig(config, "release")).contains("WL_ADS_UNITS = home=$unit;native.list=$unit\n")
+        assertThat(iosXcconfig(config, "debug"))
+            .contains("WL_ADS_UNITS = home=ca-app-pub-3940256099942544/2435281174;native.list=ca-app-pub-3940256099942544/3986624511\n")
+    }
+
     @Test fun `the non-personalized setting is published only where ads are on`() {
         val config = app().copy(ads = ServiceMode.DEBUG, adsNonPersonalized = true)
         assertThat(iosXcconfig(config, "debug")).contains("WL_ADS_NON_PERSONALIZED = yes\n")

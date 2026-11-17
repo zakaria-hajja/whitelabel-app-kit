@@ -15,7 +15,7 @@ class AdsWiringTest {
 
     private fun wiring(
         usesAds: Boolean = true,
-        placements: List<String> = listOf("home"),
+        placements: List<AdPlacement> = listOf(AdPlacement("home", null)),
         declared: Boolean = true,
         mode: String = "on",
         units: String = "home=$unit",
@@ -57,6 +57,54 @@ class AdsWiringTest {
         assertThat(wiring(units = "", debugBuild = true))
             .isEqualTo(AdsWiring(enabled = true, units = mapOf("home" to "ca-app-pub-3940256099942544/2435281174")))
         assertThat(AdsPlatform.ANDROID.testBannerUnit).isEqualTo("ca-app-pub-3940256099942544/9214589741")
+    }
+
+    private val nativeUnit = "ca-app-pub-6543210987654321/1111111111"
+    private val withNative = listOf(AdPlacement("home", null), AdPlacement("list", null, AdKind.NATIVE))
+
+    @Test fun `a native placement takes its native unit`() {
+        assertThat(wiring(placements = withNative, units = "home=$unit;native.list=$nativeUnit").units)
+            .isEqualTo(mapOf("home" to unit, "list" to nativeUnit))
+    }
+
+    @Test fun `the wiring names its native placements`() {
+        assertThat(wiring(placements = withNative, units = "home=$unit;native.list=$nativeUnit").natives).isEqualTo(setOf("list"))
+        assertThat(wiring(units = "home=$unit").natives).isEqualTo(emptySet())
+    }
+
+    @Test fun `debug native placement without a unit gets the native test unit`() {
+        assertThat(wiring(placements = withNative, units = "", debugBuild = true).units)
+            .isEqualTo(mapOf("home" to "ca-app-pub-3940256099942544/2435281174", "list" to "ca-app-pub-3940256099942544/3986624511"))
+    }
+
+    @Test fun `release native placement without a unit fails`() {
+        assertFailure { wiring(placements = withNative, units = "home=$unit") }
+            .isInstanceOf<IllegalStateException>()
+            .hasMessage("placement 'list' has no ads.ios.native.list")
+    }
+
+    @Test fun `a native unit without a native placement fails`() {
+        assertFailure { wiring(units = "home=$unit;native.x=$nativeUnit") }
+            .isInstanceOf<IllegalStateException>()
+            .hasMessage("ads.ios.native.x has no matching ads { native(\"x\") }")
+        // A native unit for a banner placement is a native unit without a native placement.
+        assertFailure { wiring(units = "home=$unit;native.home=$nativeUnit") }
+            .isInstanceOf<IllegalStateException>()
+            .hasMessage("ads.ios.native.home has no matching ads { native(\"home\") }")
+    }
+
+    @Test fun `a banner unit for a native placement fails`() {
+        assertFailure { wiring(placements = withNative, units = "home=$unit;list=$nativeUnit") }
+            .isInstanceOf<IllegalStateException>()
+            .hasMessage("ads.ios.banner.list is for a banner, but 'list' is declared native")
+    }
+
+    @Test fun `the native test units are Google's`() {
+        assertThat(AdsPlatform.ANDROID.testNativeUnit).isEqualTo("ca-app-pub-3940256099942544/2247696110")
+        assertThat(AdsPlatform.IOS.testNativeUnit).isEqualTo("ca-app-pub-3940256099942544/3986624511")
+        assertThat(AdsPlatform.ANDROID.nativeKeyPrefix).isEqualTo("ads.android.native.")
+        assertThat(AdsPlatform.IOS.nativeKeyPrefix).isEqualTo("ads.ios.native.")
+        assertThat(NATIVE_UNIT_KEY_PREFIX).isEqualTo("native.")
     }
 
     @Test fun `the units string parses trimming and skipping blanks`() {
@@ -101,6 +149,22 @@ class AdsWiringTest {
         val placements = listOf(AdPlacement("own", null), AdPlacement("top", "home"))
         assertThat(tabPlacementFor(placements) { it == "home" }).isEqualTo("top")
         assertThat(tabPlacementFor(placements) { it == "settings" }).isNull()
+    }
+
+    @Test fun `a native placement under a tab is refused`() {
+        assertFailure { checkTabs(AdPlacement("n", "home", AdKind.NATIVE)) }
+            .isInstanceOf<IllegalArgumentException>()
+            .hasMessage("placement 'n' is native: the app places it in a list, so it has no underTab")
+        // Refused before the tab lookup: a route that isn't a tab gets the native message too.
+        assertFailure { checkTabs(AdPlacement("n", "nowhere", AdKind.NATIVE)) }
+            .isInstanceOf<IllegalArgumentException>()
+            .hasMessage("placement 'n' is native: the app places it in a list, so it has no underTab")
+    }
+
+    @Test fun `tabPlacementFor ignores native placements`() {
+        val placements = listOf(AdPlacement("n", "home", AdKind.NATIVE), AdPlacement("top", "home"))
+        assertThat(tabPlacementFor(placements) { it == "home" }).isEqualTo("top")
+        assertThat(tabPlacementFor(listOf(AdPlacement("n", "home", AdKind.NATIVE))) { it == "home" }).isNull()
     }
 
     @Test fun `a non-personalized request carries AdMob's npa extra and a default one carries none`() {

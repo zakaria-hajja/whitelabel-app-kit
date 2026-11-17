@@ -10,7 +10,7 @@ private const val ANDROID_EMULATOR_HOST = "10.0.2.2"
  * xcconfig reads `//` as a comment. `WL_FIREBASE` is `on`, `fake` or `off` ([firebaseSetup], from the
  * build types that have a `GoogleService-Info.plist`, [firebaseConfigBuildTypes]);
  * `WL_ADMOB_APP_ID` is the iOS AdMob app ID ([resolvedAdmobAppId]; empty when absent), which Info.plist reads as
- * `GADApplicationIdentifier`. `WL_ADS` (`on`/`off`), `WL_ADS_UNITS` (`placement=unit;...`), `WL_ADS_TRACKING`
+ * `GADApplicationIdentifier`. `WL_ADS` (`on`/`off`), `WL_ADS_UNITS` (`placement=unit;native.placement=unit;...`), `WL_ADS_TRACKING`
  * (`yes`/`no`), `WL_ADS_TRACKING_MESSAGE` and `WL_ADS_NON_PERSONALIZED` (`yes`/`no`, `ads.nonPersonalized`)
  * come from [adsSetup]; tracking, its message and non-personalized are published only for a build type
  * where ads are on. `WL_ADS_DECLARED` (`true`/`false`, the same in both build types)
@@ -23,7 +23,7 @@ internal fun iosXcconfig(app: AppConfig, buildType: String, firebaseConfigBuildT
         app.firebase, firebaseConfigBuildTypes, adsAppId = app.adsIosAppId, adsAppIdKey = "ads.ios.appId",
         label = label, configFileName = "GoogleService-Info.plist",
     )
-    val ads = adsSetup(app.ads, app.adsIosAppId, app.adsIosUnits, Platform.IOS, label)
+    val ads = adsSetup(app.ads, app.adsIosAppId, app.adsIosUnits, app.adsIosNativeUnits, Platform.IOS, label)
     val adsOn = ads.modeFor.getValue(buildType) == "on"
     val tracking = adsOn && app.iosRequestTracking
     val fields = appConfigFields(app, buildType).toMutableMap()

@@ -111,8 +111,8 @@ private fun PauseWithLifecycle(view: AdView?) {
     }
 }
 
-/** The Google Mobile Ads SDK's start, shared by every banner in the process. */
-private val MobileAdsStart = StartOnce()
+/** The Google Mobile Ads SDK's start, shared by every banner and native ad in the process. */
+internal val MobileAdsStart = StartOnce()
 
 /**
  * Runs a start once and lets every caller wait for it, off the main thread. A start that throws

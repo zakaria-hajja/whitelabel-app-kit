@@ -1,8 +1,10 @@
 package com.whitelabel.core.ads
 
 import com.whitelabel.core.consent.Consent
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Clock
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,6 +25,10 @@ sealed interface BannerState {
 /**
  * Decides, per placement, whether a banner may load. [units] maps a placement to its unit ID (already
  * resolved for the build type); a placement not in it is undeclared. Counts this launch on creation.
+ *
+ * [natives] are the native placements: for each, the controller tells its rotation ([rotations]) every
+ * hide on [rotationContext] (the main thread by default; rotations are main-thread only), so held ads
+ * are dropped on a consent or ad-free hide even while no slot of the placement is alive.
  */
 class AdsController(
     private val enabled: Boolean,
@@ -33,6 +39,9 @@ class AdsController(
     private val tracking: TrackingPort,
     private val clock: Clock,
     private val scope: CoroutineScope,
+    private val natives: Set<String> = emptySet(),
+    private val rotations: (placement: String) -> NativeAdRotation = NativeAdRotations::of,
+    private val rotationContext: CoroutineContext? = null,
 ) {
     // Lazies are swapped in by compare-and-set; only the winner is ever forced, so one flow exists per placement.
     private val banners = MutableStateFlow<Map<String, Lazy<StateFlow<BannerState>>>>(emptyMap())
@@ -49,7 +58,21 @@ class AdsController(
         scope.launch { runCatching { launches.countThisLaunch() } }
     }
 
-    /** One shared state per placement: every caller of the same placement sees the same flow. */
+    init {
+        if (enabled) {
+            natives.filter { it in units }.forEach { placement ->
+                val state = bannerState(placement)
+                scope.launch(rotationContext ?: Dispatchers.Main.immediate) {
+                    state.collect { if (it is BannerState.Hidden) rotations(placement).hidden(it.reason) }
+                }
+            }
+        }
+    }
+
+    /**
+     * One shared state per placement: every caller of the same placement sees the same flow. It is
+     * also the state of a native placement: `Ready` means a native ad may load (and show).
+     */
     fun bannerState(placement: String): StateFlow<BannerState> =
         if (placement !in units) {
             // One constant per reason, so arbitrary names never cache or launch anything.
