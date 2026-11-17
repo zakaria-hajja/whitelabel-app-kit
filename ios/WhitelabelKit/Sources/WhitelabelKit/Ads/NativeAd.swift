@@ -111,7 +111,26 @@ final class NativeAdSlotDriver {
 @MainActor
 @Observable
 public final class NativeAdSlotModel {
-    public private(set) var ad: NativeAdHandle?
+    /** What the slot holds; while no task runs, [ad] checks it against the rules and the clock first. */
+    private var held: NativeAdHandle?
+    /**
+     * Set while no task runs (the screen is away): the placement's state now, and its rotation. The
+     * rules or the clock may change meanwhile with nothing observing them, so [ad] checks again each
+     * time the slot is drawn, the same check as Android's first-frame seed.
+     */
+    @ObservationIgnored private var away: (current: () -> BannerState, rotation: NativeAdRotation)?
+
+    /**
+     * The ad to draw now. While [observe] runs, the one its visit shows. Otherwise the held ad only if
+     * the rules are `Ready` now and it is under the age limit (`NativeAdRotation.peek`): a screen that
+     * comes back after consent was withdrawn, an ad-free window started or an hour passed draws nothing.
+     */
+    public var ad: NativeAdHandle? {
+        guard held != nil else { return nil }
+        guard let away else { return held }
+        guard case .load = AdBannerSlot(state: away.current()) else { return nil }
+        return away.rotation.peek()
+    }
     public var isLoaded: Bool { ad != nil }
 
     @ObservationIgnored private let placement: String
@@ -122,6 +141,17 @@ public final class NativeAdSlotModel {
 
     /** A slot loads only in an app with ads (a controller) and a registered [NativeAdHost]. */
     static func loads(hasController: Bool, hasHost: Bool) -> Bool { hasController && hasHost }
+
+    /**
+     * Stores [ad]'s check while no task runs, so SwiftUI sees the change (the row goes) even when it
+     * draws the screen without reading [ad] again. [NativeAdItem] calls it when it appears, which
+     * completes before the first frame is drawn.
+     */
+    func reconcile() {
+        guard away != nil else { return }
+        let now = ad
+        if now !== held { held = now }
+    }
 
     /** Follows the placement's rules until the calling task is cancelled (the view went away). */
     public func observe() async {
@@ -139,7 +169,7 @@ public final class NativeAdSlotModel {
             feed.finish()
         }
         // Cancelling this task ends [run]'s loop; the pump then stops too.
-        await run(states: states, host: host, rotation: rotation)
+        await run(states: states, current: { flow.value }, host: host, rotation: rotation)
         pump.cancel()
     }
 
@@ -148,21 +178,26 @@ public final class NativeAdSlotModel {
      * requests or is destroyed), else nothing. A slot that comes back draws its row on the first frame.
      */
     func seed(slot: AdBannerSlot, rotation: NativeAdRotation) {
-        if case .load = slot { ad = rotation.peek() } else { ad = nil }
+        if case .load = slot { held = rotation.peek() } else { held = nil }
     }
 
-    /** [observe] with its inputs handed in (tests). [center] posts the app's foreground and background. */
+    /**
+     * [observe] with its inputs handed in (tests). [current] gives the placement's state now (the
+     * flow's value), for [ad]'s check once the task ends. [center] posts the app's foreground and background.
+     */
     func run(
         states: AsyncStream<BannerState>,
+        current: @escaping () -> BannerState,
         host: any NativeAdHost,
         rotation: NativeAdRotation,
         // Qualified: an app's Shared framework may export its own `NotificationCenter`.
         center: Foundation.NotificationCenter = .default
     ) async {
+        away = nil
         let driver = NativeAdSlotDriver(
             rotation: rotation,
             load: { host.load(unitId: $0, onLoaded: $1, onFailed: $2) },
-            onShow: { [weak self] in self?.ad = $0 }
+            onShow: { [weak self] in self?.held = $0 }
         )
         var unitId: String?
         var hideReason = HideReason.loading
@@ -209,8 +244,10 @@ public final class NativeAdSlotModel {
         observers.forEach(center.removeObserver)
         driver.dispose()
         // This model outlives its task (a pushed screen, a tab flip): keep the held ad, so coming
-        // back draws its row on the first frame instead of inserting it a moment later.
+        // back draws its row on the first frame instead of inserting it a moment later. Until the next
+        // task, [ad] checks it against the rules and the clock whenever the slot is drawn.
         seed(slot: last, rotation: rotation)
+        away = (current, rotation)
     }
 }
 
@@ -223,7 +260,8 @@ public struct NativeAdItem: View {
     }
 
     public var body: some View {
-        if let row = Self.row(ad: slot.ad, host: NativeAds.host) { row }
+        // A screen coming back may draw from what it drew before: check the held ad again on appear.
+        if let row = Self.row(ad: slot.ad, host: NativeAds.host) { row.onAppear { slot.reconcile() } }
     }
 
     /** The card at the host's height, or nil (no frame, no space) when there is no ad to draw. */

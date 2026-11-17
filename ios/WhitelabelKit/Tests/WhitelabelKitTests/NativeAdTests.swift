@@ -47,13 +47,15 @@ final class NativeAdTests: XCTestCase {
     private func running() -> (NativeAdSlotModel, AsyncStream<BannerState>.Continuation, Task<Void, Never>) {
         let model = NativeAdSlotModel(placement: "list")
         let (stream, feed) = AsyncStream<BannerState>.makeStream()
-        let task = Task { await model.run(states: stream, host: host, rotation: rotation, center: center) }
+        let task = Task { await model.run(states: stream, current: { [unowned self] in self.state }, host: host, rotation: rotation, center: center) }
         return (model, feed, task)
     }
 
     /** The shared rules' states the tests feed. */
     private let ready = BannerStateReady(unitId: "u")
     private let appHidden = BannerStateHidden(reason: .appHidden)
+    /** The placement's state right now (the controller flow's value), for a model with no task running. */
+    private var state: BannerState = BannerStateReady(unitId: "u")
 
     /** Lets the model's task take what was fed. */
     private func settle() async {
@@ -152,7 +154,7 @@ final class NativeAdTests: XCTestCase {
         // Back within the refresh interval: the same ad, no request.
         now = 10_000
         let (stream, nextFeed) = AsyncStream<BannerState>.makeStream()
-        let next = Task { await model.run(states: stream, host: host, rotation: rotation, center: center) }
+        let next = Task { await model.run(states: stream, current: { [unowned self] in self.state }, host: host, rotation: rotation, center: center) }
         XCTAssertTrue(model.ad === ad)
         nextFeed.yield(ready)
         await settle()
@@ -160,6 +162,50 @@ final class NativeAdTests: XCTestCase {
         XCTAssertEqual(host.loads.count, 1)
         nextFeed.finish()
         await next.value
+    }
+
+    /** A model whose task ended and holds an ad, as when its screen is pushed over or its tab flipped. */
+    private func leftHolding() async -> (NativeAdSlotModel, FakeAd) {
+        let (model, feed, task) = running()
+        feed.yield(ready)
+        await settle()
+        let ad = FakeAd()
+        host.loads.last!.onLoaded(ad)
+        task.cancel()
+        await task.value
+        return (model, ad)
+    }
+
+    /** Consent withdrawn or ad-free started while the screen was away: its first frame back draws no ad. */
+    func testAReturningSlotDrawsNothingTheRulesNowHide() async {
+        for reason in [HideReason.consentNoAds, .adFree, .appHidden] {
+            state = ready
+            let (model, ad) = await leftHolding()
+            XCTAssertTrue(model.isLoaded, "\(reason)")
+            state = BannerStateHidden(reason: reason)
+            // No task has run since: the check happens when the slot is drawn.
+            XCTAssertFalse(model.isLoaded, "\(reason)")
+            XCTAssertNil(model.ad, "\(reason)")
+            XCTAssertEqual(ad.destroyed, 0, "\(reason)")
+            now += 60_000
+        }
+    }
+
+    /** Away past the age limit: the first frame back draws nothing, and drawing destroys nothing. */
+    func testAReturningSlotDrawsNothingPastTheAgeLimit() async {
+        let (model, ad) = await leftHolding()
+        now = 3_600_001
+        XCTAssertFalse(model.isLoaded)
+        XCTAssertEqual(ad.destroyed, 0)
+    }
+
+    /** [reconcile] (the item's appear) stores the check, so SwiftUI sees the change and removes the row. */
+    func testReconcileDropsTheHeldAdTheRulesNowHide() async {
+        let (model, _) = await leftHolding()
+        state = BannerStateHidden(reason: .consentNoAds)
+        model.reconcile()
+        state = ready
+        XCTAssertNil(model.ad)
     }
 
     func testLeavingWhileHiddenLeavesNothing() async {
