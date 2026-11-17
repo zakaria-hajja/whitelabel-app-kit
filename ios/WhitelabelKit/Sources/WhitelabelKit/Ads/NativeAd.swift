@@ -11,7 +11,8 @@ import UIKit
  */
 public protocol NativeAdHost {
     @MainActor func load(unitId: String, onLoaded: @escaping (NativeAdHandle) -> Void, onFailed: @escaping () -> Void)
-    @MainActor func item(ad: NativeAdHandle) -> AnyView
+    /** The template for [ad], or nil when the handle holds no ad (destroyed): then nothing takes space. */
+    @MainActor func item(ad: NativeAdHandle) -> AnyView?
     var itemHeight: CGFloat { get }
 }
 
@@ -220,8 +221,12 @@ public struct NativeAdItem: View {
     }
 
     public var body: some View {
-        if let ad = slot.ad, let host = NativeAds.host {
-            host.item(ad: ad).frame(height: host.itemHeight)
-        }
+        if let row = Self.row(ad: slot.ad, host: NativeAds.host) { row }
+    }
+
+    /** The card at the host's height, or nil (no frame, no space) when there is no ad to draw. */
+    static func row(ad: NativeAdHandle?, host: (any NativeAdHost)?) -> AnyView? {
+        guard let ad, let host, let item = host.item(ad: ad) else { return nil }
+        return AnyView(item.frame(height: host.itemHeight))
     }
 }

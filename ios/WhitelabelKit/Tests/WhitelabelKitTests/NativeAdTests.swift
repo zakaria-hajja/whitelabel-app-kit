@@ -24,7 +24,9 @@ private final class FakeHost: NativeAdHost {
         loads.append(Load(unitId: unitId, onLoaded: onLoaded, onFailed: onFailed))
     }
 
-    func item(ad: NativeAdHandle) -> AnyView { AnyView(EmptyView()) }
+    var draws = true
+
+    func item(ad: NativeAdHandle) -> AnyView? { draws ? AnyView(EmptyView()) : nil }
 }
 
 /** The kit's native ad slot: the same visit rules as Android's `NativeAdSlotDriver`. */
@@ -225,6 +227,15 @@ final class NativeAdTests: XCTestCase {
         XCTAssertEqual(host.loads.count, 2)
         feed.finish()
         await task.value
+    }
+
+    /** A destroyed handle (the host draws nothing) leaves no row, not an empty card-height frame. */
+    func testTheItemTakesNoSpaceWhenTheHostDrawsNothing() {
+        XCTAssertNotNil(NativeAdItem.row(ad: FakeAd(), host: host))
+        host.draws = false
+        XCTAssertNil(NativeAdItem.row(ad: FakeAd(), host: host))
+        XCTAssertNil(NativeAdItem.row(ad: nil, host: host))
+        XCTAssertNil(NativeAdItem.row(ad: FakeAd(), host: nil))
     }
 
     func testANativePlacementKeepsItsKindFromSwift() {

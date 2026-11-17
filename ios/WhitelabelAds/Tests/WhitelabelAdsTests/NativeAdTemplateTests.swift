@@ -1,5 +1,11 @@
+import Shared
 import XCTest
 @testable import WhitelabelAds
+
+/** A handle that isn't a Google ad (or no longer holds one). */
+private final class NoAd: NSObject, NativeAdHandle {
+    func destroy() {}
+}
 
 final class NativeAdTemplateTests: XCTestCase {
 
@@ -32,5 +38,11 @@ final class NativeAdTemplateTests: XCTestCase {
         XCTAssertFalse(NativeAdTemplate.isRenderable(headline: nil, hasMedia: true))
         XCTAssertFalse(NativeAdTemplate.isRenderable(headline: "", hasMedia: true))
         XCTAssertFalse(NativeAdTemplate.isRenderable(headline: "Quillby", hasMedia: false))
+    }
+
+    /** A handle with no ad draws nothing, so the kit's item takes no space (no empty card-height gap). */
+    @MainActor func testTheHostDrawsNothingForAHandleWithoutAnAd() {
+        let host = GoogleNativeAdHost(policy: AdRequestPolicy(nonPersonalized: false))
+        XCTAssertNil(host.item(ad: NoAd()))
     }
 }

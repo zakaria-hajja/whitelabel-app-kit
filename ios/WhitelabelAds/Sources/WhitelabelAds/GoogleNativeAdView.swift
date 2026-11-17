@@ -24,8 +24,8 @@ struct GoogleNativeAdHost: NativeAdHost {
         }
     }
 
-    @MainActor func item(ad: NativeAdHandle) -> AnyView {
-        guard let google = ad as? GoogleNativeAd, let native = google.ad else { return AnyView(EmptyView()) }
+    @MainActor func item(ad: NativeAdHandle) -> AnyView? {
+        guard let google = ad as? GoogleNativeAd, let native = google.ad else { return nil }
         // A new ad is a new NativeAdView: the template is built once per ad.
         return AnyView(NativeAdTemplateView(ad: native).id(ObjectIdentifier(native)))
     }
