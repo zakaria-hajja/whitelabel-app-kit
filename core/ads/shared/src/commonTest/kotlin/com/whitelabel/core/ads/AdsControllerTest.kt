@@ -14,6 +14,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -62,6 +63,7 @@ class AdsControllerTest {
     )
 
     /** [earlierLaunches] processes ran before this one, so this launch is number earlierLaunches + 1. */
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun TestScope.rig(
         earlierLaunches: Int,
         enabled: Boolean = true,
