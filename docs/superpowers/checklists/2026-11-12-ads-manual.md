@@ -64,7 +64,7 @@ test unit. Run each on Android and iOS, in light and dark, and once in French.
 | N10 | Both | Background the app over an hour (or move the clock forward 1 h), come back: the old ad is gone (not shown), a new one loads | |
 | N11 | Both | Ad-free on (see check 4 / 11): the item disappears; it never shows on launch 1 or before consent. After the ad-free window (or a consent change that hid ads) ends, the list shows a new ad, never the one held before | |
 | N12 | Both | The ad loads while its slot is on screen: it animates in, rows below move, not while a finger is down; with reduced motion it appears instantly (the app's insertion, ads.md "What the app still owns") | |
-| N13 | Both | TalkBack / VoiceOver read "Ad" first, then the headline, advertiser, body and CTA; AdChoices is reachable | |
+| N13 | Both | TalkBack / VoiceOver read "Ad" first, then the headline, advertiser, body and CTA; AdChoices is reachable. iOS: swiping on past the CTA reaches the advertiser icon (read as the advertiser's name) and then AdChoices, and double-tapping AdChoices opens Google's ad preferences. Android: listen for "Ad, <headline>" (the headline sits in an interop view) | |
 | N14 | Both | **Native Ad Validator**: on test native ads in Debug, open its panel (Android: the validator's overlay on the ad; iOS: the same), it reports no errors or warnings. Screenshot it for the PR. Don't set `com.google.android.gms.ads.flag.NATIVE_AD_DEBUGGER_ENABLED=false` for QA | |
 
 `npa=1` on native requests is pinned by unit tests (`AdsContributorTest`, `AdsServiceTests`), so it has no manual row.
