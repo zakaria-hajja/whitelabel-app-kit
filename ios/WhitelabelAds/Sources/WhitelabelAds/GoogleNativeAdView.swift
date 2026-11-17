@@ -139,6 +139,14 @@ enum NativeAdTemplate {
         return min(UIFontMetrics.default.scaledValue(for: 1), cap)
     }
 
+    /**
+     * The order VoiceOver reads the card in: "Ad, <headline>" first (design spec §5), then the
+     * advertiser, body, media and CTA. Missing optional assets are skipped.
+     */
+    static func readingOrder(chip: UIView, headline: UIView, advertiser: UIView?, body: UIView?, media: UIView, callToAction: UIView?) -> [UIView] {
+        [chip, headline, advertiser, body, media, callToAction].compactMap { $0 }
+    }
+
     /** Whether the template can draw an ad: it needs a headline and media (the SDK's required assets). */
     static func isRenderable(headline: String?, hasMedia: Bool) -> Bool {
         !(headline ?? "").isEmpty && hasMedia
@@ -235,6 +243,7 @@ private struct NativeAdViewBuilder {
             bottom.addArrangedSubview(icon)
             card.iconView = icon
         }
+        var ctaText: UILabel?
         if let action = ad.callToAction, !action.isEmpty {
             let text = label(action, size: 14, style: .subheadline, weight: .medium, color: colors.primary, lines: 1)
             let cta = UIView()
@@ -247,6 +256,7 @@ private struct NativeAdViewBuilder {
             cta.isUserInteractionEnabled = false
             bottom.addArrangedSubview(cta)
             card.callToActionView = cta
+            ctaText = text
         }
 
         for view in [header, media, column, bottom] as [UIView] {
@@ -292,6 +302,10 @@ private struct NativeAdViewBuilder {
         }
         applyBorders(card)
         card.registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: NativeAdView, _: UITraitCollection) in applyBorders(view) }
+
+        card.accessibilityElements = NativeAdTemplate.readingOrder(
+            chip: chipLabel, headline: headline, advertiser: card.advertiserView, body: card.bodyView, media: media, callToAction: ctaText
+        )
 
         // Set last, once every asset view is registered.
         card.nativeAd = ad

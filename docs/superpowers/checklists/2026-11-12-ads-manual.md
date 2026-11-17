@@ -59,10 +59,10 @@ test unit. Run each on Android and iOS, in light and dark, and once in French.
 | N5 | Both | Long text truncates with an ellipsis (headline and body 2 lines, CTA 1 line), never overflows the card; the card's height stays 184 at the default text size | |
 | N6 | Both | Font scale 1.3 / larger Dynamic Type: the card is taller (212 at 1.3) and nothing is clipped; it doesn't change size while on screen | |
 | N7 | Both | A failed load (airplane mode, then open the list): no gap, no error, the list looks as without ads | |
-| N8 | Both | Leave and come back within 60 s: the same ad, no reload, no jump | |
+| N8 | Both | Leave and come back within 60 s (detail and back, a tab flip): the same ad on the first frame, no reload, no jump, no insert animation | |
 | N9 | Both | Come back after 60 s: the same ad again; the next entry after that shows a new one | |
 | N10 | Both | Background the app over an hour (or move the clock forward 1 h), come back: the old ad is gone (not shown), a new one loads | |
-| N11 | Both | Ad-free on (see check 4 / 11): the item disappears; it never shows on launch 1 or before consent | |
+| N11 | Both | Ad-free on (see check 4 / 11): the item disappears; it never shows on launch 1 or before consent. After the ad-free window (or a consent change that hid ads) ends, the list shows a new ad, never the one held before | |
 | N12 | Both | The ad loads while its slot is on screen: it animates in, rows below move, not while a finger is down; with reduced motion it appears instantly (the app's insertion, ads.md "What the app still owns") | |
 | N13 | Both | TalkBack / VoiceOver read "Ad" first, then the headline, advertiser, body and CTA; AdChoices is reachable | |
 | N14 | Both | **Native Ad Validator**: on test native ads in Debug, open its panel (Android: the validator's overlay on the ad; iOS: the same), it reports no errors or warnings. Screenshot it for the PR. Don't set `com.google.android.gms.ads.flag.NATIVE_AD_DEBUGGER_ENABLED=false` for QA | |

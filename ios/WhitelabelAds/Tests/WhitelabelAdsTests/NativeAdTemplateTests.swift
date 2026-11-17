@@ -1,4 +1,5 @@
 import Shared
+import UIKit
 import XCTest
 @testable import WhitelabelAds
 
@@ -44,5 +45,14 @@ final class NativeAdTemplateTests: XCTestCase {
     @MainActor func testTheHostDrawsNothingForAHandleWithoutAnAd() {
         let host = GoogleNativeAdHost(policy: AdRequestPolicy(nonPersonalized: false))
         XCTAssertNil(host.item(ad: NoAd()))
+    }
+
+    /** VoiceOver reads "Ad, <headline>" first, then the rest; missing assets are skipped. */
+    @MainActor func testScreenReaderOrderStartsWithTheChipThenTheHeadline() {
+        let chip = UILabel(), headline = UILabel(), advertiser = UILabel(), body = UILabel(), media = UIView(), cta = UILabel()
+        let order = NativeAdTemplate.readingOrder(chip: chip, headline: headline, advertiser: advertiser, body: body, media: media, callToAction: cta)
+        XCTAssertEqual(order.map(ObjectIdentifier.init), [chip, headline, advertiser, body, media, cta].map(ObjectIdentifier.init))
+        let sparse = NativeAdTemplate.readingOrder(chip: chip, headline: headline, advertiser: nil, body: nil, media: media, callToAction: nil)
+        XCTAssertEqual(sparse.map(ObjectIdentifier.init), [chip, headline, media].map(ObjectIdentifier.init))
     }
 }

@@ -29,6 +29,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -111,7 +114,8 @@ internal fun NativeAdTemplate(ad: NativeAd, modifier: Modifier = Modifier) {
             .background(colors.surface, cardShape)
             .border(1.dp, colors.outlineVariant, cardShape),
     ) {
-        Column(Modifier.fillMaxSize().padding(spacing.md)) {
+        // Screen readers read "Ad, <headline>" first (design spec §5), then the rest in layout order.
+        Column(Modifier.fillMaxSize().padding(spacing.md).semantics { isTraversalGroup = true }) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,6 +126,7 @@ internal fun NativeAdTemplate(ad: NativeAd, modifier: Modifier = Modifier) {
             ) {
                 Box(
                     modifier = Modifier
+                        .semantics { traversalIndex = -2f }
                         .defaultMinSize(NativeAdTemplate.BadgeMinSize, NativeAdTemplate.BadgeMinSize)
                         .background(colors.onSurface, smallShape)
                         .padding(horizontal = NativeAdTemplate.BadgePadding),
@@ -150,7 +155,7 @@ internal fun NativeAdTemplate(ad: NativeAd, modifier: Modifier = Modifier) {
                 Spacer(Modifier.width(spacing.md))
                 Column(Modifier.weight(1f).fillMaxHeight()) {
                     ad.headline?.let { headline ->
-                        NativeAdHeadlineView {
+                        NativeAdHeadlineView(Modifier.semantics { traversalIndex = -1f }) {
                             Text(headline, style = typography.titleSmall, color = colors.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                     }
