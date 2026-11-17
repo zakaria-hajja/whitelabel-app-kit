@@ -1,5 +1,6 @@
 package com.whitelabel.core.ios
 
+import com.whitelabel.core.ads.AdKind
 import com.whitelabel.core.ads.AdPlacement
 import com.whitelabel.core.ads.BannerState
 import com.whitelabel.core.ads.HideReason
@@ -166,6 +167,31 @@ class SharedGraphAdsTest {
         val controller = assertNotNull(SharedGraph.adsController())
         assertEquals(BannerState.Hidden(HideReason.UNDECLARED), controller.bannerState("other").value)
         assertEquals(testUnit, SharedGraph.adsUnits()["home"])
+    }
+
+    @Test fun `debug gives a native placement without a unit the native test unit`() {
+        SharedGraph.declareAds(listOf(AdPlacement("list", null, AdKind.NATIVE)))
+        SharedGraph.useAds(CountingTracking())
+        start(units = "", debugBuild = true)
+        assertEquals("ca-app-pub-3940256099942544/3986624511", SharedGraph.adsUnits()["list"])
+    }
+
+    @Test fun `the replay keeps the kinds so a shared name or a native under a tab or under a banner key fails`() {
+        placements(AdPlacement("x", null), AdPlacement("x", null, AdKind.NATIVE))
+        assertEquals("placement 'x' is declared twice", assertFailsWith<IllegalArgumentException> { start() }.message)
+        SharedGraph.clearFirebaseServices()
+        placements(AdPlacement("n", "home", AdKind.NATIVE))
+        assertEquals(
+            "placement 'n' is native: the app places it in a list, so it has no underTab",
+            assertFailsWith<IllegalArgumentException> { start() }.message,
+        )
+        SharedGraph.clearFirebaseServices()
+        placements(AdPlacement("list", null, AdKind.NATIVE))
+        SharedGraph.useAds(CountingTracking())
+        assertEquals(
+            "ads.ios.banner.list is for a banner, but 'list' is declared native",
+            assertFailsWith<IllegalStateException> { start(units = "list=$unit") }.message,
+        )
     }
 
     @Test fun `on gathers consent through the handed-over port and asks for tracking before the first banner`() {

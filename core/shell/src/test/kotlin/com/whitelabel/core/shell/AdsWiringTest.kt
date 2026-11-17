@@ -171,6 +171,21 @@ class AdsWiringTest {
         assertThat(wiring).isEqualTo(AdsWiring(enabled = true, units = mapOf("home" to UNIT)))
     }
 
+    @Test fun `a native placement resolves its native unit next to a banner`() {
+        val definition = appDefinition {
+            add(entry("a", RouteA))
+            add(entry("b", RouteB))
+            ads {
+                placement("home", underTab = RouteA)
+                native("list")
+            }
+        }
+        val wiring = adsWiring(definition, declared = true, mode = "on", units = "home=$UNIT;native.list=$OTHER", contributorPresent = true, debugBuild = false)
+        assertThat(wiring).isEqualTo(AdsWiring(enabled = true, units = mapOf("home" to UNIT, "list" to OTHER)))
+        val debug = adsWiring(definition, declared = true, mode = "on", units = "", contributorPresent = true, debugBuild = true)
+        assertThat(debug.units["list"]).isEqualTo("ca-app-pub-3940256099942544/2247696110")
+    }
+
     @Test fun `the non-personalized setting reaches the wiring and is off by default`() {
         val npa = adsWiring(withHome, declared = true, mode = "on", units = "home=$UNIT", contributorPresent = true, debugBuild = false, nonPersonalized = true)
         assertThat(npa.request).isEqualTo(AdRequestPolicy(nonPersonalized = true))

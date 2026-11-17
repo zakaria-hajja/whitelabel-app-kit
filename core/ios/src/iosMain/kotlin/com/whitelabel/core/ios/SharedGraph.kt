@@ -2,6 +2,7 @@ package com.whitelabel.core.ios
 
 import androidx.lifecycle.SavedStateHandle
 import com.whitelabel.core.ads.AdFree
+import com.whitelabel.core.ads.AdKind
 import com.whitelabel.core.ads.AdPlacement
 import com.whitelabel.core.ads.AdTabOwner
 import com.whitelabel.core.ads.AdsBuilder
@@ -147,7 +148,7 @@ object SharedGraph {
     }
 
     /**
-     * The app's banner placements (`AppDefinition(ads:)`, Android's `ads { }`): the app uses ads.
+     * The app's placements, banner and native (`AppDefinition(ads:)`, Android's `ads { }`): the app uses ads.
      * [gateRoutes] are the placements' routes that the sign-in gate's screens own (Swift asks the gate
      * feature), so a placement there fails as on Android. Call before [start], which checks them
      * against the app's ads settings.
@@ -311,8 +312,10 @@ object SharedGraph {
      */
     private fun adsWiringFor(platform: IosPlatform, definition: DefinitionSpec): AdsWiring {
         val placements = adPlacements.orEmpty()
-        // The builder applies Android's name rules (letters, digits, '_' and '-'; no repeats).
-        AdsBuilder().apply { placements.forEach { placement(it.name, it.underTab) } }
+        // The builder applies Android's name rules (letters, digits, '_' and '-'; no repeats across kinds).
+        AdsBuilder().apply {
+            placements.forEach { if (it.kind == AdKind.NATIVE) native(it.name) else placement(it.name, it.underTab) }
+        }
         checkAdPlacementTabs(
             placements,
             ownerOf = { route ->
@@ -324,7 +327,7 @@ object SharedGraph {
         )
         return adsWiring(
             usesAds = adPlacements != null,
-            placements = placements.map { it.name },
+            placements = placements,
             declared = platform.adsDeclared,
             mode = platform.ads,
             units = platform.adsUnits,

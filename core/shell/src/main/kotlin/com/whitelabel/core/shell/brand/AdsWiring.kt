@@ -35,7 +35,7 @@ internal fun adsWiring(
     nonPersonalized: Boolean = false,
 ): AdsWiring = adsWiring(
     usesAds = definition.usesAds,
-    placements = definition.adPlacements.map { it.name },
+    placements = definition.adPlacements,
     declared = declared,
     mode = mode,
     units = units,
