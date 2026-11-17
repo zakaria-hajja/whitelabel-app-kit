@@ -16,7 +16,7 @@ class StylePackTest {
 
     private val standard = CubicBezier(0.2f, 0f, 0f, 1f)
 
-    private fun MotionSpec.curves() = listOf(screenEnter, screenExit, sharedElement, tabSwitch, emphasis, snackbar)
+    private fun MotionSpec.curves() = listOf(screenEnter, screenExit, screenReturn, sharedElement, sharedElementReturn, tabSwitch, emphasis, snackbar)
 
     @Test fun `material reproduces today`() {
         val m = StylePack.Material
@@ -29,6 +29,8 @@ class StylePackTest {
         val navDefault = Tween(700, CubicBezier(0.4f, 0f, 0.2f, 1f))
         assertThat(m.motion.screenEnter).isEqualTo(navDefault)
         assertThat(m.motion.screenExit).isEqualTo(navDefault)
+        assertThat(m.motion.screenReturn).isEqualTo(navDefault)
+        assertThat(m.motion.sharedElementReturn).isEqualTo(Tween(300, CubicBezier(0.4f, 0f, 0.2f, 1f)))
         assertThat(m.motion.tabSwitch).isEqualTo(navDefault)
         assertThat(m.motion.tabSwitchScale).isEqualTo(1f)
         assertThat(m.motion.press).isEqualTo(Spring(dampingRatio = 1f, stiffness = 400f))
@@ -64,6 +66,8 @@ class StylePackTest {
         val emphasized = Tween(420, CubicBezier(0.2f, 0f, 0f, 1f))
         assertThat(g.motion.sharedElement).isEqualTo(emphasized)
         assertThat(g.motion.screenEnter).isEqualTo(emphasized)
+        assertThat(g.motion.screenReturn).isEqualTo(emphasized)
+        assertThat(g.motion.sharedElementReturn).isEqualTo(emphasized)
         assertThat(g.motion.screenExit).isEqualTo(Tween(320, CubicBezier(0.3f, 0f, 0.8f, 0.15f)))
         assertThat(g.motion.tabSwitch).isEqualTo(Tween(150, standard))
         assertThat(g.motion.tabSwitchScale).isEqualTo(1f)
