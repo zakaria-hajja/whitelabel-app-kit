@@ -17,6 +17,7 @@
 // Copied from https://github.com/googleads/googleads-mobile-android-examples/blob/eac5db1a64ff2858676c98889c275cef926e3ab6/kotlin/advanced/JetpackComposeDemo/app/src/main/java/com/google/android/gms/example/jetpackcomposedemo/formats/compose_utils/NativeAdView.kt
 // at eac5db1a64ff2858676c98889c275cef926e3ab6; changed: package, internal visibility, and the unused wrappers
 // (AdChoices, price, star rating, store, attribution, button) removed. The template draws its own chip and CTA.
+// Licence text and notice: THIRD_PARTY_NOTICES.md and third_party/googleads-mobile-android-examples/LICENSE.
 
 package com.whitelabel.core.ads.google.compose
 
