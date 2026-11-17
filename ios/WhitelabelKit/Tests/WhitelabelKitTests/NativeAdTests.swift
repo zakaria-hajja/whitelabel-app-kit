@@ -212,6 +212,28 @@ final class NativeAdTests: XCTestCase {
         }
     }
 
+    /** A request a consent hide discarded neither blocks the next visit's request nor fills its slot. */
+    func testARequestDiscardedByAConsentHideNeitherBlocksNorFillsTheNextVisit() async {
+        let (model, feed, task) = running()
+        feed.yield(ready)
+        await settle()
+        feed.yield(BannerStateHidden(reason: .consentNoAds))
+        await settle()
+        now = 60_000
+        feed.yield(ready)
+        await settle()
+        XCTAssertEqual(host.loads.count, 2)
+        let stale = FakeAd()
+        host.loads[0].onLoaded(stale)
+        XCTAssertEqual(stale.destroyed, 1)
+        XCTAssertNil(model.ad)
+        let fresh = FakeAd()
+        host.loads[1].onLoaded(fresh)
+        XCTAssertTrue(model.ad === fresh)
+        feed.finish()
+        await task.value
+    }
+
     func testBackgroundKeepsTheAdAndComingBackPastAnHourDropsIt() async {
         let (model, feed, task) = running()
         feed.yield(ready)

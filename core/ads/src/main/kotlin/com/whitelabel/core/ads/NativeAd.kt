@@ -129,7 +129,10 @@ internal class NativeAdSlotDriver(
         visiting = true
         val visit = rotation.beginVisit()
         shown = visit.ad
-        if (visit.request) load(unitId, ::onLoaded, rotation::failed)
+        if (visit.request) {
+            val id = visit.requestId
+            load(unitId, { onLoaded(it, id) }, { rotation.failed(id) })
+        }
     }
 
     fun hidden(reason: HideReason) {
@@ -152,8 +155,8 @@ internal class NativeAdSlotDriver(
         rotation.endVisit()
     }
 
-    private fun onLoaded(ad: NativeAdHandle) {
-        val show = rotation.loaded(ad)
+    private fun onLoaded(ad: NativeAdHandle, requestId: Int) {
+        val show = rotation.loaded(ad, requestId)
         if (show != null && visiting && !disposed) shown = show
     }
 }

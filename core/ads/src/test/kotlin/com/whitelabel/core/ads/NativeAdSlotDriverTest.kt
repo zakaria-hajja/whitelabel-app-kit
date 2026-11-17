@@ -170,4 +170,21 @@ class NativeAdSlotDriverTest {
         assertThat(driver.shown).isNull()
         assertThat(requests.size).isEqualTo(2)
     }
+
+    @Test fun `a request discarded by a consent hide neither blocks nor fills the next visit`() {
+        val driver = driver()
+        driver.ready("u")
+        driver.hidden(HideReason.CONSENT_NO_ADS)
+        now = 60_000
+        driver.ready("u")
+        assertThat(requests.size).isEqualTo(2)
+        // The discarded request lands late: destroyed, not shown; the new one shows.
+        val stale = FakeAd()
+        requests[0].onLoaded(stale)
+        assertThat(stale.destroyed).isEqualTo(1)
+        assertThat(driver.shown).isNull()
+        val fresh = FakeAd()
+        requests[1].onLoaded(fresh)
+        assertThat(driver.shown).isSameInstanceAs(fresh)
+    }
 }

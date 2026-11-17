@@ -7,8 +7,12 @@ interface NativeAdHandle {
     fun destroy()
 }
 
-/** What a list shows when it appears: [ad] (null for nothing yet), and whether to [request] a new one now. */
-data class NativeAdVisit(val ad: NativeAdHandle?, val request: Boolean)
+/**
+ * What a list shows when it appears: [ad] (null for nothing yet), and whether to [request] a new one
+ * now. [requestId] names that request (0 without one): hand it back to [NativeAdRotation.loaded] or
+ * [NativeAdRotation.failed], so a request the rotation discarded can't pass for a newer one.
+ */
+data class NativeAdVisit(val ad: NativeAdHandle?, val request: Boolean, val requestId: Int = 0)
 
 /**
  * When a native placement requests, shows, keeps and destroys an ad, the same on both platforms.
@@ -19,7 +23,8 @@ data class NativeAdVisit(val ad: NativeAdHandle?, val request: Boolean)
  * - A shown ad is never swapped mid-visit: a newer one waits as *next* and shows on the next visit.
  * - An ad that loads after the visit ended is kept for the next one.
  * - Hiding for consent or an ad-free window ([hidden]) destroys every held ad, and one still loading
- *   when it lands: an ad is never shown under rules other than those it was requested under.
+ *   when it lands: an ad is never shown under rules other than those it was requested under. That
+ *   request no longer counts as in flight, so the next visit may request (still [refreshMillis] apart).
  *
  * Main thread only on both platforms: no locking, no coroutines, no SDK.
  */
@@ -35,7 +40,8 @@ class NativeAdRotation(
     private var inFlight = false
     private var lastRequestAt: Long? = null
     private var inVisit = false
-    private var discardInFlight = false
+    // The id of the latest request; a callback with another id belongs to a discarded one.
+    private var requestId = 0
 
     /** The list appeared with the rules at `Ready`: what to show, and whether to start a request. */
     fun beginVisit(): NativeAdVisit {
@@ -55,21 +61,22 @@ class NativeAdRotation(
         if (request) {
             inFlight = true
             lastRequestAt = now
+            requestId++
         }
-        return NativeAdVisit(shown?.ad, request)
+        return NativeAdVisit(shown?.ad, request, if (request) requestId else 0)
     }
 
     /**
-     * A requested ad loaded: returns it when it shows now (a visit with nothing shown), or null when
-     * it is kept for the next visit (replacing, and destroying, an earlier kept one).
+     * The request [requestId] loaded [ad]: returns it when it shows now (a visit with nothing shown),
+     * or null when it is kept for the next visit (replacing, and destroying, an earlier kept one). An
+     * ad of a discarded request ([hidden]) is destroyed.
      */
-    fun loaded(ad: NativeAdHandle): NativeAdHandle? {
-        inFlight = false
-        if (discardInFlight) {
-            discardInFlight = false
+    fun loaded(ad: NativeAdHandle, requestId: Int): NativeAdHandle? {
+        if (requestId != this.requestId) {
             ad.destroy()
             return null
         }
+        inFlight = false
         val held = Held(ad, nowMillis())
         if (inVisit && current == null) {
             current = held
@@ -80,15 +87,18 @@ class NativeAdRotation(
         return null
     }
 
-    /** A requested ad failed to load: a later visit retries, still [refreshMillis] after the last request. */
-    fun failed() {
-        inFlight = false
-        discardInFlight = false
+    /**
+     * The request [requestId] failed: a later visit retries, still
+     * [refreshMillis] after the last request. A discarded request's failure changes nothing.
+     */
+    fun failed(requestId: Int) {
+        if (requestId == this.requestId) inFlight = false
     }
 
     /**
      * The rules hide the placement for [reason]. Consent pending, failed or refused, and an ad-free
-     * window starting, destroy the held ads (and the one loading, when it lands); any other reason
+     * window starting, destroy the held ads and discard the request in flight (its ad is destroyed
+     * when it lands, and the next visit needn't wait for it); any other reason
      * (`setHidden`, ads off, …) keeps them for when the placement shows again.
      */
     fun hidden(reason: HideReason) {
@@ -97,7 +107,10 @@ class NativeAdRotation(
         next?.ad?.destroy()
         current = null
         next = null
-        if (inFlight) discardInFlight = true
+        if (inFlight) {
+            inFlight = false
+            requestId++
+        }
     }
 
     /** The list left the screen (or the rules stopped being `Ready`); held ads stay for the next visit. */

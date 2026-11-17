@@ -68,11 +68,13 @@ final class NativeAdSlotDriver {
         let visit = rotation.beginVisit()
         shown = visit.ad
         if visit.request {
+            // The id ties the callbacks to this request: one a consent or ad-free hide discarded can't fill a later visit.
+            let id = visit.requestId
             load(unitId, { [weak self, rotation] ad in
-                let show = rotation.loaded(ad: ad)
+                let show = rotation.loaded(ad: ad, requestId: id)
                 guard let self, let show, self.visiting, !self.disposed else { return }
                 self.shown = show
-            }, { [rotation] in rotation.failed() })
+            }, { [rotation] in rotation.failed(requestId: id) })
         }
     }
 
