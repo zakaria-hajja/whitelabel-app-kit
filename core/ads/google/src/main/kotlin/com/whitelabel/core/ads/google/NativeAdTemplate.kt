@@ -97,7 +97,11 @@ internal object NativeAdTemplate {
                 return Lines(label = 16f * s, headline = 20f * s, body = 16f * s, cta = 20f * s)
             }
 
-            /** The app's actual line heights; a style without one falls back to the spec's. */
+            /**
+             * The app's actual line heights. A style without one falls back to the spec's 16 / 20 sp, while
+             * `Text` then uses the font's natural line height, which some brand fonts make taller: give
+             * such a type role a `lineHeight` (Material 3's styles always have one) or the CTA may clip.
+             */
             fun of(density: Density, label: TextStyle, headline: TextStyle, body: TextStyle, cta: TextStyle): Lines {
                 val spec = spec(1f)
                 fun TextStyle.lineDp(fallbackSp: Float): Float = with(density) {
