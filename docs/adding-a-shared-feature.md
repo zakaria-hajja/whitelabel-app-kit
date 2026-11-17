@@ -94,7 +94,9 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
   rather than `composable<Route>`, so shared elements work inside them:
   - mark an element that moves to the next screen with `Modifier.sharedElementTransition(key)`
     (same content, e.g. an avatar) or a container that morphs with `Modifier.sharedBoundsTransition(key)`,
-    using the same `key` on both screens. Both do nothing outside the shell;
+    using the same `key` on both screens. Both do nothing outside the shell. On Back (predictive
+    back included) the move uses the pack's `sharedElementReturn`, and the screen underneath fades
+    in on `screenReturn`;
   - time in-screen animations with `AppTheme.style.motion` (`emphasis`, `snackbar`, `press` with
     `pressScale`, …) and `toAnimationSpec()`, never with hard-coded durations, and skip ambient
     animations when `AppTheme.reducedMotion` is true;

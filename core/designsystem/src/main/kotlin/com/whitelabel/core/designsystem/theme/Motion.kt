@@ -20,7 +20,8 @@ sealed interface MotionCurve {
  * fade between tabs (Gallery's is a plain crossfade, no zoom), [emphasis] is for small
  * interactions, [snackbar] for feedback. [press] (with [pressScale]) is a button or chip press:
  * Android buttons keep the Material ripple, so it drives the iOS buttons and any pressable view
- * an app draws itself.
+ * an app draws itself. [screenReturn] is the screen coming back on a pop (the outgoing one still
+ * uses [screenExit]); [sharedElementReturn] is a shared element moving back on a pop.
  */
 data class MotionSpec(
     val screenEnter: MotionCurve,
@@ -32,6 +33,8 @@ data class MotionSpec(
     val snackbar: MotionCurve,
     val press: MotionCurve,
     val pressScale: Float,
+    val screenReturn: MotionCurve,
+    val sharedElementReturn: MotionCurve,
 ) {
     companion object {
         private val FastOutSlowIn = CubicBezier(0.4f, 0f, 0.2f, 1f)
@@ -52,6 +55,8 @@ data class MotionSpec(
             snackbar = MotionCurve.Tween(250, FastOutSlowIn),
             press = MotionCurve.Spring(dampingRatio = 1f, stiffness = 400f),
             pressScale = 0.98f,
+            screenReturn = MotionCurve.Tween(700, FastOutSlowIn),
+            sharedElementReturn = MotionCurve.Tween(300, FastOutSlowIn),
         )
 
         /** Soft, quick motion: shared elements and pushes at 420 ms, a 150 ms tab crossfade, a steady 120 ms press. */
@@ -65,17 +70,24 @@ data class MotionSpec(
             snackbar = MotionCurve.Tween(200, Standard),
             press = MotionCurve.Tween(120, EaseOut),
             pressScale = 0.97f,
+            screenReturn = MotionCurve.Tween(420, Emphasized),
+            sharedElementReturn = MotionCurve.Tween(420, Emphasized),
         )
 
         /** "Remove animations": every movement becomes a short crossfade; a press is instant and never scales. */
         val Reduced: MotionSpec = MotionCurve.Tween(150, Linear).let { fade ->
             MotionSpec(
-                fade, fade, fade, fade,
+                screenEnter = fade,
+                screenExit = fade,
+                sharedElement = fade,
+                tabSwitch = fade,
                 tabSwitchScale = 1f,
                 emphasis = fade,
                 snackbar = fade,
                 press = MotionCurve.Tween(0, Linear),
                 pressScale = 1f,
+                screenReturn = fade,
+                sharedElementReturn = fade,
             )
         }
     }

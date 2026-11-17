@@ -2,6 +2,9 @@ package com.whitelabel.core.shell
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.whitelabel.core.designsystem.theme.CubicBezier
+import com.whitelabel.core.designsystem.theme.MotionCurve.Tween
+import com.whitelabel.core.designsystem.theme.MotionSpec
 import org.junit.jupiter.api.Test
 
 /** Entries are (id, route); a TabTransitions instance lives for the whole NavHost, like the real one. */
@@ -45,5 +48,20 @@ class ShellTransitionsTest {
 
     @Test fun `a route that only shares a prefix with a tab is not that tab`() {
         assertThat(tabs.kind("ab", "com.x.AB", "b", "com.x.B")).isEqualTo(TransitionKind.Screen)
+    }
+
+    private val back = Tween(300, CubicBezier(0.32f, 0.72f, 0f, 1f))
+    private val motion = MotionSpec.Gallery.copy(screenReturn = back)
+
+    @Test fun `a push fades in on screenEnter`() {
+        assertThat(motion.enterCurve(TransitionKind.Screen, isPop = false)).isEqualTo(motion.screenEnter)
+    }
+
+    @Test fun `a pop fades in on screenReturn`() {
+        assertThat(motion.enterCurve(TransitionKind.Screen, isPop = true)).isEqualTo(back)
+    }
+
+    @Test fun `a tab switch during a pop stays the tab switch`() {
+        assertThat(motion.enterCurve(TransitionKind.TabSwitch, isPop = true)).isEqualTo(motion.tabSwitch)
     }
 }

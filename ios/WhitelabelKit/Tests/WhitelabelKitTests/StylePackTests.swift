@@ -15,6 +15,8 @@ final class StylePackTests: XCTestCase {
         XCTAssertEqual(gallery.motion.screenEnter, .tween(milliseconds: 420, CubicBezier(0.2, 0, 0, 1)))
         XCTAssertEqual(gallery.motion.screenExit, .tween(milliseconds: 320, CubicBezier(0.3, 0, 0.8, 0.15)))
         XCTAssertEqual(gallery.motion.sharedElement, .tween(milliseconds: 420, CubicBezier(0.2, 0, 0, 1)))
+        XCTAssertEqual(gallery.motion.screenReturn, .tween(milliseconds: 420, CubicBezier(0.2, 0, 0, 1)))
+        XCTAssertEqual(gallery.motion.sharedElementReturn, .tween(milliseconds: 420, CubicBezier(0.2, 0, 0, 1)))
         XCTAssertEqual(gallery.motion.tabSwitch, .tween(milliseconds: 150, CubicBezier(0.2, 0, 0, 1)))
         XCTAssertEqual(gallery.motion.tabSwitchScale, 1)
         XCTAssertEqual(gallery.motion.press, .tween(milliseconds: 120, CubicBezier(0.32, 0.72, 0, 1)))
@@ -38,6 +40,8 @@ final class StylePackTests: XCTestCase {
         XCTAssertEqual(material.valueRows, .inline)
         XCTAssertFalse(material.type.titlesUseBodyFont)
         XCTAssertEqual(material.motion.screenEnter, .tween(milliseconds: 700, CubicBezier(0.4, 0, 0.2, 1)))
+        XCTAssertEqual(material.motion.screenReturn, .tween(milliseconds: 700, CubicBezier(0.4, 0, 0.2, 1)))
+        XCTAssertEqual(material.motion.sharedElementReturn, .tween(milliseconds: 300, CubicBezier(0.4, 0, 0.2, 1)))
         XCTAssertEqual(material.motion.emphasis, .spring(dampingRatio: 1, stiffness: 400))
         XCTAssertEqual(material.motion.press, .spring(dampingRatio: 1, stiffness: 400))
         XCTAssertEqual(material.motion.pressScale, 0.98)
@@ -51,7 +55,7 @@ final class StylePackTests: XCTestCase {
     func testReducedMotionUsesThePacksReducedValues() {
         let fade = MotionCurve.tween(milliseconds: 150, CubicBezier(0, 0, 1, 1))
         let reduced = StylePack.gallery.reduced().motion
-        XCTAssertEqual([reduced.screenEnter, reduced.screenExit, reduced.sharedElement, reduced.tabSwitch, reduced.emphasis, reduced.snackbar], Array(repeating: fade, count: 6))
+        XCTAssertEqual([reduced.screenEnter, reduced.screenExit, reduced.sharedElement, reduced.tabSwitch, reduced.emphasis, reduced.snackbar, reduced.screenReturn, reduced.sharedElementReturn], Array(repeating: fade, count: 8))
         XCTAssertEqual(reduced.tabSwitchScale, 1)
         XCTAssertEqual(reduced.press, .tween(milliseconds: 0, CubicBezier(0, 0, 1, 1)))
         XCTAssertEqual(reduced.pressScale, 1)

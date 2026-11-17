@@ -29,7 +29,8 @@ public enum MotionCurve: Equatable {
 
 /**
  * A pack's named motion (Kotlin: `MotionSpec`): pushes and pops, shared elements, the tab switch
- * (with its scale), small emphasis, feedback, and a button press (with its scale).
+ * (with its scale), small emphasis, feedback, and a button press (with its scale). `screenReturn`
+ * is the screen coming back on a pop and `sharedElementReturn` a shared element moving back on a pop.
  */
 public struct MotionSpec: Equatable {
     public var screenEnter: MotionCurve
@@ -41,6 +42,8 @@ public struct MotionSpec: Equatable {
     public var snackbar: MotionCurve
     public var press: MotionCurve
     public var pressScale: Double
+    public var screenReturn: MotionCurve
+    public var sharedElementReturn: MotionCurve
 
     private static let fastOutSlowIn = CubicBezier(0.4, 0, 0.2, 1)
     private static let standard = CubicBezier(0.2, 0, 0, 1)
@@ -59,7 +62,9 @@ public struct MotionSpec: Equatable {
         emphasis: .spring(dampingRatio: 1, stiffness: 400),
         snackbar: .tween(milliseconds: 250, fastOutSlowIn),
         press: .spring(dampingRatio: 1, stiffness: 400),
-        pressScale: 0.98
+        pressScale: 0.98,
+        screenReturn: .tween(milliseconds: 700, fastOutSlowIn),
+        sharedElementReturn: .tween(milliseconds: 300, fastOutSlowIn)
     )
 
     // Kotlin: MotionSpec.Gallery
@@ -72,7 +77,9 @@ public struct MotionSpec: Equatable {
         emphasis: .spring(dampingRatio: 0.55, stiffness: 380),
         snackbar: .tween(milliseconds: 200, standard),
         press: .tween(milliseconds: 120, easeOut),
-        pressScale: 0.97
+        pressScale: 0.97,
+        screenReturn: .tween(milliseconds: 420, emphasized),
+        sharedElementReturn: .tween(milliseconds: 420, emphasized)
     )
 
     // Kotlin: MotionSpec.Reduced
@@ -80,7 +87,8 @@ public struct MotionSpec: Equatable {
         let fade = MotionCurve.tween(milliseconds: 150, linear)
         return MotionSpec(
             screenEnter: fade, screenExit: fade, sharedElement: fade, tabSwitch: fade, tabSwitchScale: 1,
-            emphasis: fade, snackbar: fade, press: .tween(milliseconds: 0, linear), pressScale: 1
+            emphasis: fade, snackbar: fade, press: .tween(milliseconds: 0, linear), pressScale: 1,
+            screenReturn: fade, sharedElementReturn: fade
         )
     }()
 }
