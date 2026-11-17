@@ -7,6 +7,7 @@ import assertk.assertions.isInstanceOf
 import com.whitelabel.core.ads.AdRequestPolicy
 import com.whitelabel.core.ads.AdsServicesContributor
 import com.whitelabel.core.ads.BannerHost
+import com.whitelabel.core.ads.NativeAdHost
 import com.whitelabel.core.network.ModuleContributor
 import java.util.ServiceLoader
 import org.junit.jupiter.api.Test
@@ -38,5 +39,22 @@ class AdsContributorTest {
     @Test fun `without a bound policy the banner host uses the default`() {
         val koin = koinApplication { modules(AdsContributor().modules()) }.koin
         assertThat((koin.get<BannerHost>() as GoogleBannerHost).request).isEqualTo(AdRequestPolicy.DEFAULT)
+    }
+
+    @Test fun `the contributor binds the google native host`() {
+        val koin = koinApplication { modules(AdsContributor().modules()) }.koin
+        assertThat(koin.get<NativeAdHost>()).isInstanceOf<GoogleNativeAdHost>()
+    }
+
+    @Test fun `native host builds requests with the graph's policy`() {
+        val koin = koinApplication {
+            modules(module { single { AdRequestPolicy(nonPersonalized = true) } }, *AdsContributor().modules().toTypedArray())
+        }.koin
+        assertThat((koin.get<NativeAdHost>() as GoogleNativeAdHost).request.nonPersonalized).isEqualTo(true)
+    }
+
+    @Test fun `without a bound policy the native host uses the default`() {
+        val koin = koinApplication { modules(AdsContributor().modules()) }.koin
+        assertThat((koin.get<NativeAdHost>() as GoogleNativeAdHost).request).isEqualTo(AdRequestPolicy.DEFAULT)
     }
 }

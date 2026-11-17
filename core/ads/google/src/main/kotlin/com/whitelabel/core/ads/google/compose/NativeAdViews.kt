@@ -1,0 +1,214 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// Copied from https://github.com/googleads/googleads-mobile-android-examples/blob/eac5db1a64ff2858676c98889c275cef926e3ab6/kotlin/advanced/JetpackComposeDemo/app/src/main/java/com/google/android/gms/example/jetpackcomposedemo/formats/compose_utils/NativeAdView.kt
+// at eac5db1a64ff2858676c98889c275cef926e3ab6; changed: package, internal visibility, and the unused wrappers
+// (AdChoices, price, star rating, store, attribution, button) removed. The template draws its own chip and CTA.
+
+package com.whitelabel.core.ads.google.compose
+
+import android.view.ViewGroup
+import android.widget.ImageView
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.gms.ads.nativead.MediaView
+import com.google.android.gms.ads.nativead.NativeAd
+import com.google.android.gms.ads.nativead.NativeAdView
+
+/**
+ * A CompositionLocal that can provide a `NativeAdView` to ad attributes such as `NativeHeadline`.
+ */
+internal val LocalNativeAdView = staticCompositionLocalOf<NativeAdView?> { null }
+
+/**
+ * This is the Compose wrapper for a NativeAdView.
+ *
+ * @param nativeAd The `NativeAd` object containing the ad assets to be displayed in this view.
+ * @param modifier The modifier to apply to the native ad.
+ * @param content A composable function that defines the rest of the native ad view's elements.
+ */
+@Composable
+internal fun NativeAdView(
+  nativeAd: NativeAd,
+  modifier: Modifier = Modifier,
+  content: @Composable () -> Unit,
+) {
+  val nativeAdViewRef = remember { mutableStateOf<NativeAdView?>(null) }
+  AndroidView(
+    factory = { context ->
+      val composeView =
+        ComposeView(context).apply {
+          layoutParams =
+            ViewGroup.LayoutParams(
+              ViewGroup.LayoutParams.MATCH_PARENT,
+              ViewGroup.LayoutParams.MATCH_PARENT,
+            )
+        }
+      NativeAdView(context).apply {
+        layoutParams =
+          ViewGroup.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT,
+          )
+        addView(composeView)
+        nativeAdViewRef.value = this
+      }
+    },
+    modifier = modifier,
+    update = { view ->
+      val composeView = view.getChildAt(0) as? ComposeView
+      composeView?.setContent {
+        // Set `nativeAdView` as the current LocalNativeAdView so that
+        // `content` can access the `NativeAdView` via `LocalNativeAdView.current`.
+        // This would allow ad attributes (such as `NativeHeadline`) to attribute
+        // its contained View subclass via setter functions (e.g. nativeAdView.headlineView =
+        // view)
+        CompositionLocalProvider(LocalNativeAdView provides view) { content() }
+      }
+    },
+  )
+  val currentNativeAd by rememberUpdatedState(nativeAd)
+  SideEffect { nativeAdViewRef.value?.setNativeAd(currentNativeAd) }
+}
+
+/**
+ * The ComposeWrapper container for an advertiserView inside a NativeAdView. This composable must be
+ * invoked from within a `NativeAdView`.
+ *
+ * @param modifier modify the native ad view element.
+ * @param content A composable function that defines the content of this native asset.
+ */
+@Composable
+internal fun NativeAdAdvertiserView(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+  val nativeAdView = LocalNativeAdView.current ?: throw IllegalStateException("NativeAdView null")
+  AndroidView(
+    factory = { context -> ComposeView(context) },
+    modifier = modifier,
+    update = { view ->
+      nativeAdView.advertiserView = view
+      view.setContent(content)
+    },
+  )
+}
+
+/**
+ * The ComposeWrapper container for a bodyView inside a NativeAdView. This composable must be
+ * invoked from within a `NativeAdView`.
+ *
+ * @param modifier modify the native ad view element.
+ * @param content A composable function that defines the content of this native asset.
+ */
+@Composable
+internal fun NativeAdBodyView(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+  val nativeAdView = LocalNativeAdView.current ?: throw IllegalStateException("NativeAdView null")
+  AndroidView(
+    factory = { context -> ComposeView(context) },
+    modifier = modifier,
+    update = { view ->
+      nativeAdView.bodyView = view
+      view.setContent(content)
+    },
+  )
+}
+
+/**
+ * The ComposeWrapper container for a callToActionView inside a NativeAdView. This composable must
+ * be invoked from within a `NativeAdView`.
+ *
+ * @param modifier modify the native ad view element.
+ * @param content A composable function that defines the content of this native asset.
+ */
+@Composable
+internal fun NativeAdCallToActionView(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+  val nativeAdView = LocalNativeAdView.current ?: throw IllegalStateException("NativeAdView null")
+  AndroidView(
+    factory = { context -> ComposeView(context) },
+    modifier = modifier,
+    update = { view ->
+      nativeAdView.callToActionView = view
+      view.setContent(content)
+    },
+  )
+}
+
+/**
+ * The ComposeWrapper container for a headlineView inside a NativeAdView. This composable must be
+ * invoked from within a `NativeAdView`.
+ *
+ * @param modifier modify the native ad view element.
+ * @param content A composable function that defines the content of this native asset.
+ */
+@Composable
+internal fun NativeAdHeadlineView(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+  val nativeAdView = LocalNativeAdView.current ?: throw IllegalStateException("NativeAdView null")
+  AndroidView(
+    factory = { context -> ComposeView(context) },
+    modifier = modifier,
+    update = { view ->
+      nativeAdView.headlineView = view
+      view.setContent(content)
+    },
+  )
+}
+
+/**
+ * The ComposeWrapper container for a iconView inside a NativeAdView. This composable must be
+ * invoked from within a `NativeAdView`.
+ *
+ * @param modifier modify the native ad view element.
+ * @param content A composable function that defines the content of this native asset.
+ */
+@Composable
+internal fun NativeAdIconView(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+  val nativeAdView = LocalNativeAdView.current ?: throw IllegalStateException("NativeAdView null")
+  AndroidView(
+    factory = { context -> ComposeView(context) },
+    modifier = modifier,
+    update = { view ->
+      nativeAdView.iconView = view
+      view.setContent(content)
+    },
+  )
+}
+
+/**
+ * The ComposeWrapper for a mediaView inside a NativeAdView. This composable must be invoked from
+ * within a `NativeAdView`.
+ *
+ * @param modifier modify the native ad view element.
+ * @param scaleType The ImageView.ScaleType to apply to the image/media within the MediaView.
+ */
+@Composable
+internal fun NativeAdMediaView(modifier: Modifier = Modifier, scaleType: ImageView.ScaleType? = null) {
+  val nativeAdView = LocalNativeAdView.current ?: throw IllegalStateException("NativeAdView null")
+  AndroidView(
+    factory = { context -> MediaView(context) },
+    update = { view ->
+      nativeAdView.mediaView = view
+      scaleType?.let { type -> view.setImageScaleType(type) }
+    },
+    modifier = modifier,
+  )
+}
