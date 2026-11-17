@@ -103,6 +103,22 @@ class AdsWiringTest {
         assertThat(tabPlacementFor(placements) { it == "settings" }).isNull()
     }
 
+    @Test fun `a native placement under a tab is refused`() {
+        assertFailure { checkTabs(AdPlacement("n", "home", AdKind.NATIVE)) }
+            .isInstanceOf<IllegalArgumentException>()
+            .hasMessage("placement 'n' is native: the app places it in a list, so it has no underTab")
+        // Refused before the tab lookup: a route that isn't a tab gets the native message too.
+        assertFailure { checkTabs(AdPlacement("n", "nowhere", AdKind.NATIVE)) }
+            .isInstanceOf<IllegalArgumentException>()
+            .hasMessage("placement 'n' is native: the app places it in a list, so it has no underTab")
+    }
+
+    @Test fun `tabPlacementFor ignores native placements`() {
+        val placements = listOf(AdPlacement("n", "home", AdKind.NATIVE), AdPlacement("top", "home"))
+        assertThat(tabPlacementFor(placements) { it == "home" }).isEqualTo("top")
+        assertThat(tabPlacementFor(listOf(AdPlacement("n", "home", AdKind.NATIVE))) { it == "home" }).isNull()
+    }
+
     @Test fun `a non-personalized request carries AdMob's npa extra and a default one carries none`() {
         assertThat(AdRequestPolicy(nonPersonalized = true).extras).isEqualTo(mapOf("npa" to "1"))
         assertThat(AdRequestPolicy(nonPersonalized = false).extras).isEqualTo(emptyMap())

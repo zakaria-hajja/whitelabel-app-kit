@@ -90,9 +90,12 @@ private const val SETTINGS_FEATURE_ID = "settings"
 /**
  * Checks where a shell would draw each placement with an `underTab`: under a tab ([ownerOf] finds
  * the feature owning a route, or null), never Settings or the gate (no ads on forms or settings),
- * and one banner per tab. [routeName] names a route in messages.
+ * and one banner per tab; a native placement has no `underTab`. [routeName] names a route in messages.
  */
 fun checkAdPlacementTabs(placements: List<AdPlacement>, ownerOf: (route: Any) -> AdTabOwner?, routeName: (route: Any) -> String) {
+    placements.firstOrNull { it.kind == AdKind.NATIVE && it.underTab != null }?.let {
+        throw IllegalArgumentException("placement '${it.name}' is native: the app places it in a list, so it has no underTab")
+    }
     val underTabs = placements.filter { it.underTab != null }
     underTabs.forEach { placement ->
         val route = checkNotNull(placement.underTab)
@@ -110,8 +113,8 @@ fun checkAdPlacementTabs(placements: List<AdPlacement>, ownerOf: (route: Any) ->
 }
 
 /**
- * The placement a shell draws below the current screen, if that screen is a tab's root:
+ * The banner placement a shell draws below the current screen, if that screen is a tab's root:
  * [isCurrent] says whether a tab route is the current destination.
  */
 fun tabPlacementFor(placements: List<AdPlacement>, isCurrent: (route: Any) -> Boolean): String? =
-    placements.firstOrNull { placement -> placement.underTab?.let(isCurrent) == true }?.name
+    placements.firstOrNull { placement -> placement.kind == AdKind.BANNER && placement.underTab?.let(isCurrent) == true }?.name
