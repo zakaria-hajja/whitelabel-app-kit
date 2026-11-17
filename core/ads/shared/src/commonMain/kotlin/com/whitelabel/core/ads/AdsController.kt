@@ -49,7 +49,10 @@ class AdsController(
         scope.launch { runCatching { launches.countThisLaunch() } }
     }
 
-    /** One shared state per placement: every caller of the same placement sees the same flow. */
+    /**
+     * One shared state per placement: every caller of the same placement sees the same flow. It is
+     * also the state of a native placement: `Ready` means a native ad may load (and show).
+     */
     fun bannerState(placement: String): StateFlow<BannerState> =
         if (placement !in units) {
             // One constant per reason, so arbitrary names never cache or launch anything.
