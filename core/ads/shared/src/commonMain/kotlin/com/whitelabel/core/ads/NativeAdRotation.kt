@@ -82,9 +82,21 @@ class NativeAdRotation(
         inVisit = false
     }
 
+    /**
+     * The ad the next [beginVisit] would show (a fresh *next*, else a fresh *current*), without
+     * beginning a visit, requesting or destroying anything. A new slot draws it on its first frame,
+     * so a list that comes back to a held ad has its row at once instead of one frame later.
+     */
+    fun peek(): NativeAdHandle? {
+        val now = nowMillis()
+        return (next?.takeIf { !it.isExpired(now) } ?: current?.takeIf { !it.isExpired(now) })?.ad
+    }
+
     // A clock that went back before the load leaves the age unknown: treated as expired.
+    private fun Held.isExpired(now: Long): Boolean = now < loadedAt || now - loadedAt > maxAgeMillis
+
     private fun Held.takeUnlessExpired(now: Long): Held? =
-        if (now < loadedAt || now - loadedAt > maxAgeMillis) {
+        if (isExpired(now)) {
             ad.destroy()
             null
         } else {

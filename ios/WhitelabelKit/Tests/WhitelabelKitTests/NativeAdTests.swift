@@ -132,6 +132,63 @@ final class NativeAdTests: XCTestCase {
         await nextTask.value
     }
 
+    /** The model outlives its task (a pushed screen, a tab flip): coming back draws the held ad on the first frame. */
+    func testLeavingKeepsTheHeldAdForTheReturningSlot() async {
+        let (model, feed, task) = running()
+        feed.yield(.load(unitId: "u"))
+        await settle()
+        let ad = FakeAd()
+        host.loads[0].onLoaded(ad)
+        task.cancel()
+        await task.value
+        XCTAssertTrue(model.ad === ad)
+        XCTAssertEqual(ad.destroyed, 0)
+        // Back within the refresh interval: the same ad, no request.
+        now = 10_000
+        let (stream, nextFeed) = AsyncStream<AdBannerSlot>.makeStream()
+        let next = Task { await model.run(slots: stream, host: host, rotation: rotation, center: center) }
+        XCTAssertTrue(model.ad === ad)
+        nextFeed.yield(.load(unitId: "u"))
+        await settle()
+        XCTAssertTrue(model.ad === ad)
+        XCTAssertEqual(host.loads.count, 1)
+        nextFeed.finish()
+        await next.value
+    }
+
+    func testLeavingWhileHiddenLeavesNothing() async {
+        let (model, feed, task) = running()
+        feed.yield(.load(unitId: "u"))
+        await settle()
+        host.loads[0].onLoaded(FakeAd())
+        feed.yield(.hidden)
+        await settle()
+        task.cancel()
+        await task.value
+        XCTAssertNil(model.ad)
+    }
+
+    /** A new model of a placement with a held ad draws it before its first state arrives. */
+    func testSeedShowsTheHeldAdOnlyWhileTheRulesAreReady() async {
+        let (_, feed, task) = running()
+        feed.yield(.load(unitId: "u"))
+        await settle()
+        let ad = FakeAd()
+        host.loads[0].onLoaded(ad)
+        feed.finish()
+        await task.value
+        let fresh = NativeAdSlotModel(placement: "list")
+        fresh.seed(slot: .load(unitId: "u"), rotation: rotation)
+        XCTAssertTrue(fresh.ad === ad)
+        fresh.seed(slot: .hidden, rotation: rotation)
+        XCTAssertNil(fresh.ad)
+        // Past the age limit: nothing, and peeking destroys nothing.
+        now = 3_600_001
+        fresh.seed(slot: .load(unitId: "u"), rotation: rotation)
+        XCTAssertNil(fresh.ad)
+        XCTAssertEqual(ad.destroyed, 0)
+    }
+
     func testBackgroundKeepsTheAdAndComingBackPastAnHourDropsIt() async {
         let (model, feed, task) = running()
         feed.yield(.load(unitId: "u"))

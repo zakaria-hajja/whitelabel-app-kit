@@ -38,7 +38,8 @@ public enum NativeAds {
  * - [hidden]: the rules hide the placement: nothing shown, the visit ends, held ads stay.
  * - [paused]: the app went to the background: the visit ends but the screen keeps its ad, so coming
  *   back shows the same ad without a gap, or drops it when it is past the age limit.
- * - [dispose]: the view went away: the visit ends; a later load goes to the rotation only.
+ * - [dispose]: the view went away: the visit ends; a later load goes to the rotation only. The
+ *   model then shows the rotation's held ad again ([NativeAdSlotModel.seed]) for when the view comes back.
  */
 @MainActor
 final class NativeAdSlotDriver {
@@ -124,14 +125,25 @@ public final class NativeAdSlotModel {
               let controller, let host = NativeAds.host else { return }
         // One shared flow per placement; its states are pumped into a stream [run] follows.
         let flow = controller.bannerState(placement: placement)
+        let rotation = NativeAdRotations.shared.of(placement: placement)
+        // Before any await: the rules are known now, so a held ad shows at once and a hidden one goes.
+        seed(slot: AdBannerSlot(state: flow.value), rotation: rotation)
         let (slots, feed) = AsyncStream<AdBannerSlot>.makeStream()
         let pump = Task {
             for await state in flow { feed.yield(AdBannerSlot(state: state)) }
             feed.finish()
         }
         // Cancelling this task ends [run]'s loop; the pump then stops too.
-        await run(slots: slots, host: host, rotation: NativeAdRotations.shared.of(placement: placement))
+        await run(slots: slots, host: host, rotation: rotation)
         pump.cancel()
+    }
+
+    /**
+     * Shows the ad [rotation] holds while [slot] lets the placement load (`peek`: nothing begins,
+     * requests or is destroyed), else nothing. A slot that comes back draws its row on the first frame.
+     */
+    func seed(slot: AdBannerSlot, rotation: NativeAdRotation) {
+        if case .load = slot { ad = rotation.peek() } else { ad = nil }
     }
 
     /** [observe] with its inputs handed in (tests). [center] posts the app's foreground and background. */
@@ -148,6 +160,7 @@ public final class NativeAdSlotModel {
             onShow: { [weak self] in self?.ad = $0 }
         )
         var unitId: String?
+        var last: AdBannerSlot = .hidden
         var foreground = true
         func apply() {
             if let unitId {
@@ -172,6 +185,7 @@ public final class NativeAdSlotModel {
             },
         ]
         for await slot in slots {
+            last = slot
             switch slot {
             case let .load(unit): unitId = unit
             case .hidden: unitId = nil
@@ -186,6 +200,9 @@ public final class NativeAdSlotModel {
         }
         observers.forEach(center.removeObserver)
         driver.dispose()
+        // This model outlives its task (a pushed screen, a tab flip): keep the held ad, so coming
+        // back draws its row on the first frame instead of inserting it a moment later.
+        seed(slot: last, rotation: rotation)
     }
 }
 

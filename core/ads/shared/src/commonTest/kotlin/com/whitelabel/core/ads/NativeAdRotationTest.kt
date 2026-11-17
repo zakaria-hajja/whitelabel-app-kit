@@ -147,6 +147,52 @@ class NativeAdRotationTest {
         assertThat(rotation.beginVisit().request).isTrue()
     }
 
+    @Test fun `peek is empty before anything loaded`() {
+        assertThat(rotation.peek()).isNull()
+    }
+
+    @Test fun `peek gives the held ad a visit would show, without beginning one`() {
+        showAndLeave(a)
+        now = 30_000
+        assertThat(rotation.peek()).isSameInstanceAs(a)
+        // Peeking neither began a visit nor used up the request: the visit still decides as before.
+        assertThat(rotation.loaded(b)).isNull()
+        assertThat(rotation.peek()).isSameInstanceAs(b)
+        assertThat(a.destroyed).isEqualTo(0)
+    }
+
+    @Test fun `peek gives the next ad over the current one, as the next visit promotes it`() {
+        showAndLeave(a)
+        now = 60_000
+        rotation.beginVisit()
+        rotation.loaded(b)
+        rotation.endVisit()
+        assertThat(rotation.peek()).isSameInstanceAs(b)
+        assertThat(a.destroyed).isEqualTo(0)
+        assertThat(rotation.beginVisit().ad).isSameInstanceAs(b)
+    }
+
+    @Test fun `peek skips an expired ad without destroying it`() {
+        showAndLeave(a)
+        now = 3_600_001
+        assertThat(rotation.peek()).isNull()
+        assertThat(a.destroyed).isEqualTo(0)
+        // The visit is still the one that destroys it.
+        assertThat(rotation.beginVisit().ad).isNull()
+        assertThat(a.destroyed).isEqualTo(1)
+    }
+
+    @Test fun `peek skips an expired next ad and falls back to a fresh current one`() {
+        showAndLeave(a)
+        now = 60_000
+        rotation.beginVisit()
+        rotation.loaded(b)
+        rotation.endVisit()
+        now = 50_000 // the clock went back before b loaded: b's age is unknown
+        assertThat(rotation.peek()).isSameInstanceAs(a)
+        assertThat(rotation.beginVisit().ad).isSameInstanceAs(a)
+    }
+
     @Test fun `rotations are one per placement`() {
         assertThat(NativeAdRotations.of("a")).isSameInstanceAs(NativeAdRotations.of("a"))
         assertThat(NativeAdRotations.of("a")).isNotSameInstanceAs(NativeAdRotations.of("b"))

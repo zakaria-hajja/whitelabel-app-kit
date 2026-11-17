@@ -161,7 +161,9 @@ never loads.
   only when a visit begins: never off screen, never in the background, at most one at a time, and at
   least 60 s apart per placement.
 - A shown ad is never swapped mid-visit. Coming back within 60 s (detail and back, a tab flip) shows
-  the same ad at once with no request. After 60 s the same ad shows and a new one is requested; it
+  the same ad on the first frame with no request: the slot starts from the ad the placement holds
+  (`NativeAdRotation.peek()`, which begins, requests and destroys nothing) when the rules are already
+  `Ready`, so the row doesn't jump in a frame later and an insert animation doesn't replay. After 60 s the same ad shows and a new one is requested; it
   appears on the next visit.
 - An ad is shown at most 1 h after it loaded; an older one is destroyed and a new one requested.
 - An ad that loads after the user left is kept for the next visit, not shown in a dead slot.

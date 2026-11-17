@@ -54,6 +54,7 @@ fun rememberNativeAd(placement: String): NativeAdSlot {
     val controller = remember(koin) { koin.getOrNull<AdsController>() }
     val host = remember(koin) { koin.getOrNull<NativeAdHost>() }
     val context = LocalContext.current
+    val stateFlow = remember(controller, placement) { controller?.bannerState(placement) }
     val slot = remember(controller, host, placement) {
         val driver = if (controller != null && host != null) {
             val appContext = context.applicationContext
@@ -63,11 +64,13 @@ fun rememberNativeAd(placement: String): NativeAdSlot {
         } else {
             null
         }
+        // The rules are a StateFlow, so they are known on this first frame: a held ad shows at once.
+        if (stateFlow?.value is BannerState.Ready) driver?.seed()
         NativeAdSlot(driver, host)
     }
     val driver = slot.driver
-    if (controller != null && driver != null) {
-        val state by remember(controller, placement) { controller.bannerState(placement) }.collectAsStateWithLifecycle()
+    if (stateFlow != null && driver != null) {
+        val state by stateFlow.collectAsStateWithLifecycle()
         val debugBuild = remember(context) { context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 }
         val unitId = bannerUnit(state, placement, debugBuild)
         val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
@@ -96,6 +99,8 @@ fun NativeAdItem(slot: NativeAdSlot, modifier: Modifier = Modifier) {
  * The logic of one [rememberNativeAd] slot, apart from Compose so it is testable on the JVM. It
  * drives the placement's [rotation] and asks [load] for an ad when a visit says so. [shown] is the
  * ad the slot draws (snapshot state).
+ * - [seed]: the slot is new and the rules are already `Ready`: shows the ad the placement holds
+ *   ([NativeAdRotation.peek]) before any visit begins, so it is there on the first frame.
  * - [ready]: the rules are `Ready` and the screen is visible: begins a visit, if none, and requests
  *   when the visit says so.
  * - [hidden]: the rules hide the placement: nothing shown, the visit ends, held ads stay.
@@ -111,6 +116,11 @@ internal class NativeAdSlotDriver(
         private set
     private var visiting = false
     private var disposed = false
+
+    fun seed() {
+        if (disposed || visiting) return
+        shown = rotation.peek()
+    }
 
     fun ready(unitId: String) {
         if (disposed || visiting) return

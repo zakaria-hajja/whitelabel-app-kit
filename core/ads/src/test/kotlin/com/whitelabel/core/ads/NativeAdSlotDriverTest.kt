@@ -116,4 +116,44 @@ class NativeAdSlotDriverTest {
         driver.ready("u")
         assertThat(driver.shown).isSameInstanceAs(ad)
     }
+
+    @Test fun `a new slot of a placement with a held ad shows it before any visit begins`() {
+        val first = driver()
+        first.ready("u")
+        val ad = FakeAd()
+        requests.single().onLoaded(ad)
+        first.dispose()
+        now = 10_000
+        val second = driver()
+        second.seed()
+        // Drawn on the first frame: no empty frame, no row inserted a frame later.
+        assertThat(second.shown).isSameInstanceAs(ad)
+        second.ready("u")
+        assertThat(second.shown).isSameInstanceAs(ad)
+        assertThat(requests.size).isEqualTo(1)
+        assertThat(ad.destroyed).isEqualTo(0)
+    }
+
+    @Test fun `seeding a slot with nothing held shows nothing and requests nothing`() {
+        val driver = driver()
+        driver.seed()
+        assertThat(driver.shown).isNull()
+        assertThat(requests.size).isEqualTo(0)
+    }
+
+    @Test fun `seeding skips an expired ad, and the visit then destroys it and requests`() {
+        val first = driver()
+        first.ready("u")
+        val ad = FakeAd()
+        requests.single().onLoaded(ad)
+        first.dispose()
+        now = 3_600_001
+        val second = driver()
+        second.seed()
+        assertThat(second.shown).isNull()
+        assertThat(ad.destroyed).isEqualTo(0)
+        second.ready("u")
+        assertThat(ad.destroyed).isEqualTo(1)
+        assertThat(requests.size).isEqualTo(2)
+    }
 }
