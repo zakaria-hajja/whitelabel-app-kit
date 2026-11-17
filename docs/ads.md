@@ -167,7 +167,12 @@ never loads.
   appears on the next visit.
 - An ad is shown at most 1 h after it loaded; an older one is destroyed and a new one requested.
 - An ad that loads after the user left is kept for the next visit, not shown in a dead slot.
-- Ad-free starting, `setHidden`, or consent changing hides the item at once (held ads stay until they expire).
+- Ad-free starting, `setHidden`, or consent changing hides the item at once. An ad-free window or a
+  consent hide (pending, failed, or no ads allowed) also destroys the placement's held ads, and the one
+  still loading when it lands, so an ad is never shown under rules other than those it was requested
+  under; the next visit after the rules allow ads again requests a new one. `setHidden` (and the other
+  reasons) keep held ads until they expire. A slot applies this when it sees the rules hide: a screen
+  that isn't open meanwhile drops its held ads on its next appearance, and they are at most 1 h old.
 
 **The template** (the same on both platforms, sizes in dp/pt; spec in Munch's
 `docs/design/` native ad row): a full-width card, fixed height **184** at the default text size (it

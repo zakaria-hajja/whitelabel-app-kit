@@ -42,12 +42,16 @@ final class NativeAdTests: XCTestCase {
     }
 
     /** Runs a model on a stream the test feeds; returns the model, the feed and the running task. */
-    private func running() -> (NativeAdSlotModel, AsyncStream<AdBannerSlot>.Continuation, Task<Void, Never>) {
+    private func running() -> (NativeAdSlotModel, AsyncStream<BannerState>.Continuation, Task<Void, Never>) {
         let model = NativeAdSlotModel(placement: "list")
-        let (stream, feed) = AsyncStream<AdBannerSlot>.makeStream()
-        let task = Task { await model.run(slots: stream, host: host, rotation: rotation, center: center) }
+        let (stream, feed) = AsyncStream<BannerState>.makeStream()
+        let task = Task { await model.run(states: stream, host: host, rotation: rotation, center: center) }
         return (model, feed, task)
     }
+
+    /** The shared rules' states the tests feed. */
+    private let ready = BannerStateReady(unitId: "u")
+    private let appHidden = BannerStateHidden(reason: .appHidden)
 
     /** Lets the model's task take what was fed. */
     private func settle() async {
@@ -80,9 +84,9 @@ final class NativeAdTests: XCTestCase {
 
     func testReadyRequestsOnceAndShowsLoadedAd() async {
         let (model, feed, task) = running()
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
         XCTAssertEqual(host.loads.map(\.unitId), ["u"])
         XCTAssertFalse(model.isLoaded)
@@ -95,16 +99,16 @@ final class NativeAdTests: XCTestCase {
 
     func testHiddenRemovesAdWithoutDestroying() async {
         let (model, feed, task) = running()
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
         let ad = FakeAd()
         host.loads[0].onLoaded(ad)
-        feed.yield(.hidden)
+        feed.yield(appHidden)
         await settle()
         XCTAssertNil(model.ad)
         XCTAssertEqual(ad.destroyed, 0)
         now = 30_000
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
         XCTAssertTrue(model.ad === ad)
         XCTAssertEqual(host.loads.count, 1)
@@ -114,7 +118,7 @@ final class NativeAdTests: XCTestCase {
 
     func testLoadAfterCancelIsNotShown() async {
         let (model, feed, task) = running()
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
         task.cancel()
         await task.value
@@ -124,7 +128,7 @@ final class NativeAdTests: XCTestCase {
         XCTAssertEqual(ad.destroyed, 0)
         // Kept for the next visit: a new slot shows it at once, without a request.
         let (next, nextFeed, nextTask) = running()
-        nextFeed.yield(.load(unitId: "u"))
+        nextFeed.yield(ready)
         await settle()
         XCTAssertTrue(next.ad === ad)
         XCTAssertEqual(host.loads.count, 1)
@@ -135,7 +139,7 @@ final class NativeAdTests: XCTestCase {
     /** The model outlives its task (a pushed screen, a tab flip): coming back draws the held ad on the first frame. */
     func testLeavingKeepsTheHeldAdForTheReturningSlot() async {
         let (model, feed, task) = running()
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
         let ad = FakeAd()
         host.loads[0].onLoaded(ad)
@@ -145,10 +149,10 @@ final class NativeAdTests: XCTestCase {
         XCTAssertEqual(ad.destroyed, 0)
         // Back within the refresh interval: the same ad, no request.
         now = 10_000
-        let (stream, nextFeed) = AsyncStream<AdBannerSlot>.makeStream()
-        let next = Task { await model.run(slots: stream, host: host, rotation: rotation, center: center) }
+        let (stream, nextFeed) = AsyncStream<BannerState>.makeStream()
+        let next = Task { await model.run(states: stream, host: host, rotation: rotation, center: center) }
         XCTAssertTrue(model.ad === ad)
-        nextFeed.yield(.load(unitId: "u"))
+        nextFeed.yield(ready)
         await settle()
         XCTAssertTrue(model.ad === ad)
         XCTAssertEqual(host.loads.count, 1)
@@ -158,10 +162,10 @@ final class NativeAdTests: XCTestCase {
 
     func testLeavingWhileHiddenLeavesNothing() async {
         let (model, feed, task) = running()
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
         host.loads[0].onLoaded(FakeAd())
-        feed.yield(.hidden)
+        feed.yield(appHidden)
         await settle()
         task.cancel()
         await task.value
@@ -171,7 +175,7 @@ final class NativeAdTests: XCTestCase {
     /** A new model of a placement with a held ad draws it before its first state arrives. */
     func testSeedShowsTheHeldAdOnlyWhileTheRulesAreReady() async {
         let (_, feed, task) = running()
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
         let ad = FakeAd()
         host.loads[0].onLoaded(ad)
@@ -189,9 +193,26 @@ final class NativeAdTests: XCTestCase {
         XCTAssertEqual(ad.destroyed, 0)
     }
 
+    func testHiddenForAdFreeOrConsentDestroysTheHeldAd() async {
+        for reason in [HideReason.adFree, .consentNoAds, .consentFailed, .consentPending] {
+            let (model, feed, task) = running()
+            feed.yield(ready)
+            await settle()
+            let ad = FakeAd()
+            host.loads.last!.onLoaded(ad)
+            feed.yield(BannerStateHidden(reason: reason))
+            await settle()
+            XCTAssertNil(model.ad, "\(reason)")
+            XCTAssertEqual(ad.destroyed, 1, "\(reason)")
+            feed.finish()
+            await task.value
+            now += 60_000
+        }
+    }
+
     func testBackgroundKeepsTheAdAndComingBackPastAnHourDropsIt() async {
         let (model, feed, task) = running()
-        feed.yield(.load(unitId: "u"))
+        feed.yield(ready)
         await settle()
         let ad = FakeAd()
         host.loads[0].onLoaded(ad)

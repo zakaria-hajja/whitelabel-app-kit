@@ -73,11 +73,12 @@ fun rememberNativeAd(placement: String): NativeAdSlot {
         val state by stateFlow.collectAsStateWithLifecycle()
         val debugBuild = remember(context) { context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 }
         val unitId = bannerUnit(state, placement, debugBuild)
+        val hideReason = (state as? BannerState.Hidden)?.reason
         val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
         val started = lifecycle.isAtLeast(Lifecycle.State.STARTED)
-        LaunchedEffect(driver, unitId, started) {
+        LaunchedEffect(driver, unitId, hideReason, started) {
             when {
-                unitId == null -> driver.hidden()
+                unitId == null -> driver.hidden(hideReason ?: HideReason.LOADING)
                 !started -> driver.paused()
                 else -> driver.ready(unitId)
             }
@@ -103,7 +104,8 @@ fun NativeAdItem(slot: NativeAdSlot, modifier: Modifier = Modifier) {
  *   ([NativeAdRotation.peek]) before any visit begins, so it is there on the first frame.
  * - [ready]: the rules are `Ready` and the screen is visible: begins a visit, if none, and requests
  *   when the visit says so.
- * - [hidden]: the rules hide the placement: nothing shown, the visit ends, held ads stay.
+ * - [hidden]: the rules hide the placement: nothing shown, the visit ends; held ads stay, except
+ *   for consent and ad-free reasons, which destroy them ([NativeAdRotation.hidden]).
  * - [paused]: the screen stopped (app in the background): the visit ends but the stopped screen keeps
  *   its ad, so coming back shows the same ad without a gap, or drops it when it is past the age limit.
  * - [dispose]: the slot left the composition: the visit ends; a later load goes to the rotation only.
@@ -130,8 +132,9 @@ internal class NativeAdSlotDriver(
         if (visit.request) load(unitId, ::onLoaded, rotation::failed)
     }
 
-    fun hidden() {
+    fun hidden(reason: HideReason) {
         endVisit()
+        rotation.hidden(reason)
         shown = null
     }
 

@@ -18,6 +18,8 @@ data class NativeAdVisit(val ad: NativeAdHandle?, val request: Boolean)
  * - Requests are at least [refreshMillis] (60 s) apart, one at a time, and only while a visit begins.
  * - A shown ad is never swapped mid-visit: a newer one waits as *next* and shows on the next visit.
  * - An ad that loads after the visit ended is kept for the next one.
+ * - Hiding for consent or an ad-free window ([hidden]) destroys every held ad, and one still loading
+ *   when it lands: an ad is never shown under rules other than those it was requested under.
  *
  * Main thread only on both platforms: no locking, no coroutines, no SDK.
  */
@@ -33,6 +35,7 @@ class NativeAdRotation(
     private var inFlight = false
     private var lastRequestAt: Long? = null
     private var inVisit = false
+    private var discardInFlight = false
 
     /** The list appeared with the rules at `Ready`: what to show, and whether to start a request. */
     fun beginVisit(): NativeAdVisit {
@@ -62,6 +65,11 @@ class NativeAdRotation(
      */
     fun loaded(ad: NativeAdHandle): NativeAdHandle? {
         inFlight = false
+        if (discardInFlight) {
+            discardInFlight = false
+            ad.destroy()
+            return null
+        }
         val held = Held(ad, nowMillis())
         if (inVisit && current == null) {
             current = held
@@ -75,11 +83,30 @@ class NativeAdRotation(
     /** A requested ad failed to load: a later visit retries, still [refreshMillis] after the last request. */
     fun failed() {
         inFlight = false
+        discardInFlight = false
+    }
+
+    /**
+     * The rules hide the placement for [reason]. Consent pending, failed or refused, and an ad-free
+     * window starting, destroy the held ads (and the one loading, when it lands); any other reason
+     * (`setHidden`, ads off, …) keeps them for when the placement shows again.
+     */
+    fun hidden(reason: HideReason) {
+        if (reason !in dropsHeldAds) return
+        current?.ad?.destroy()
+        next?.ad?.destroy()
+        current = null
+        next = null
+        if (inFlight) discardInFlight = true
     }
 
     /** The list left the screen (or the rules stopped being `Ready`); held ads stay for the next visit. */
     fun endVisit() {
         inVisit = false
+    }
+
+    private companion object {
+        val dropsHeldAds = setOf(HideReason.CONSENT_PENDING, HideReason.CONSENT_FAILED, HideReason.CONSENT_NO_ADS, HideReason.AD_FREE)
     }
 
     /**

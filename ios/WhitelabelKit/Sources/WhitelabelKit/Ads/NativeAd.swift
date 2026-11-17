@@ -35,7 +35,8 @@ public enum NativeAds {
  * [onShow] gets the ad the slot draws (nil for nothing).
  * - [ready]: the rules are `Ready` and the app is in the foreground: begins a visit, if none, and
  *   requests when the visit says so.
- * - [hidden]: the rules hide the placement: nothing shown, the visit ends, held ads stay.
+ * - [hidden]: the rules hide the placement: nothing shown, the visit ends; held ads stay, except
+ *   for consent and ad-free reasons, which destroy them (`NativeAdRotation.hidden`).
  * - [paused]: the app went to the background: the visit ends but the screen keeps its ad, so coming
  *   back shows the same ad without a gap, or drops it when it is past the age limit.
  * - [dispose]: the view went away: the visit ends; a later load goes to the rotation only. The
@@ -74,8 +75,9 @@ final class NativeAdSlotDriver {
         }
     }
 
-    func hidden() {
+    func hidden(reason: HideReason) {
         endVisit()
+        rotation.hidden(reason: reason)
         shown = nil
     }
 
@@ -128,13 +130,13 @@ public final class NativeAdSlotModel {
         let rotation = NativeAdRotations.shared.of(placement: placement)
         // Before any await: the rules are known now, so a held ad shows at once and a hidden one goes.
         seed(slot: AdBannerSlot(state: flow.value), rotation: rotation)
-        let (slots, feed) = AsyncStream<AdBannerSlot>.makeStream()
+        let (states, feed) = AsyncStream<BannerState>.makeStream()
         let pump = Task {
-            for await state in flow { feed.yield(AdBannerSlot(state: state)) }
+            for await state in flow { feed.yield(state) }
             feed.finish()
         }
         // Cancelling this task ends [run]'s loop; the pump then stops too.
-        await run(slots: slots, host: host, rotation: rotation)
+        await run(states: states, host: host, rotation: rotation)
         pump.cancel()
     }
 
@@ -148,7 +150,7 @@ public final class NativeAdSlotModel {
 
     /** [observe] with its inputs handed in (tests). [center] posts the app's foreground and background. */
     func run(
-        slots: AsyncStream<AdBannerSlot>,
+        states: AsyncStream<BannerState>,
         host: any NativeAdHost,
         rotation: NativeAdRotation,
         // Qualified: an app's Shared framework may export its own `NotificationCenter`.
@@ -160,13 +162,14 @@ public final class NativeAdSlotModel {
             onShow: { [weak self] in self?.ad = $0 }
         )
         var unitId: String?
+        var hideReason = HideReason.loading
         var last: AdBannerSlot = .hidden
         var foreground = true
         func apply() {
             if let unitId {
                 if foreground { driver.ready(unitId: unitId) } else { driver.paused() }
             } else {
-                driver.hidden()
+                driver.hidden(reason: hideReason)
             }
         }
         // queue nil: the block runs synchronously on the posting thread, which UIKit makes the main one.
@@ -184,8 +187,10 @@ public final class NativeAdSlotModel {
                 }
             },
         ]
-        for await slot in slots {
+        for await state in states {
+            let slot = AdBannerSlot(state: state)
             last = slot
+            hideReason = (state as? BannerStateHidden)?.reason ?? .loading
             switch slot {
             case let .load(unit): unitId = unit
             case .hidden: unitId = nil

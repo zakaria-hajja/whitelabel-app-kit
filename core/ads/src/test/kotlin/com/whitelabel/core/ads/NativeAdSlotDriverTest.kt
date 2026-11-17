@@ -40,7 +40,7 @@ class NativeAdSlotDriverTest {
         driver.ready("u")
         val ad = FakeAd()
         requests.single().onLoaded(ad)
-        driver.hidden()
+        driver.hidden(HideReason.APP_HIDDEN)
         assertThat(driver.shown).isNull()
         assertThat(ad.destroyed).isEqualTo(0)
         now = 30_000
@@ -77,7 +77,7 @@ class NativeAdSlotDriverTest {
         driver.ready("u")
         requests.single().onFailed()
         assertThat(driver.shown).isNull()
-        driver.hidden()
+        driver.hidden(HideReason.APP_HIDDEN)
         now = 60_000
         driver.ready("u")
         assertThat(requests.size).isEqualTo(2)
@@ -154,6 +154,20 @@ class NativeAdSlotDriverTest {
         assertThat(ad.destroyed).isEqualTo(0)
         second.ready("u")
         assertThat(ad.destroyed).isEqualTo(1)
+        assertThat(requests.size).isEqualTo(2)
+    }
+
+    @Test fun `hidden for ad-free or consent removes and destroys the held ad`() {
+        val driver = driver()
+        driver.ready("u")
+        val ad = FakeAd()
+        requests.single().onLoaded(ad)
+        driver.hidden(HideReason.AD_FREE)
+        assertThat(driver.shown).isNull()
+        assertThat(ad.destroyed).isEqualTo(1)
+        now = 60_000
+        driver.ready("u")
+        assertThat(driver.shown).isNull()
         assertThat(requests.size).isEqualTo(2)
     }
 }

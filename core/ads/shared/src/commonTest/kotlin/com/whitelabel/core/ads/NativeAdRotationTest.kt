@@ -193,6 +193,54 @@ class NativeAdRotationTest {
         assertThat(rotation.beginVisit().ad).isSameInstanceAs(a)
     }
 
+    @Test fun `hiding for consent or ad-free destroys the held ads`() {
+        val dropping = listOf(HideReason.CONSENT_PENDING, HideReason.CONSENT_FAILED, HideReason.CONSENT_NO_ADS, HideReason.AD_FREE)
+        for (reason in dropping) {
+            val rotation = NativeAdRotation(nowMillis = { now })
+            val shown = FakeAd("shown")
+            val kept = FakeAd("kept")
+            rotation.beginVisit()
+            rotation.loaded(shown)
+            rotation.endVisit()
+            rotation.loaded(kept)
+            rotation.hidden(reason)
+            assertThat(shown.destroyed, "$reason").isEqualTo(1)
+            assertThat(kept.destroyed, "$reason").isEqualTo(1)
+            assertThat(rotation.peek(), "$reason").isNull()
+        }
+    }
+
+    @Test fun `hiding for any other reason keeps the held ads`() {
+        val keeping = HideReason.entries - setOf(HideReason.CONSENT_PENDING, HideReason.CONSENT_FAILED, HideReason.CONSENT_NO_ADS, HideReason.AD_FREE)
+        showAndLeave(a)
+        for (reason in keeping) rotation.hidden(reason)
+        assertThat(a.destroyed).isEqualTo(0)
+        assertThat(rotation.peek()).isSameInstanceAs(a)
+    }
+
+    @Test fun `an ad requested before a consent hide is destroyed when it lands, never kept`() {
+        rotation.beginVisit()
+        rotation.endVisit()
+        rotation.hidden(HideReason.CONSENT_NO_ADS)
+        assertThat(rotation.loaded(a)).isNull()
+        assertThat(a.destroyed).isEqualTo(1)
+        assertThat(rotation.peek()).isNull()
+        // The request is over: a later visit, 60 s after it, requests again.
+        now = 60_000
+        assertThat(rotation.beginVisit().request).isTrue()
+    }
+
+    @Test fun `a request that fails after a consent hide doesn't discard the next one`() {
+        rotation.beginVisit()
+        rotation.endVisit()
+        rotation.hidden(HideReason.AD_FREE)
+        rotation.failed()
+        now = 60_000
+        rotation.beginVisit()
+        assertThat(rotation.loaded(a)).isSameInstanceAs(a)
+        assertThat(a.destroyed).isEqualTo(0)
+    }
+
     @Test fun `rotations are one per placement`() {
         assertThat(NativeAdRotations.of("a")).isSameInstanceAs(NativeAdRotations.of("a"))
         assertThat(NativeAdRotations.of("a")).isNotSameInstanceAs(NativeAdRotations.of("b"))

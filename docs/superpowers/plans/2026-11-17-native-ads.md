@@ -176,6 +176,7 @@ Rules the tests pin (the algorithm the signatures don't determine):
 2. `loaded`: clears "in flight". In a visit with nothing shown → it becomes current and is returned. Otherwise it becomes *next* (destroying a previous next) and null is returned. Never swaps a shown ad.
 3. `failed`: clears "in flight"; nothing else (retry on a later visit, still ≥ 60 s after the last request).
 4. `endVisit`: ends the visit; held ads stay.
+5. (Review r1, Lead decision) `hidden(reason)`: a consent hide (`CONSENT_PENDING`, `CONSENT_FAILED`, `CONSENT_NO_ADS`) or an ad-free window starting (`AD_FREE`) destroys the held ads, and the in-flight one when it lands, matching the architecture note; other reasons keep them. `peek()` gives what the next `beginVisit` would show, with no side effects, so a new slot draws a held ad on its first frame.
 
 - [ ] **Step 1: Write the failing tests** (fake clock `var now = 0L`, `FakeAd` recording `destroyed`)
   - `first visit requests and shows nothing`: `beginVisit() == NativeAdVisit(null, true)`.
