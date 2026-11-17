@@ -147,9 +147,57 @@ enum NativeAdTemplate {
         [chip, headline, advertiser, body, media, callToAction].compactMap { $0 }
     }
 
+    /**
+     * Everything VoiceOver can reach in [root]: [leading] (the [readingOrder]) first, then every other
+     * accessible view in UIKit's order, such as the icon and the AdChoices view the SDK adds. A view
+     * that holds none of [leading] goes in whole (VoiceOver walks into it); hidden and empty
+     * decorative views are left out. Setting `accessibilityElements` to [leading] alone would make
+     * VoiceOver skip the rest, AdChoices included.
+     */
+    @MainActor static func accessibilityOrder(in root: UIView, leading: [UIView]) -> [Any] {
+        var rest: [Any] = []
+        func isLeading(_ view: UIView) -> Bool { leading.contains { $0 === view } }
+        func holdsLeading(_ view: UIView) -> Bool { leading.contains { $0.isDescendant(of: view) } }
+        func visit(_ view: UIView) {
+            for child in view.subviews where !child.isHidden && !isLeading(child) {
+                if child.isAccessibilityElement {
+                    rest.append(child)
+                } else if holdsLeading(child) {
+                    visit(child)
+                } else if !child.subviews.isEmpty || !(child.accessibilityElements ?? []).isEmpty {
+                    rest.append(child)
+                }
+            }
+        }
+        visit(root)
+        return leading + rest
+    }
+
+    /** The advertiser's icon as an image VoiceOver reaches, named by the advertiser, else the headline. */
+    @MainActor static func makeAccessible(icon: UIImageView, advertiser: String?, headline: String?) {
+        icon.isAccessibilityElement = true
+        icon.accessibilityTraits = .image
+        icon.accessibilityLabel = [advertiser, headline].compactMap { $0 }.first { !$0.isEmpty }
+    }
+
     /** Whether the template can draw an ad: it needs a headline and media (the SDK's required assets). */
     static func isRenderable(headline: String?, hasMedia: Bool) -> Bool {
         !(headline ?? "").isEmpty && hasMedia
+    }
+}
+
+/**
+ * The card's `NativeAdView`: VoiceOver reads [leading] first, then everything else
+ * ([NativeAdTemplate.accessibilityOrder]). Computed each time VoiceOver asks, so the AdChoices view
+ * the SDK inserts when the ad is set is always included.
+ */
+final class OrderedNativeAdView: NativeAdView {
+    var leading: [UIView] = []
+
+    override var accessibilityElements: [Any]? {
+        get { NativeAdTemplate.accessibilityOrder(in: self, leading: leading) }
+        // The order is derived; a value set from outside would drop the SDK's views again.
+        set {}
     }
 }
 
@@ -183,7 +231,7 @@ private struct NativeAdViewBuilder {
     func build(_ ad: NativeAd) -> NativeAdView {
         let colors = style.colors
         let corners = style.pack.corners
-        let card = NativeAdView()
+        let card = OrderedNativeAdView()
         card.backgroundColor = UIColor(colors.surface)
         card.layer.cornerRadius = corners.large
         card.layer.borderWidth = 1
@@ -240,6 +288,7 @@ private struct NativeAdViewBuilder {
                 icon.widthAnchor.constraint(equalToConstant: NativeAdTemplate.iconSize),
                 icon.heightAnchor.constraint(equalToConstant: NativeAdTemplate.iconSize),
             ])
+            NativeAdTemplate.makeAccessible(icon: icon, advertiser: ad.advertiser, headline: ad.headline)
             bottom.addArrangedSubview(icon)
             card.iconView = icon
         }
@@ -303,7 +352,8 @@ private struct NativeAdViewBuilder {
         applyBorders(card)
         card.registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: NativeAdView, _: UITraitCollection) in applyBorders(view) }
 
-        card.accessibilityElements = NativeAdTemplate.readingOrder(
+        // "Ad, <headline>" first; the icon and the SDK's AdChoices follow ([OrderedNativeAdView]).
+        card.leading = NativeAdTemplate.readingOrder(
             chip: chipLabel, headline: headline, advertiser: card.advertiserView, body: card.bodyView, media: media, callToAction: ctaText
         )
 

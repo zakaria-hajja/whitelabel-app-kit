@@ -55,4 +55,65 @@ final class NativeAdTemplateTests: XCTestCase {
         let sparse = NativeAdTemplate.readingOrder(chip: chip, headline: headline, advertiser: nil, body: nil, media: media, callToAction: nil)
         XCTAssertEqual(sparse.map(ObjectIdentifier.init), [chip, headline, media].map(ObjectIdentifier.init))
     }
+
+    /**
+     * After the reading order, VoiceOver still reaches every other accessible view: the icon, and the
+     * AdChoices view the SDK adds once the ad is set. Hidden and empty decorative views are left out.
+     */
+    @MainActor func testVoiceOverReachesEveryOtherViewAfterTheReadingOrder() {
+        let root = UIView()
+        let chipLabel = UILabel(), advertiser = UILabel(), headline = UILabel(), body = UILabel(), ctaText = UILabel()
+        let media = UIView()
+        let chip = UIView()
+        chip.addSubview(chipLabel)
+        let header = UIStackView(arrangedSubviews: [chip, advertiser])
+        let column = UIStackView(arrangedSubviews: [headline, body])
+        let icon = UIImageView()
+        icon.isAccessibilityElement = true
+        let cta = UIView()
+        cta.addSubview(ctaText)
+        let bottom = UIStackView(arrangedSubviews: [icon, cta])
+        let gone = UILabel()
+        gone.isHidden = true
+        for view in [header, media, column, bottom, gone, UIView()] { root.addSubview(view) }
+        let leading = NativeAdTemplate.readingOrder(chip: chipLabel, headline: headline, advertiser: advertiser, body: body, media: media, callToAction: ctaText)
+        // The SDK adds AdChoices after the template is built; here a container holding an element.
+        let adChoices = UIView()
+        let adChoicesIcon = UIImageView()
+        adChoicesIcon.isAccessibilityElement = true
+        adChoices.addSubview(adChoicesIcon)
+        root.addSubview(adChoices)
+        let order = NativeAdTemplate.accessibilityOrder(in: root, leading: leading)
+        XCTAssertEqual(
+            order.map { ObjectIdentifier($0 as AnyObject) },
+            [chipLabel, headline, advertiser, body, media, ctaText, icon, adChoices].map(ObjectIdentifier.init)
+        )
+    }
+
+    /** The card computes its order when VoiceOver asks, so a view the SDK adds later is in it. */
+    @MainActor func testTheCardsElementsIncludeAViewAddedLater() {
+        let card = OrderedNativeAdView()
+        let chipLabel = UILabel(), headline = UILabel()
+        card.addSubview(headline)
+        card.addSubview(chipLabel)
+        card.leading = [chipLabel, headline]
+        let adChoices = UIView()
+        adChoices.isAccessibilityElement = true
+        adChoices.accessibilityLabel = "AdChoices"
+        card.addSubview(adChoices)
+        let elements = (card.accessibilityElements ?? []).map { ObjectIdentifier($0 as AnyObject) }
+        XCTAssertEqual(elements, [chipLabel, headline, adChoices].map(ObjectIdentifier.init))
+    }
+
+    /** The advertiser's icon is an image VoiceOver can reach, named by the advertiser (else the headline). */
+    @MainActor func testTheIconIsAnAccessibleImage() {
+        let icon = UIImageView()
+        NativeAdTemplate.makeAccessible(icon: icon, advertiser: "Quillby Inc.", headline: "Write better")
+        XCTAssertTrue(icon.isAccessibilityElement)
+        XCTAssertEqual(icon.accessibilityLabel, "Quillby Inc.")
+        XCTAssertTrue(icon.accessibilityTraits.contains(.image))
+        let unnamed = UIImageView()
+        NativeAdTemplate.makeAccessible(icon: unnamed, advertiser: "", headline: "Write better")
+        XCTAssertEqual(unnamed.accessibilityLabel, "Write better")
+    }
 }
