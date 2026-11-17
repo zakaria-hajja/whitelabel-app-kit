@@ -2,6 +2,7 @@ package com.whitelabel.core.ads
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNull
 import assertk.assertions.isSameInstanceAs
 import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.consent.FakeConsentPort
@@ -67,6 +68,8 @@ class AdsControllerTest {
         port: FakeConsentPort = FakeConsentPort(granted),
         gather: Boolean = true,
         adFreeScope: CoroutineScope = scope(),
+        natives: Set<String> = emptySet(),
+        rotations: (String) -> NativeAdRotation = NativeAdRotations::of,
     ): Rig {
         val launchPath = "$dir/ads-launches.json".toPath()
         repeat(earlierLaunches) {
@@ -80,6 +83,7 @@ class AdsControllerTest {
         val tracking = RecordingTracking()
         val controller = AdsController(
             enabled, units, consent, LaunchCounter(launchPath, scope(), fileSystem), adFree, tracking, clock, scope(),
+            natives = natives, rotations = rotations, rotationContext = UnconfinedTestDispatcher(testScheduler),
         )
         return Rig(port, consent, adFree, tracking, controller)
     }
@@ -277,5 +281,58 @@ class AdsControllerTest {
         rig.controller.setHidden("home", true)
         assertThat(a.value).isEqualTo(hidden(HideReason.APP_HIDDEN))
         assertThat(b.value).isEqualTo(hidden(HideReason.APP_HIDDEN))
+    }
+
+    private class HeldAd : NativeAdHandle {
+        var destroyed = 0
+        override fun destroy() {
+            destroyed++
+        }
+    }
+
+    /** A rotation for "home" holding [ad], loaded in a visit that has ended (no slot alive). */
+    private fun holding(ad: HeldAd): NativeAdRotation = NativeAdRotation(nowMillis = { 0 }).apply {
+        val visit = beginVisit()
+        loaded(ad, visit.requestId)
+        endVisit()
+    }
+
+    @Test
+    fun `an ad-free window drops a native placement's held ads with no slot alive, even once it has ended`() = runTest {
+        val ad = HeldAd()
+        val rotation = holding(ad)
+        val rig = rig(earlierLaunches = 1, natives = setOf("home"), rotations = { rotation })
+        rig.tracking.finish()
+        assertThat(rig.controller.bannerState("home").value).isEqualTo(ready)
+        rig.adFree.grantUntil(now + 1.hours)
+        advance(1.hours)
+        assertThat(rig.controller.bannerState("home").value).isEqualTo(ready)
+        assertThat(ad.destroyed).isEqualTo(1)
+        assertThat(rotation.peek()).isNull()
+    }
+
+    @Test
+    fun `consent withdrawn drops a native placement's held ads with no slot alive`() = runTest {
+        val ad = HeldAd()
+        val rotation = holding(ad)
+        val rig = rig(earlierLaunches = 1, natives = setOf("home"), rotations = { rotation })
+        rig.tracking.finish()
+        rig.port.next = denied
+        rig.consent.showPrivacyOptions()
+        assertThat(rig.controller.bannerState("home").value).isEqualTo(hidden(HideReason.CONSENT_FAILED))
+        assertThat(ad.destroyed).isEqualTo(1)
+    }
+
+    @Test
+    fun `an app hide keeps a native placement's held ads, and banners are not followed`() = runTest {
+        val ad = HeldAd()
+        val banner = HeldAd()
+        val rotations = mapOf("home" to holding(ad), "detail" to holding(banner))
+        val rig = rig(earlierLaunches = 1, natives = setOf("home"), rotations = { rotations.getValue(it) })
+        rig.tracking.finish()
+        rig.controller.setHidden("home", true)
+        rig.adFree.grantUntil(now + 1.hours)
+        assertThat(ad.destroyed).isEqualTo(0)
+        assertThat(banner.destroyed).isEqualTo(0)
     }
 }

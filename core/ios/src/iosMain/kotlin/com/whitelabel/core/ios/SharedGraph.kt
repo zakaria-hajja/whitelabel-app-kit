@@ -354,7 +354,7 @@ object SharedGraph {
         val tracking = adsTracking
         return listOf(
             module { if (tracking != null) single<TrackingPort> { tracking } },
-            adsModule(wiring.enabled, wiring.units),
+            adsModule(wiring.enabled, wiring.units, natives = wiring.natives),
         )
     }
 

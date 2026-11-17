@@ -175,8 +175,9 @@ never loads.
   consent hide (pending, failed, or no ads allowed) also destroys the placement's held ads, and the one
   still loading when it lands, so an ad is never shown under rules other than those it was requested
   under; the next visit after the rules allow ads again requests a new one. `setHidden` (and the other
-  reasons) keep held ads until they expire. A slot applies this when it sees the rules hide: a screen
-  that isn't open meanwhile drops its held ads on its next appearance, and they are at most 1 h old.
+  reasons) keep held ads until they expire. The `AdsController` follows every native placement's rules
+  itself, on the main thread, so this happens even while no screen shows the placement: a list that
+  comes back after an ad-free window or a consent change never draws an ad held from before it.
 
 **The template** (the same on both platforms, sizes in dp/pt; spec in Munch's
 `docs/design/` native ad row): a full-width card, fixed height **184** at the default text size (it

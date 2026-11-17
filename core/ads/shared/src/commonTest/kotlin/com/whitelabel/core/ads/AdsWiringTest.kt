@@ -67,6 +67,11 @@ class AdsWiringTest {
             .isEqualTo(mapOf("home" to unit, "list" to nativeUnit))
     }
 
+    @Test fun `the wiring names its native placements`() {
+        assertThat(wiring(placements = withNative, units = "home=$unit;native.list=$nativeUnit").natives).isEqualTo(setOf("list"))
+        assertThat(wiring(units = "home=$unit").natives).isEqualTo(emptySet())
+    }
+
     @Test fun `debug native placement without a unit gets the native test unit`() {
         assertThat(wiring(placements = withNative, units = "", debugBuild = true).units)
             .isEqualTo(mapOf("home" to "ca-app-pub-3940256099942544/2435281174", "list" to "ca-app-pub-3940256099942544/3986624511"))

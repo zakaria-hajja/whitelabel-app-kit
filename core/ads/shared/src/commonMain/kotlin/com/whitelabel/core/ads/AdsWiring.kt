@@ -40,9 +40,15 @@ data class AdRequestPolicy(val nonPersonalized: Boolean) {
 
 /**
  * How the ads part of the graph is wired: whether ads are on in this build, the unit (banner or
- * native, by the placement's kind) of each declared placement (resolved for the build type), and what each request carries.
+ * native, by the placement's kind) of each declared placement (resolved for the build type), what each
+ * request carries, and which placements are [natives] (the controller follows their rotations).
  */
-data class AdsWiring(val enabled: Boolean, val units: Map<String, String>, val request: AdRequestPolicy = AdRequestPolicy.DEFAULT) {
+data class AdsWiring(
+    val enabled: Boolean,
+    val units: Map<String, String>,
+    val request: AdRequestPolicy = AdRequestPolicy.DEFAULT,
+    val natives: Set<String> = emptySet(),
+) {
     companion object {
         val OFF = AdsWiring(enabled = false, units = emptyMap())
     }
@@ -108,6 +114,7 @@ fun adsWiring(
             name to unit
         },
         request = AdRequestPolicy(nonPersonalized),
+        natives = placements.filter { it.kind == AdKind.NATIVE }.map { it.name }.toSet(),
     )
 }
 
