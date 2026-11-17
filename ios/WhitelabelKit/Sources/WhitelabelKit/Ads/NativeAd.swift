@@ -22,6 +22,9 @@ public enum NativeAds {
 
     public static func register(_ host: any NativeAdHost) { self.host = host }
 
+    /** The ad label a host's template shows ("Ad", "Annonce"), the banner's `KitStrings` "Ad". */
+    public static var label: String { KitStrings.text("Ad") }
+
     /** Tests. */
     static func unregister() { host = nil }
 }

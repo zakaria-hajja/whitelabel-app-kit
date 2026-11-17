@@ -6,8 +6,8 @@ import Shared
 @MainActor
 final class AdsServiceTests: XCTestCase {
 
-    override func setUp() { SharedGraph.shared.stop(); SharedGraph.shared.clearFirebaseServices(); AdBanners.unregister() }
-    override func tearDown() { SharedGraph.shared.stop(); SharedGraph.shared.clearFirebaseServices(); AdBanners.unregister() }
+    override func setUp() { SharedGraph.shared.stop(); SharedGraph.shared.clearFirebaseServices(); AdBanners.unregister(); NativeAds.unregister() }
+    override func tearDown() { SharedGraph.shared.stop(); SharedGraph.shared.clearFirebaseServices(); AdBanners.unregister(); NativeAds.unregister() }
 
     func testFollowsTheAdsSetting() {
         XCTAssertEqual(AdsService().kind, .ads)
@@ -51,5 +51,20 @@ final class AdsServiceTests: XCTestCase {
     func testOnModeRegistersAHostWithTheSettingsPolicy() {
         AdsService().install(mode: "on", info: ["GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511", "WLAdsNonPersonalized": "yes"])
         XCTAssertEqual((AdBanners.host as? GoogleBannerHost)?.policy, AdRequestPolicy(nonPersonalized: true))
+    }
+
+    func testInstallRegistersNativeHost() {
+        AdsService().install(mode: "on", info: ["GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511"])
+        XCTAssertTrue(NativeAds.host is GoogleNativeAdHost)
+    }
+
+    func testNativeHostUsesRequestPolicy() {
+        AdsService().install(mode: "on", info: ["GADApplicationIdentifier": "ca-app-pub-3940256099942544~1458002511", "WLAdsNonPersonalized": "yes"])
+        XCTAssertEqual((NativeAds.host as? GoogleNativeAdHost)?.policy.nonPersonalized, true)
+    }
+
+    func testOffInstallsNoNativeHost() {
+        AdsService().install(mode: "off")
+        XCTAssertNil(NativeAds.host)
     }
 }

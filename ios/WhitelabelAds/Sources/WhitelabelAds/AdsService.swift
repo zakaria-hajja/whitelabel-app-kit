@@ -4,13 +4,13 @@ import WhitelabelConsent
 import WhitelabelKit
 
 /**
- * Google Mobile Ads banners and the consent form for an iOS app, the twin of Android's
+ * Google Mobile Ads banners, native ads and the consent form for an iOS app, the twin of Android's
  * `:core:ads:google`: list it in `AppDefinition(services: [AdsService()], ads: [...])`. It follows
  * `WL_ADS` (`WLAds` in Info.plist):
  * - `on`: hands the shared graph the UMP consent port and the tracking prompt (ATT when
  *   `ads.ios.requestTracking` is on, `WLAdsTracking` yes; otherwise none) and registers Google's
- *   banner host, whose requests carry `npa=1` with `ads.nonPersonalized` (`WLAdsNonPersonalized` yes).
- *   The SDK itself starts lazily, on the first banner the rules let load. The app's
+ *   banner and native ad hosts, whose requests carry `npa=1` with `ads.nonPersonalized` (`WLAdsNonPersonalized` yes).
+ *   The SDK itself starts lazily, on the first banner or native ad the rules let load. The app's
  *   Info.plist must carry the AdMob app ID (`GADApplicationIdentifier`), and with tracking on the
  *   prompt's text (the WhitelabelAdsApp template adds it), or the app stops at launch.
  * - `off` (also Release with `ads.enabled=debug`): nothing; every banner stays hidden.
@@ -32,6 +32,7 @@ public struct AdsService: AppService {
         SharedGraph.shared.useConsent(port: UmpConsentPort())
         SharedGraph.shared.useAds(tracking: Self.trackingPort(info))
         AdBanners.register(GoogleBannerHost(policy: Self.requestPolicy(info)))
+        NativeAds.register(GoogleNativeAdHost(policy: Self.requestPolicy(info)))
     }
 
     /** `WLAdsNonPersonalized` (`$(WL_ADS_NON_PERSONALIZED)`, from `ads.nonPersonalized`) is `yes` only with ads on and the setting true. */
