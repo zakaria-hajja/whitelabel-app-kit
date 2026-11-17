@@ -72,7 +72,7 @@ The build validates this file and reports every problem at once, naming the file
 | `defaults.features` | `catalog,profile` | Optional. Flagged features that are on when remote config is unavailable |
 | `firebase.enabled` | `debug` | Optional: `false` (default), `true` or `debug`. `true` needs `apps/<name>/google-services.json` (or one per build type in `src/debug/` and `src/release/`, each from its own Firebase project) and the two AdMob app IDs below; `debug` runs a fake Firebase in Debug unless the Debug file and the ID exist. See [firebase.md](firebase.md) |
 | `ads.android.appId`, `ads.ios.appId` | `ca-app-pub-1234567890123456~1234567890` | The app's AdMob app IDs (Google's consent SDK needs them). Required with `firebase.enabled=true` or `ads.enabled=true`; validated when present |
-| `ads.enabled` | `debug` | Optional: `false` (default), `true` or `debug` (Debug builds, Google's test units). `true` needs both app IDs and `ads.android.banner.<placement>` / `ads.ios.banner.<placement>` units. See [ads.md](ads.md) |
+| `ads.enabled` | `debug` | Optional: `false` (default), `true` or `debug` (Debug builds, Google's test units). `true` needs both app IDs and `ads.android.banner.<placement>` / `ads.ios.banner.<placement>` units (`ads.android.native.<placement>` / `ads.ios.native.<placement>` for a native placement). See [ads.md](ads.md) |
 | `ads.ios.requestTracking`, `ads.ios.trackingMessage` | `true`, `We use this to show relevant ads.` | Optional iOS App Tracking Transparency prompt; the message is required when it is on |
 | `ads.nonPersonalized` | `true` | Optional: `false` (default) or `true`. Every ad request on both platforms asks for a non-personalized ad (AdMob's `npa=1`). See [ads.md](ads.md) |
 
@@ -138,8 +138,10 @@ feature's module, then the app's own `modules(...)`.
   app remote values, analytics and crash reports behind the user's consent. Put
   `PrivacyChoicesRow()` in the app's own settings section. See [firebase.md](firebase.md).
 - **Ads:** `ads { placement("home", underTab = HomeRoute) }` in the definition (with `ads.enabled` in
-  `app.properties`) shows a banner under a tab, after consent and never on launch 1. Real units go in
-  `ads.android.banner.<placement>` / `ads.ios.banner.<placement>`. See [ads.md](ads.md).
+  `app.properties`) shows a banner under a tab, after consent and never on launch 1; `native("list")`
+  declares a native ad the app shows as a list item (`rememberNativeAd` + `NativeAdItem`). Real units go
+  in `ads.android.banner.<placement>` / `ads.ios.banner.<placement>` (`…native.<placement>` for native).
+  See [ads.md](ads.md).
 - **Remote flags:** a feature with a flag key can be switched off remotely. When the remote config
   is unavailable, it falls back to `defaults.features`.
 - **Content gate (app lock):** see [Content gate](#content-gate-app-lock) below.

@@ -43,3 +43,28 @@ Background: [ads.md](../../ads.md). Spec: [the design](../specs/2026-11-12-fireb
 
 Notes from the Android run: logcat showed the SDK starting when the first banner was allowed
 (Home visible on launch 2), not at process start.
+
+## Native (list item)
+
+Showcase has no native placement, so run these on an app that declares one (Munch Debug after its
+native-ads card, `ads { native(…) }` / `AdPlacement(…, kind: .native)`), in Debug on Google's native
+test unit. Run each on Android and iOS, in light and dark, and once in French.
+
+| # | Platform | Check | Result |
+|---|---|---|---|
+| N1 | Both | The "Ad" chip ("Annonce" in French) reads top-left, high contrast, at least 15 px | |
+| N2 | Both | AdChoices sits in the card's top-right corner, uncovered; nothing of ours is drawn there | |
+| N3 | Both | Only headline, media, icon and CTA open the ad; tapping the card's padding, the chip or the empty space does nothing. No swipe or long-press action | |
+| N4 | Both | A video ad plays muted in the 120 media with the SDK's controls; an image is scaled to fit, never cropped | |
+| N5 | Both | Long text truncates with an ellipsis (headline and body 2 lines, CTA 1 line), never overflows the card; the card's height stays 184 at the default text size | |
+| N6 | Both | Font scale 1.3 / larger Dynamic Type: the card is taller (212 at 1.3) and nothing is clipped; it doesn't change size while on screen | |
+| N7 | Both | A failed load (airplane mode, then open the list): no gap, no error, the list looks as without ads | |
+| N8 | Both | Leave and come back within 60 s: the same ad, no reload, no jump | |
+| N9 | Both | Come back after 60 s: the same ad again; the next entry after that shows a new one | |
+| N10 | Both | Background the app over an hour (or move the clock forward 1 h), come back: the old ad is gone (not shown), a new one loads | |
+| N11 | Both | Ad-free on (see check 4 / 11): the item disappears; it never shows on launch 1 or before consent | |
+| N12 | Both | The ad loads while its slot is on screen: it animates in, rows below move, not while a finger is down; with reduced motion it appears instantly (the app's insertion, ads.md "What the app still owns") | |
+| N13 | Both | TalkBack / VoiceOver read "Ad" first, then the headline, advertiser, body and CTA; AdChoices is reachable | |
+| N14 | Both | **Native Ad Validator**: on test native ads in Debug, open its panel (Android: the validator's overlay on the ad; iOS: the same), it reports no errors or warnings. Screenshot it for the PR. Don't set `com.google.android.gms.ads.flag.NATIVE_AD_DEBUGGER_ENABLED=false` for QA | |
+
+`npa=1` on native requests is pinned by unit tests (`AdsContributorTest`, `AdsServiceTests`), so it has no manual row.
