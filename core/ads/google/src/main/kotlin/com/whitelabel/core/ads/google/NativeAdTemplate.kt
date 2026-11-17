@@ -33,8 +33,11 @@ import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import com.google.android.gms.ads.nativead.NativeAd
 import com.whitelabel.core.ads.R
@@ -52,7 +55,7 @@ import kotlin.math.max
 /**
  * Sizes of the native list-item template (the Designer's option A, "media left"), the same numbers
  * as iOS's `NativeAdTemplate` in pt. [Height] is the card at font scale ≤ 1; [height] grows it with
- * the font scale, computed once so the card never changes size while it is on screen.
+ * the app's actual line heights at its font scale, computed once so the card never changes size on screen.
  */
 internal object NativeAdTemplate {
     /** The media view, square; the policy minimum is 120. */
@@ -67,16 +70,46 @@ internal object NativeAdTemplate {
     /** The card's height at font scale ≤ 1. */
     val Height: Dp = height(1f)
 
+    /** The card's height at [fontScale] with the spec's line heights ([Lines.spec]). */
+    fun height(fontScale: Float): Dp = height(Lines.spec(fontScale))
+
     /**
-     * The card's height at [fontScale]: padding 16 + header max(24, 16s) + gap 8 + main row
-     * max(media, headline 2×20s + 4 + body 2×16s + 4 + bottom row max(40, 20s + 20)) + padding 16, rounded up.
+     * The card's height for [lines]: padding 16 + header max(24, label, advertiser) + gap 8 + main row
+     * max(media, headline 2 lines + 4 + body 2 lines + 4 + bottom row max(40, CTA line + 20)) + padding 16,
+     * rounded up. Taller type roles grow the card, so the CTA row is never squeezed out.
      */
-    fun height(fontScale: Float): Dp {
-        val s = max(fontScale, 0f)
-        val header = max(24f, 16f * s)
-        val column = 40f * s + 4f + 32f * s + 4f + max(40f, 20f * s + 20f)
+    fun height(lines: Lines): Dp {
+        val header = maxOf(24f, lines.label, lines.body)
+        val column = 2 * lines.headline + 4f + 2 * lines.body + 4f + max(40f, lines.cta + 20f)
         val main = max(MediaSize.value, column)
         return ceil(16f + header + 8f + main + 16f).dp
+    }
+
+    /**
+     * Line heights in dp of the template's text roles: [label] the chip (`labelSmall`), [headline]
+     * (`titleSmall`), [body] the body and advertiser (`bodySmall`), [cta] (`labelLarge`).
+     */
+    data class Lines(val label: Float, val headline: Float, val body: Float, val cta: Float) {
+        companion object {
+            /** The spec's 16 / 20 / 16 / 20 (Material 3's defaults) at [fontScale]. */
+            fun spec(fontScale: Float): Lines {
+                val s = max(fontScale, 0f)
+                return Lines(label = 16f * s, headline = 20f * s, body = 16f * s, cta = 20f * s)
+            }
+
+            /** The app's actual line heights; a style without one falls back to the spec's. */
+            fun of(density: Density, label: TextStyle, headline: TextStyle, body: TextStyle, cta: TextStyle): Lines {
+                val spec = spec(1f)
+                fun TextStyle.lineDp(fallbackSp: Float): Float = with(density) {
+                    when {
+                        lineHeight.isSp -> lineHeight.toDp().value
+                        lineHeight.isEm && fontSize.isSp -> (fontSize.value * lineHeight.value).sp.toDp().value
+                        else -> fallbackSp.sp.toDp().value
+                    }
+                }
+                return Lines(label.lineDp(spec.label), headline.lineDp(spec.headline), body.lineDp(spec.body), cta.lineDp(spec.cta))
+            }
+        }
     }
 
     /** The "Ad" chip's horizontal padding (spec: 6, between the kit's xs and sm). */
@@ -104,8 +137,12 @@ internal fun NativeAdTemplate(ad: NativeAd, modifier: Modifier = Modifier) {
     val spacing = AppTheme.spacing
     val cardShape = MaterialTheme.shapes.large
     val smallShape = MaterialTheme.shapes.small
-    val fontScale = LocalDensity.current.fontScale
-    val height = remember(fontScale) { NativeAdTemplate.height(fontScale) }
+    val density = LocalDensity.current
+    val height = remember(density, typography) {
+        NativeAdTemplate.height(
+            NativeAdTemplate.Lines.of(density, typography.labelSmall, typography.titleSmall, typography.bodySmall, typography.labelLarge),
+        )
+    }
     NativeAdView(
         nativeAd = ad,
         modifier = modifier

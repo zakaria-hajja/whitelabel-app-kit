@@ -180,8 +180,9 @@ never loads.
 
 **The template** (the same on both platforms, sizes in dp/pt; spec in Munch's
 `docs/design/` native ad row): a full-width card, fixed height **184** at the default text size (it
-grows with the font scale, `NativeAdTemplate.height(fontScale)`, computed once so it never jumps on
-screen; iOS caps Dynamic Type at accessibility2), `surface` fill, 1 dp `outlineVariant` border,
+grows with the font scale, computed once so it never jumps on screen; on Android it is computed from
+the app's actual `labelSmall` / `titleSmall` / `bodySmall` / `labelLarge` line heights, so taller type
+roles grow the card instead of clipping the CTA; iOS caps Dynamic Type at accessibility2), `surface` fill, 1 dp `outlineVariant` border,
 `corners.large`. An "Ad" chip ("Annonce" in French, ≥ 16, `onSurface` on `surface`) top-left with the
 advertiser beside it; the top-right 24×24 corner is left to the SDK's AdChoices icon. The media
 (image or muted video with the SDK's controls) is 120×120 on the left, scaled to fit, never cropped.

@@ -57,7 +57,7 @@ test unit. Run each on Android and iOS, in light and dark, and once in French.
 | N3 | Both | Only headline, media, icon and CTA open the ad; tapping the card's padding, the chip or the empty space does nothing. No swipe or long-press action | |
 | N4 | Both | A video ad plays muted in the 120 media with the SDK's controls; an image is scaled to fit, never cropped | |
 | N5 | Both | Long text truncates with an ellipsis (headline and body 2 lines, CTA 1 line), never overflows the card; the card's height stays 184 at the default text size | |
-| N6 | Both | Font scale 1.3 / larger Dynamic Type: the card is taller (212 at 1.3) and nothing is clipped; it doesn't change size while on screen | |
+| N6 | Both | Font scale 1.3 / larger Dynamic Type: the card is taller (iOS 212 at 1.3; Android follows its nonlinear font scaling) and nothing is clipped, the CTA row included; it doesn't change size while on screen | |
 | N7 | Both | A failed load (airplane mode, then open the list): no gap, no error, the list looks as without ads | |
 | N8 | Both | Leave and come back within 60 s (detail and back, a tab flip): the same ad on the first frame, no reload, no jump, no insert animation | |
 | N9 | Both | Come back after 60 s: the same ad again; the next entry after that shows a new one | |
