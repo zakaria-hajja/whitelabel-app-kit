@@ -167,6 +167,10 @@ never loads.
   appears on the next visit.
 - An ad is shown at most 1 h after it loaded; an older one is destroyed and a new one requested.
 - An ad that loads after the user left is kept for the next visit, not shown in a dead slot.
+- **One live slot per placement.** The rotation (and its visit) is shared by every slot of a placement,
+  so show a placement on one screen at a time. Two screens alive at once (two tabs kept composed, a
+  split view) each need their own placement name (`native("homeList")`, `native("feedList")`);
+  otherwise one screen leaving ends the other's visit and a promoted ad can replace the one it draws.
 - Ad-free starting, `setHidden`, or consent changing hides the item at once. An ad-free window or a
   consent hide (pending, failed, or no ads allowed) also destroys the placement's held ads, and the one
   still loading when it lands, so an ad is never shown under rules other than those it was requested
