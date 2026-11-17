@@ -151,7 +151,7 @@ class NativeAdRotationTest {
         assertThat(rotation.peek()).isNull()
     }
 
-    @Test fun `peek gives the held ad a visit would show, without beginning one`() {
+    @Test fun `peek gives the held ad a visit would show without beginning one`() {
         showAndLeave(a)
         now = 30_000
         assertThat(rotation.peek()).isSameInstanceAs(a)
@@ -161,7 +161,7 @@ class NativeAdRotationTest {
         assertThat(a.destroyed).isEqualTo(0)
     }
 
-    @Test fun `peek gives the next ad over the current one, as the next visit promotes it`() {
+    @Test fun `peek gives the next ad over the current one as the next visit promotes it`() {
         showAndLeave(a)
         now = 60_000
         rotation.beginVisit()
@@ -218,7 +218,7 @@ class NativeAdRotationTest {
         assertThat(rotation.peek()).isSameInstanceAs(a)
     }
 
-    @Test fun `an ad requested before a consent hide is destroyed when it lands, never kept`() {
+    @Test fun `an ad requested before a consent hide is destroyed when it lands and never kept`() {
         rotation.beginVisit()
         rotation.endVisit()
         rotation.hidden(HideReason.CONSENT_NO_ADS)
