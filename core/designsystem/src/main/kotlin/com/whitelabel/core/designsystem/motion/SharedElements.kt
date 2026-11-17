@@ -8,8 +8,11 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import com.whitelabel.core.designsystem.theme.AppTheme
+import com.whitelabel.core.designsystem.theme.MotionCurve
+import com.whitelabel.core.designsystem.theme.MotionSpec
 import com.whitelabel.core.designsystem.theme.toAnimationSpec
 
 /** The shell's shared-transition scope; `null` outside the shell. */
@@ -18,9 +21,13 @@ val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { nu
 /** The current navigation destination's animation scope; `null` outside a `screen<Route>`. */
 val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
 
+/** Whether the shell's current navigation is a pop (Back or predictive back); the shell provides it, `false` outside the shell. */
+val LocalNavIsPop = staticCompositionLocalOf<() -> Boolean> { { false } }
+
 /**
  * Moves this element to the element with the same [key] on the next screen (same content, e.g. an
- * image or an avatar), with the style pack's `sharedElement` motion. Does nothing outside the shell.
+ * image or an avatar), with the style pack's `sharedElement` motion, `sharedElementReturn` on back.
+ * Does nothing outside the shell.
  */
 @Composable
 fun Modifier.sharedElementTransition(key: Any): Modifier {
@@ -54,8 +61,14 @@ fun Modifier.sharedBoundsTransition(key: Any): Modifier {
     }
 }
 
+/** The shared-element curve for the current navigation: [MotionSpec.sharedElementReturn] on a pop. */
+internal fun MotionSpec.sharedCurve(isPop: Boolean): MotionCurve = if (isPop) sharedElementReturn else sharedElement
+
+// The transform runs when the bounds animation starts, after the NavHost's transition lambdas
+// have recorded the direction, so it reads it then rather than at composition.
 @Composable
 private fun packBoundsTransform(): BoundsTransform {
-    val curve = AppTheme.style.motion.sharedElement
-    return BoundsTransform { _, _ -> curve.toAnimationSpec() }
+    val motion = AppTheme.style.motion
+    val isPop = LocalNavIsPop.current
+    return BoundsTransform { _, _ -> motion.sharedCurve(isPop()).toAnimationSpec() }
 }

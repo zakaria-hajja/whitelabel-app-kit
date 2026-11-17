@@ -8,6 +8,7 @@ import com.whitelabel.core.ads.AdBanner
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import com.whitelabel.core.designsystem.motion.LocalNavIsPop
 import com.whitelabel.core.designsystem.motion.LocalSharedTransitionScope
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.designsystem.theme.BottomBarStyle
@@ -143,8 +144,9 @@ internal fun ShellNavHost(
             ShellTransitions(motion, visibleTabs.mapNotNull { it.route::class.qualifiedName }.toSet())
         }
         // Shared elements between destinations: features use Modifier.sharedElementTransition(key).
+        val isPopReader = remember(transitions) { { transitions.isPop } }
         SharedTransitionLayout {
-            CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+            CompositionLocalProvider(LocalSharedTransitionScope provides this, LocalNavIsPop provides isPopReader) {
                 if (gate == null) {
                     NavHost(
                         navController = navController,
@@ -152,7 +154,7 @@ internal fun ShellNavHost(
                         modifier = hostModifier,
                         enterTransition = transitions.enter,
                         exitTransition = transitions.exit,
-                        popEnterTransition = transitions.enter,
+                        popEnterTransition = transitions.popEnter,
                         popExitTransition = transitions.exit,
                     ) {
                         enabled.forEach { entry -> entry.routes(this, scope) }
@@ -165,7 +167,7 @@ internal fun ShellNavHost(
                         modifier = hostModifier,
                         enterTransition = transitions.enter,
                         exitTransition = transitions.exit,
-                        popEnterTransition = transitions.enter,
+                        popEnterTransition = transitions.popEnter,
                         popExitTransition = transitions.exit,
                     ) {
                         navigation<AuthGraph>(startDestination = checkNotNull(gate.gate).startRoute) { gate.routes(this, scope) }

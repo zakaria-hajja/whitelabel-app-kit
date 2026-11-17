@@ -14,6 +14,7 @@ import androidx.navigation.NavDeepLink
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.whitelabel.core.designsystem.motion.LocalNavAnimatedVisibilityScope
+import com.whitelabel.core.designsystem.theme.MotionCurve
 import com.whitelabel.core.designsystem.theme.MotionSpec
 import com.whitelabel.core.designsystem.theme.toAnimationSpec
 
@@ -43,7 +44,17 @@ internal class TabTransitions(private val tabRoutes: Set<String>) {
     }
 }
 
-/** NavHost transitions from the pack's motion: a fade-through between tabs, a fade for pushes and pops. */
+/** The enter curve: [MotionSpec.tabSwitch] between tabs, else [MotionSpec.screenReturn] on a pop and [MotionSpec.screenEnter] on a push. */
+internal fun MotionSpec.enterCurve(kind: TransitionKind, isPop: Boolean): MotionCurve = when (kind) {
+    TransitionKind.TabSwitch -> tabSwitch
+    TransitionKind.Screen -> if (isPop) screenReturn else screenEnter
+}
+
+/**
+ * NavHost transitions from the pack's motion: a fade-through between tabs, a fade for pushes,
+ * `screenReturn` for the screen coming back on a pop. [isPop] records the direction of the current
+ * navigation for shared elements (`LocalNavIsPop`).
+ */
 internal class ShellTransitions(private val motion: MotionSpec, tabRoutes: Set<String>) {
 
     private val tabs = TabTransitions(tabRoutes)
@@ -51,14 +62,27 @@ internal class ShellTransitions(private val motion: MotionSpec, tabRoutes: Set<S
     private fun AnimatedContentTransitionScope<NavBackStackEntry>.kind() =
         tabs.kind(initialState.id, initialState.destination.route, targetState.id, targetState.destination.route)
 
-    val enter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = {
-        when (kind()) {
+    /**
+     * Whether the current navigation is a pop (Back, or predictive back while it runs). A plain field,
+     * not snapshot state: it's written inside the transition lambdas and read at layout.
+     */
+    var isPop: Boolean = false
+        private set
+
+    private fun AnimatedContentTransitionScope<NavBackStackEntry>.enterFor(pop: Boolean): EnterTransition {
+        isPop = pop
+        val kind = kind()
+        val curve = motion.enterCurve(kind, pop)
+        return when (kind) {
             TransitionKind.TabSwitch ->
-                fadeIn(motion.tabSwitch.toAnimationSpec()) +
-                    scaleIn(motion.tabSwitch.toAnimationSpec(), initialScale = motion.tabSwitchScale)
-            TransitionKind.Screen -> fadeIn(motion.screenEnter.toAnimationSpec())
+                fadeIn(curve.toAnimationSpec()) + scaleIn(curve.toAnimationSpec(), initialScale = motion.tabSwitchScale)
+            TransitionKind.Screen -> fadeIn(curve.toAnimationSpec())
         }
     }
+
+    val enter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = { enterFor(pop = false) }
+
+    val popEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = { enterFor(pop = true) }
 
     val exit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
         when (kind()) {
