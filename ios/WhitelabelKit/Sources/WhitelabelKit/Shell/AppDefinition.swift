@@ -9,7 +9,9 @@ import Shared
  *
  * `ads` is Android's `ads { }`: `[AdPlacement(name: "home", underTab: HomeRoutes.shared.ROOT)]`. A
  * placement with `underTab` (a tab's route id) is drawn by the shell below that tab's root screen;
- * any other the app places with `AdBanner(placement:)`. Never under Settings or the gate. Ads need
+ * any other the app places with `AdBanner(placement:)`. Never under Settings or the gate. A native
+ * placement (Android's `native("list")`) is `AdPlacement(name: "list", underTab: nil, kind: .native)`:
+ * the app shows it as a list row with `NativeAdSlotModel` and `NativeAdItem`; it never has a tab. Ads need
  * `ads.enabled` in app.properties and `AdsService()` in `services`. An empty `ads` (the default) is
  * an app without ads: unlike Android's `ads { }` with no placement, `ads: []` declares nothing.
  *
