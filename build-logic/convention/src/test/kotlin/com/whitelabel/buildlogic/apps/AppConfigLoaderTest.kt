@@ -505,6 +505,28 @@ class AppConfigLoaderTest {
     }
 
     @Test
+    fun `native units are collected per placement and platform`() {
+        writeApp(mapOf("ads.android.native.list" to androidUnit, "ads.ios.native.list" to iosUnit, "ads.android.banner.home" to androidUnit))
+
+        val config = AppConfigLoader.load(appDir)
+
+        assertThat(config.adsAndroidNativeUnits).isEqualTo(mapOf("list" to androidUnit))
+        assertThat(config.adsIosNativeUnits).isEqualTo(mapOf("list" to iosUnit))
+        // A native key is never read as a banner unit.
+        assertThat(config.adsAndroidUnits).isEqualTo(mapOf("home" to androidUnit))
+    }
+
+    @Test
+    fun `a bad native placement name or unit is rejected naming the key`() {
+        writeApp(mapOf("ads.android.native.1x" to androidUnit, "ads.ios.native.list" to "ca-app-pub-123/1234567890"))
+
+        val all = problems()
+
+        assertThat(all.single { "ads.android.native.1x" in it }).contains("placement '1x' must match")
+        assertThat(all.single { "ads.ios.native.list" in it }).contains("apps/sample/app.properties: ads.ios.native.list")
+    }
+
+    @Test
     fun `request tracking is a boolean and defaults to false`() {
         writeApp(mapOf("ads.ios.requestTracking" to "true", "ads.ios.trackingMessage" to "Ads stay relevant."))
         assertThat(AppConfigLoader.load(appDir).iosRequestTracking).isEqualTo(true)

@@ -158,6 +158,8 @@ object AppConfigLoader {
             }.toMap()
         val adsAndroidUnits = units("ads.android.banner.")
         val adsIosUnits = units("ads.ios.banner.")
+        val adsAndroidNativeUnits = units("ads.android.native.")
+        val adsIosNativeUnits = units("ads.ios.native.")
         val adsNonPersonalized = when (val raw = value("ads.nonPersonalized")) {
             null, "false" -> false
             "true" -> true
@@ -198,6 +200,8 @@ object AppConfigLoader {
             ads = ads!!,
             adsAndroidUnits = adsAndroidUnits,
             adsIosUnits = adsIosUnits,
+            adsAndroidNativeUnits = adsAndroidNativeUnits,
+            adsIosNativeUnits = adsIosNativeUnits,
             adsNonPersonalized = adsNonPersonalized,
             iosRequestTracking = iosRequestTracking,
             iosTrackingMessage = iosTrackingMessage,
