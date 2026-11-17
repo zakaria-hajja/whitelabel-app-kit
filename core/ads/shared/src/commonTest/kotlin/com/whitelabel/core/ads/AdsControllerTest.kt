@@ -298,7 +298,7 @@ class AdsControllerTest {
     }
 
     @Test
-    fun `an ad-free window drops a native placement's held ads with no slot alive, even once it has ended`() = runTest {
+    fun `an ad-free window drops a native placement's held ads with no slot alive even once it has ended`() = runTest {
         val ad = HeldAd()
         val rotation = holding(ad)
         val rig = rig(earlierLaunches = 1, natives = setOf("home"), rotations = { rotation })
@@ -324,7 +324,7 @@ class AdsControllerTest {
     }
 
     @Test
-    fun `an app hide keeps a native placement's held ads, and banners are not followed`() = runTest {
+    fun `an app hide keeps a native placement's held ads and banners are not followed`() = runTest {
         val ad = HeldAd()
         val banner = HeldAd()
         val rotations = mapOf("home" to holding(ad), "detail" to holding(banner))
