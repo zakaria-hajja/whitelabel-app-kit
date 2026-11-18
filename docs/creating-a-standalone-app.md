@@ -98,6 +98,16 @@ project per build type, in `src/debug/` and `src/release/` of that module (iOS:
 Ads (`ads.enabled` is `true` or `debug`) need no extra plugin line in this file. Their keys and the iOS
 setup are in [ads.md](ads.md).
 
+**Open-source licences:** an app that ships to a store lists the open-source code it contains
+(Apache-2.0 and OFL ask for it). The catalog has AboutLibraries for this (13.1.0, the newest that
+builds with the catalog's Kotlin 2.2.20; don't bump it on its own): the
+`aboutlibraries-android` plugin in the app module generates the list for each variant, the
+`aboutlibraries` plugin exports it for an iOS framework module, and `aboutlibraries-core` parses it.
+Add their two `apply false` lines here. Each entry in the foundation's `THIRD_PARTY_NOTICES.md`
+(copied code, not a library) and each bundled font becomes a custom entry. Settings shows the row
+through `SettingsOptions(aboutRows = { SettingsLinkRow(…) })`, under Terms of use in About (iOS:
+`SettingsOptions(…) { SettingsLinkRow(…) { … } }`).
+
 **Version catalog:** the app uses the foundation's (`libs`). A library only this app needs is
 declared directly in its module, e.g. `implementation("group:name:1.2.3")`. When a second app
 needs it, move it into the foundation's catalog.

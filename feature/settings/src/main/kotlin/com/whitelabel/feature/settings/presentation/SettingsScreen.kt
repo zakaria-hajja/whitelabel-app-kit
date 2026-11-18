@@ -134,6 +134,7 @@ internal fun SettingsScreen(
                 }
                 SettingsLinkRow(stringResource(R.string.settings_privacy), onClick = { onOpenUrl(state.privacyUrl) })
                 SettingsLinkRow(stringResource(R.string.settings_terms), onClick = { onOpenUrl(state.termsUrl) })
+                options.aboutRows?.invoke()
                 if (state.showDiagnostics) SettingsLinkRow(stringResource(R.string.settings_diagnostics), onClick = onOpenDiagnostics)
             }
             if (state.signedIn) {
@@ -278,6 +279,20 @@ private val previewState = SettingsState(
 @Composable
 private fun SettingsScreenPreview() {
     AppTheme { SettingsScreen(previewState, SettingsOptions(), onAction = {}, onOpenUrl = {}, onOpenDiagnostics = {}) }
+}
+
+@Preview
+@Composable
+private fun SettingsScreenAboutRowsPreview() {
+    AppTheme {
+        SettingsScreen(
+            previewState.copy(signedIn = false, notifications = null),
+            SettingsOptions(aboutRows = { SettingsLinkRow("Open-source licences", onClick = {}) }),
+            onAction = {},
+            onOpenUrl = {},
+            onOpenDiagnostics = {},
+        )
+    }
 }
 
 @Preview

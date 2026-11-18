@@ -56,6 +56,7 @@ settings(SettingsOptions(showNotifications = true, languages = listOf("en", "fr"
 | `languages` | `en`, `fr` | The languages offered for the app, as BCP 47 tags; limited further by the backend's `runtime.supportedLanguages` when it sends one. An empty list hides the language row |
 | `sections` | none | The app's own sections, shown above the shared ones (see below) |
 | `aboutNote` | none | Follows the app name and version on the About line: "Munch 0.1.0 · Your data stays on this phone." |
+| `aboutRows` | none | The app's own rows in About, under Terms of use (and above Diagnostics), e.g. "Open-source licences". Draw them with `SettingsLinkRow` |
 
 - **Appearance:** theme and language are rows showing their current value; a tap opens a sheet
   where a choice applies at once and **Done** closes it.
