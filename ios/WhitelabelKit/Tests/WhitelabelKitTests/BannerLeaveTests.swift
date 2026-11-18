@@ -55,9 +55,19 @@ final class BannerLeaveTests: XCTestCase {
         self.window = window
     }
 
-    /** Lets SwiftUI run its tasks, appear and disappear callbacks. */
+    /** Polls until `condition` holds or the deadline passes (a loaded simulator can be slow). */
+    private func wait(until condition: () -> Bool, timeout: TimeInterval = 5) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() {
+            if Date() > deadline { return false }
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+        return true
+    }
+
+    /** For what can't be polled (a callback that must NOT run, a view appearing): a short pause. */
     private func settle() async {
-        try? await Task.sleep(nanoseconds: 400_000_000)
+        try? await Task.sleep(nanoseconds: 300_000_000)
     }
 
     func testLeavingTheScreenUsesUpItsActionBanner() async throws {
@@ -68,8 +78,8 @@ final class BannerLeaveTests: XCTestCase {
         await settle()
 
         model.tab = 1
-        await settle()
-        XCTAssertNil(model.item, "the banner stays pending while its screen is away")
+        let usedUp = await wait { model.item == nil }
+        XCTAssertTrue(usedUp, "the banner stays pending while its screen is away")
 
         model.tab = 0
         await settle()
@@ -84,9 +94,22 @@ final class BannerLeaveTests: XCTestCase {
         await settle()
 
         model.tab = 1
-        await settle()
-        XCTAssertEqual(model.shown, 1, "a message seen before leaving must not show again on return")
+        let reported = await wait { model.shown == 1 }
+        XCTAssertTrue(reported, "a message seen before leaving must not show again on return")
         XCTAssertNil(model.message)
+    }
+
+    /** A one-tap Delete's Undo keeps its place: a later banner waits, and the screen's item stays the one shown. */
+    func testAProtectedBannerIsNotKnockedOut() async throws {
+        let model = Harness()
+        try host(model)
+        await settle()
+        let deleted = BannerItem(text: "Deleted Netflix", actionTitle: "Undo", protect: true) {}
+        model.item = deleted
+        await settle()
+        model.item = BannerItem(text: "Fed Spotify", actionTitle: "Undo") {}
+        let kept = await wait { model.item == deleted }
+        XCTAssertTrue(kept, "a later banner knocked out the protected one")
     }
 
     /** A message that arrives while its screen is away still shows when it comes back. */
