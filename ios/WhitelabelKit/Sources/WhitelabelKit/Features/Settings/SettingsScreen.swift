@@ -139,10 +139,10 @@ struct SettingsList: View {
         switch item {
         case .support:
             if let email = state.supportEmail {
-                link(KitStrings.text("Contact support")) { onOpen("mailto:\(email)") }
+                SettingsLinkRow(KitStrings.text("Contact support")) { onOpen("mailto:\(email)") }
             }
-        case .privacy: link(KitStrings.text("Privacy policy")) { onOpen(state.privacyUrl) }
-        case .terms: link(KitStrings.text("Terms of use")) { onOpen(state.termsUrl) }
+        case .privacy: SettingsLinkRow(KitStrings.text("Privacy policy")) { onOpen(state.privacyUrl) }
+        case .terms: SettingsLinkRow(KitStrings.text("Terms of use")) { onOpen(state.termsUrl) }
         case .appRows: options.aboutRows?()
         }
     }
@@ -168,12 +168,6 @@ struct SettingsList: View {
 
     private func toggle(_ label: String, _ isOn: Bool, _ kind: NotificationKind) -> some View {
         AppToggleRow(label, isOn: Binding(get: { isOn }, set: { send(SettingsActionOnNotificationToggle(kind: kind, enabled: $0)) }))
-    }
-
-    private func link(_ label: String, action: @escaping () -> Void) -> some View {
-        Button(label, action: action)
-            .font(style.typography.body)
-            .foregroundStyle(style.colors.primary)
     }
 
     static let themes: [ThemePreference] = [.system, .light, .dark]
@@ -226,7 +220,7 @@ private func previewState(signedIn: Bool, note: Bool = false) -> SettingsState {
 #Preview("About rows") {
     PackPreviews {
         SettingsList(
-            state: previewState(signedIn: false), options: .init(aboutRows: { AnyView(Button("Open-source licences") {}) }),
+            state: previewState(signedIn: false), options: .init { SettingsLinkRow("Open-source licences") {} },
             languages: ["en", "fr"], send: { _ in }, onChoose: { _ in }, onOpen: { _ in }
         )
         .frame(height: 500)

@@ -28,26 +28,35 @@ public struct Settings: Feature {
  * tags the app is translated into (filtered by the backend's list); empty hides the language row.
  * [sections] are the app's own, above the shared ones. [aboutNote] follows the name and version on the About line.
  * [aboutRows] are the app's rows under the legal links in About (after Terms of use), e.g. its open-source
- * licences, as on Android; nil adds none.
+ * licences, as on Android: `SettingsOptions(aboutNote: …) { SettingsLinkRow(…) { … } }`. None by default.
  */
 public struct SettingsOptions {
     public var showNotifications: Bool
     public var languages: [String]
     public var sections: [SettingsSection]
     public var aboutNote: String?
-    public var aboutRows: (() -> AnyView)?
+    /** Set through the view-builder init, so callers never write AnyView. */
+    let aboutRows: (() -> AnyView)?
 
-    public init(
+    public init(showNotifications: Bool = true, languages: [String] = ["en", "fr"], sections: [SettingsSection] = [], aboutNote: String? = nil) {
+        self.showNotifications = showNotifications
+        self.languages = languages
+        self.sections = sections
+        self.aboutNote = aboutNote
+        self.aboutRows = nil
+    }
+
+    public init<AboutRows: View>(
         showNotifications: Bool = true,
         languages: [String] = ["en", "fr"],
         sections: [SettingsSection] = [],
         aboutNote: String? = nil,
-        aboutRows: (() -> AnyView)? = nil
+        @ViewBuilder aboutRows: @escaping () -> AboutRows
     ) {
         self.showNotifications = showNotifications
         self.languages = languages
         self.sections = sections
         self.aboutNote = aboutNote
-        self.aboutRows = aboutRows
+        self.aboutRows = { AnyView(aboutRows()) }
     }
 }
