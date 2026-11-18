@@ -160,10 +160,10 @@ class SettingsScreenTest {
         rule.onNodeWithText("Open-source licences").assertExists()
     }
 
-    /** Without About rows, Diagnostics follows Terms one row down, as Terms follows Privacy. */
+    /** By default there are no About rows: Diagnostics follows Terms one row down, as Terms follows Privacy. */
     @Test
     fun noAboutRows_keepsAboutAsItWas() {
-        show(SettingsState(appName = "Sample", showDiagnostics = true), SettingsOptions(aboutRows = null))
+        show(SettingsState(appName = "Sample", showDiagnostics = true), SettingsOptions())
         rule.onNodeWithText("Diagnostics").performScrollTo()
         val rowStep = top("Terms of use") - top("Privacy policy")
         assertThat(kotlin.math.abs((top("Diagnostics") - top("Terms of use") - rowStep).value)).isLessThan(0.5f)
