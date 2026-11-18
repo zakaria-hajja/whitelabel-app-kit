@@ -54,8 +54,10 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
   language the app launched in. `Texts` pins it at launch, because a language picked in the app
   applies at the next launch and the Swift strings wait until then too.
 - **`actionBanner($item)`:** a message with one action, for events a screen handles itself
-  ("Deleted · Undo"). Set a `BannerItem(text:actionTitle:action:)`. It shows for
-  `MessageBanner.seconds`, the button runs the action and hides it, and a newer item replaces it.
+  ("Deleted · Undo"). Set a `BannerItem(text:actionTitle:action:)`. With an action it shows for
+  10 s (Android's long snackbar), without one for `MessageBanner.seconds` (4 s); the button runs
+  the action and hides it, and a newer item replaces it. Leaving the screen (a tab switch, a push)
+  hides it and clears the item, so it never shows again on return.
   Identifiers for UI tests: `banner.text` and `banner.action`.
 - **Swift gotchas:**
   - Write `Swift.Error`: the module exports a Kotlin `Error` type.
@@ -138,7 +140,8 @@ An app's `@main` is a few lines, the Swift twin of Android's `appDefinition { }`
   gate's stack. A screen calls `push(Destination(route, args:))` to open another screen. With a
   gate, signing in or out resets it, so the next user starts clean.
 - **`messageBanner(state.message) { send(OnMessageShown) }`**: a ViewModel's one-off message at the
-  bottom for 3 s (Android's snackbar). A newer message replaces it.
+  bottom for 4 s (Android's short snackbar). A newer message replaces it. Leaving the screen while
+  it shows hides it and reports it shown; one that arrives while the screen is away waits for it.
 
 ### Content gate (app lock)
 
