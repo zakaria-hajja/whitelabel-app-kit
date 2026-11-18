@@ -4,7 +4,9 @@ import Shared
 public extension View {
     /**
      * Shows a ViewModel's one-off message at the bottom for a few seconds, then reports it shown
-     * (Android's snackbar). A newer message replaces it.
+     * (Android's snackbar). A newer message replaces it. Leaving the screen while it shows hides it
+     * and reports it shown, so it never shows again on return; one that arrives while the screen is
+     * away waits for it.
      */
     func messageBanner(_ message: UiText?, onShown: @escaping () -> Void) -> some View {
         modifier(MessageBannerModifier(message: message, onShown: onShown))
@@ -62,6 +64,13 @@ private struct MessageBannerModifier: ViewModifier {
                     seconds: MessageBanner.seconds,
                     onShown: onShown
                 )
+            }
+            // Leaving cancels the task above mid-wait without reporting, so the message would show
+            // again on return: it was seen, so hide it and report it shown.
+            .onDisappear {
+                guard text != nil else { return }
+                text = nil
+                onShown()
             }
     }
 }
