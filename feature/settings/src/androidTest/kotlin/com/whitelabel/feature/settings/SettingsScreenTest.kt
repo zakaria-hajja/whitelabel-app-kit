@@ -143,6 +143,32 @@ class SettingsScreenTest {
         rule.onNodeWithText("Sample 1.0.0").performScrollTo().assertIsDisplayed()
     }
 
+    /** An app's About rows (e.g. open-source licences) come under Terms, in the app's order, above Diagnostics. */
+    @Test
+    fun aboutRows_renderUnderTermsInOrder() {
+        val options = SettingsOptions(
+            aboutRows = {
+                SettingsLinkRow("Open-source licences", onClick = {})
+                SettingsLinkRow("Credits", onClick = {})
+            },
+        )
+        show(SettingsState(appName = "Sample", showDiagnostics = true), options)
+        rule.onNodeWithText("Diagnostics").performScrollTo()
+        assertThat(top("Terms of use")).isLessThan(top("Open-source licences"))
+        assertThat(top("Open-source licences")).isLessThan(top("Credits"))
+        assertThat(top("Credits")).isLessThan(top("Diagnostics"))
+        rule.onNodeWithText("Open-source licences").assertExists()
+    }
+
+    /** Without About rows, Diagnostics follows Terms one row down, as Terms follows Privacy. */
+    @Test
+    fun noAboutRows_keepsAboutAsItWas() {
+        show(SettingsState(appName = "Sample", showDiagnostics = true), SettingsOptions(aboutRows = null))
+        rule.onNodeWithText("Diagnostics").performScrollTo()
+        val rowStep = top("Terms of use") - top("Privacy policy")
+        assertThat(kotlin.math.abs((top("Diagnostics") - top("Terms of use") - rowStep).value)).isLessThan(0.5f)
+    }
+
     @Test
     fun noSections_keepsTheSharedScreen() {
         show(SettingsState(appName = "Sample"))

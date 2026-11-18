@@ -16,13 +16,16 @@ import kotlinx.serialization.Serializable
  * [showNotifications] shows the notification toggles (signed in only). [languages] are the BCP 47
  * tags the app is translated into, offered as the app's language (filtered by the backend's list);
  * an empty list hides the language row. [sections] are the app's own, shown above the shared ones.
- * [aboutNote] is a line under the version in About (e.g. "Your data stays on this phone.").
+ * [aboutNote] follows the name and version on the About line (e.g. "Your data stays on this phone.").
+ * [aboutRows] are the app's rows under the legal links in About, e.g. its open-source licences; draw
+ * them with [SettingsLinkRow]. They come after Terms of use and before Diagnostics; null adds none.
  */
 data class SettingsOptions(
     val showNotifications: Boolean = true,
     val languages: List<String> = listOf("en", "fr"),
     val sections: List<SettingsSection> = emptyList(),
     @StringRes val aboutNote: Int? = null,
+    val aboutRows: (@Composable () -> Unit)? = null,
 )
 
 /**

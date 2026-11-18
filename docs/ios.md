@@ -196,8 +196,8 @@ both platforms name screens alike.
 
 **Settings** (`Settings(options:)`): theme, language, notifications (signed in), about, legal
 links (opened in Safari) and sign out. `SettingsOptions` mirrors Android's (`showNotifications`,
-`languages`, `sections`, `aboutNote`). An app's own `SettingsSection(title:) { rows }` goes above
-the shared ones. The diagnostics row is Android-only. A language picked in the app applies at the
+`languages`, `sections`, `aboutNote`, `aboutRows`). An app's own `SettingsSection(title:) { rows }` goes above
+the shared ones; `aboutRows: { AnyView(…) }` adds the app's rows in About, under Terms of use. The diagnostics row is Android-only. A language picked in the app applies at the
 next launch, and the screen says so (a shared string).
 
 **Auth** (`Auth(options:)`, the gate): sign-in, registration, forgot password and the reset link

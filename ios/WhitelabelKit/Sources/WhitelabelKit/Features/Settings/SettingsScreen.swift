@@ -112,11 +112,9 @@ struct SettingsList: View {
                 Text(Self.aboutLine(appName: state.appName, version: state.versionName, note: options.aboutNote))
                     .font(style.typography.body)
                     .foregroundStyle(style.colors.onSurfaceVariant)
-                if let email = state.supportEmail {
-                    link(KitStrings.text("Contact support")) { onOpen("mailto:\(email)") }
+                ForEach(Self.aboutLinks(hasSupport: state.supportEmail != nil, hasAppRows: options.aboutRows != nil), id: \.self) { item in
+                    aboutLink(item)
                 }
-                link(KitStrings.text("Privacy policy")) { onOpen(state.privacyUrl) }
-                link(KitStrings.text("Terms of use")) { onOpen(state.termsUrl) }
             } header: {
                 AppSectionHeader(KitStrings.text("About"))
             }
@@ -127,6 +125,25 @@ struct SettingsList: View {
                         .listRowSeparator(.hidden)
                 }
             }
+        }
+    }
+
+    /** The links in About, in order: support (when there is an address), the legal links, then the app's rows. */
+    enum AboutLink: Hashable { case support, privacy, terms, appRows }
+
+    static func aboutLinks(hasSupport: Bool, hasAppRows: Bool) -> [AboutLink] {
+        (hasSupport ? [.support] : []) + [.privacy, .terms] + (hasAppRows ? [.appRows] : [])
+    }
+
+    @ViewBuilder private func aboutLink(_ item: AboutLink) -> some View {
+        switch item {
+        case .support:
+            if let email = state.supportEmail {
+                link(KitStrings.text("Contact support")) { onOpen("mailto:\(email)") }
+            }
+        case .privacy: link(KitStrings.text("Privacy policy")) { onOpen(state.privacyUrl) }
+        case .terms: link(KitStrings.text("Terms of use")) { onOpen(state.termsUrl) }
+        case .appRows: options.aboutRows?()
         }
     }
 
@@ -203,6 +220,16 @@ private func previewState(signedIn: Bool, note: Bool = false) -> SettingsState {
     PackPreviews {
         SettingsList(state: previewState(signedIn: true), options: .init(), languages: ["en", "fr"], send: { _ in }, onChoose: { _ in }, onOpen: { _ in })
             .frame(height: 700)
+    }
+}
+
+#Preview("About rows") {
+    PackPreviews {
+        SettingsList(
+            state: previewState(signedIn: false), options: .init(aboutRows: { AnyView(Button("Open-source licences") {}) }),
+            languages: ["en", "fr"], send: { _ in }, onChoose: { _ in }, onOpen: { _ in }
+        )
+        .frame(height: 500)
     }
 }
 
