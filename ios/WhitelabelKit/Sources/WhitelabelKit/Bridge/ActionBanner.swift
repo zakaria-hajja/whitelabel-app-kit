@@ -21,8 +21,10 @@ public struct BannerItem: Identifiable, Equatable {
 
 public extension View {
     /**
-     * Shows `item` at the bottom for `MessageBanner.seconds` (Android's short snackbar), then sets it
-     * back to nil. Its action button runs the action and hides the banner. A newer item replaces it.
+     * Shows `item` at the bottom, then sets it back to nil: with an action for 10 s (Android's long
+     * snackbar), without one for `MessageBanner.seconds` (the short one). Its action button runs the
+     * action and hides the banner. A newer item replaces it. Leaving the screen (a tab switch, a push)
+     * hides it and uses it up, so it never shows again on return.
      */
     func actionBanner(_ item: Binding<BannerItem?>) -> some View {
         modifier(ActionBannerModifier(item: item))
@@ -30,9 +32,15 @@ public extension View {
 }
 
 enum ActionBanner {
-    /** With VoiceOver, reaching the action takes longer than a glance (Android lengthens action snackbars too). */
-    static func duration(seconds: Double, hasAction: Bool, voiceOver: Bool) -> Double {
-        hasAction && voiceOver ? max(seconds, 10) : seconds
+    /** Android's long snackbar: an action (Undo) needs time to reach, with VoiceOver too. */
+    static let actionSeconds = 10.0
+
+    /**
+     * With an action, Material's long 10 s, with or without VoiceOver; without one, `seconds`. A longer
+     * `seconds` (Debug `-messageSeconds`) still wins.
+     */
+    static func duration(seconds: Double, hasAction: Bool) -> Double {
+        hasAction ? max(seconds, actionSeconds) : seconds
     }
 
     /** Shows, announces, waits, hides. A cancelled run (a newer item, or the action) leaves the banner to its successor. */
@@ -61,9 +69,15 @@ private struct ActionBannerModifier: ViewModifier {
             }
             .task(id: item?.id) {
                 guard let item else { return }
-                let seconds = ActionBanner.duration(seconds: MessageBanner.seconds, hasAction: item.action != nil, voiceOver: UIAccessibility.isVoiceOverRunning)
+                let seconds = ActionBanner.duration(seconds: MessageBanner.seconds, hasAction: item.action != nil)
                 await ActionBanner.present(item, show: { value in withAnimation { shown = value } }, seconds: seconds)
                 if shown == nil, self.item == item { self.item = nil }
+            }
+            // The banner belongs to this screen. Leaving cancels the task above mid-wait, which would
+            // leave it on screen and pending, to show again on return: hide it and use it up instead.
+            .onDisappear {
+                shown = nil
+                if item != nil { item = nil }
             }
     }
 
