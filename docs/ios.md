@@ -56,8 +56,11 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
 - **`actionBanner($item)`:** a message with one action, for events a screen handles itself
   ("Deleted · Undo"). Set a `BannerItem(text:actionTitle:action:)`. With an action it shows for
   10 s (Android's long snackbar), without one for `MessageBanner.seconds` (4 s); the button runs
-  the action and hides it, and a newer item replaces it. Leaving the screen (a tab switch, a push)
-  hides it and clears the item, so it never shows again on return.
+  the action and hides it, and a newer item replaces it (no queue, so a burst never chains). Set
+  `protect: true` when the action is the only way back (a one-tap Delete's Undo): later banners
+  then wait (protected ones in order, otherwise only the newest) instead of knocking it out.
+  Leaving the screen (a tab switch, a push) hides it and clears the item, so it never shows again
+  on return.
   Identifiers for UI tests: `banner.text` and `banner.action`.
 - **Swift gotchas:**
   - Write `Swift.Error`: the module exports a Kotlin `Error` type.
