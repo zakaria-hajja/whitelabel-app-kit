@@ -36,6 +36,9 @@ googleServices = "4.6.0"
 firebaseCrashlyticsGradle = "3.0.8"
 # Kotlin crashes on iOS reach Crashlytics with Kotlin frames (apps with Firebase only)
 crashkios = "0.10.1"
+# AboutLibraries (an app's open-source licences): 13.1.0 is the newest built with Kotlin 2.2.20;
+# 13.2+ needs Kotlin 2.3+, so bump it only together with Kotlin
+aboutLibraries = "13.1.0"
 
 [libraries]
 # Gradle plugins used by build-logic
@@ -116,6 +119,9 @@ firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 # CrashKiOS: the Kotlin crash hook for Crashlytics on iOS
 crashkios-crashlytics = { module = "co.touchlab.crashkios:crashlytics", version.ref = "crashkios" }
 
+# AboutLibraries: parses the licences JSON the plugin generates (KMP)
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
+
 # Koin
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
@@ -150,3 +156,7 @@ android-junit5 = { id = "de.mannodermaus.android-junit5", version.ref = "android
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsGradle" }
 crashkios-crashlyticslink = { id = "co.touchlab.crashkios.crashlyticslink", version.ref = "crashkios" }
+# AboutLibraries: the manual-export plugin (e.g. an iOS framework module) and the Android plugin that
+# generates res/raw/aboutlibraries.json per variant
+aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin", version.ref = "aboutLibraries" }
+aboutlibraries-android = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }
