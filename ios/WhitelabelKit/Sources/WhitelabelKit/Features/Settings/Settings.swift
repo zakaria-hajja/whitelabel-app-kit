@@ -29,20 +29,24 @@ public struct Settings: Feature {
  * [sections] are the app's own, above the shared ones. [aboutNote] follows the name and version on the About line.
  * [aboutRows] are the app's rows under the legal links in About (after Terms of use), e.g. its open-source
  * licences, as on Android: `SettingsOptions(aboutNote: …) { SettingsLinkRow(…) { … } }`. None by default.
+ * [showPrivacyLink] false drops About's "Privacy policy" row, for an app that shows its own elsewhere on
+ * the tab; Terms of use stays.
  */
 public struct SettingsOptions {
     public var showNotifications: Bool
     public var languages: [String]
     public var sections: [SettingsSection]
     public var aboutNote: String?
+    public var showPrivacyLink: Bool
     /** Set through the view-builder init, so callers never write AnyView. */
     let aboutRows: (() -> AnyView)?
 
-    public init(showNotifications: Bool = true, languages: [String] = ["en", "fr"], sections: [SettingsSection] = [], aboutNote: String? = nil) {
+    public init(showNotifications: Bool = true, languages: [String] = ["en", "fr"], sections: [SettingsSection] = [], aboutNote: String? = nil, showPrivacyLink: Bool = true) {
         self.showNotifications = showNotifications
         self.languages = languages
         self.sections = sections
         self.aboutNote = aboutNote
+        self.showPrivacyLink = showPrivacyLink
         self.aboutRows = nil
     }
 
@@ -51,12 +55,14 @@ public struct SettingsOptions {
         languages: [String] = ["en", "fr"],
         sections: [SettingsSection] = [],
         aboutNote: String? = nil,
+        showPrivacyLink: Bool = true,
         @ViewBuilder aboutRows: @escaping () -> AboutRows
     ) {
         self.showNotifications = showNotifications
         self.languages = languages
         self.sections = sections
         self.aboutNote = aboutNote
+        self.showPrivacyLink = showPrivacyLink
         self.aboutRows = { AnyView(aboutRows()) }
     }
 }

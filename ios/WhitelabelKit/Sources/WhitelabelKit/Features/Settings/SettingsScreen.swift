@@ -112,7 +112,7 @@ struct SettingsList: View {
                 Text(Self.aboutLine(appName: state.appName, version: state.versionName, note: options.aboutNote))
                     .font(style.typography.body)
                     .foregroundStyle(style.colors.onSurfaceVariant)
-                ForEach(Self.aboutLinks(hasSupport: state.supportEmail != nil, hasAppRows: options.aboutRows != nil), id: \.self) { item in
+                ForEach(Self.aboutLinks(hasSupport: state.supportEmail != nil, hasAppRows: options.aboutRows != nil, showsPrivacy: options.showPrivacyLink), id: \.self) { item in
                     aboutLink(item)
                 }
             } header: {
@@ -128,11 +128,14 @@ struct SettingsList: View {
         }
     }
 
-    /** The links in About, in order: support (when there is an address), the legal links, then the app's rows. */
+    /**
+     * The links in About, in order: support (when there is an address), the legal links (privacy unless
+     * the app shows its own), then the app's rows.
+     */
     enum AboutLink: Hashable { case support, privacy, terms, appRows }
 
-    static func aboutLinks(hasSupport: Bool, hasAppRows: Bool) -> [AboutLink] {
-        (hasSupport ? [.support] : []) + [.privacy, .terms] + (hasAppRows ? [.appRows] : [])
+    static func aboutLinks(hasSupport: Bool, hasAppRows: Bool, showsPrivacy: Bool = true) -> [AboutLink] {
+        (hasSupport ? [.support] : []) + (showsPrivacy ? [.privacy] : []) + [.terms] + (hasAppRows ? [.appRows] : [])
     }
 
     @ViewBuilder private func aboutLink(_ item: AboutLink) -> some View {
