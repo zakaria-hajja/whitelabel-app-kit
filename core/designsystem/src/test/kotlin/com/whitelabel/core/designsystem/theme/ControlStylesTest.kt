@@ -16,11 +16,12 @@ import org.junit.jupiter.api.Test
  */
 class ControlStylesTest {
 
+    // Neutral fixture colours, distinct from Material's defaults; no app's palette.
     private val shapes = shapesOf(Corners(small = 4.dp, medium = 8.dp, large = 14.dp))
     private val scheme = lightColorScheme(
-        primary = Color(0xFF3D6838),
-        outline = Color(0xFF687061),
-        onSurfaceVariant = Color(0xFF444B3F),
+        primary = Color(0xFF112233),
+        outline = Color(0xFF445566),
+        onSurfaceVariant = Color(0xFF778899),
     )
 
     @Test fun `no pack opts in, so Munch and every existing app keep their controls`() {
@@ -46,8 +47,8 @@ class ControlStylesTest {
     }
 
     @Test fun `squared outlined button has an outline border and a primary label`() {
-        assertThat(ButtonStyle.Squared.outlinedBorderColor(scheme)).isEqualTo(Color(0xFF687061))
-        assertThat(ButtonStyle.Squared.outlinedLabelColor(scheme)).isEqualTo(Color(0xFF3D6838))
+        assertThat(ButtonStyle.Squared.outlinedBorderColor(scheme)).isEqualTo(Color(0xFF445566))
+        assertThat(ButtonStyle.Squared.outlinedLabelColor(scheme)).isEqualTo(Color(0xFF112233))
     }
 
     @Test fun `material selection controls keep Material's colors`() {
@@ -56,8 +57,8 @@ class ControlStylesTest {
     }
 
     @Test fun `outline selection controls draw the sheet handle and unselected radio in outline`() {
-        assertThat(SelectionControlStyle.Outline.sheetHandleColor(scheme)).isEqualTo(Color(0xFF687061))
-        assertThat(SelectionControlStyle.Outline.radioUnselectedColor(scheme)).isEqualTo(Color(0xFF687061))
+        assertThat(SelectionControlStyle.Outline.sheetHandleColor(scheme)).isEqualTo(Color(0xFF445566))
+        assertThat(SelectionControlStyle.Outline.radioUnselectedColor(scheme)).isEqualTo(Color(0xFF445566))
     }
 
     @Test fun `only disclosure rows show a chevron, and only when they open something`() {
