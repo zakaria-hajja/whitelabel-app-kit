@@ -32,6 +32,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.navigation.compose.composable
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.designsystem.theme.BottomBarItemStyle
@@ -319,6 +320,35 @@ class ShellNavHostTest {
     fun squaredItems_indicatorHasSmallCorners() {
         showFour(StylePack.Gallery.copy(bottomBarItems = BottomBarItemStyle.Squared))
         assertThat(indicatorCornerFilled()).isEqualTo(true)
+    }
+
+    /**
+     * Holds a press on the unselected Calendar tab and returns its indicator's top-left corner
+     * pixel (6 px in) and the bar's colour beside the indicator. A pill's ripple can't reach that
+     * corner, a squared one fills it.
+     */
+    private fun pressedCornerAndBar(): Pair<Int, Int> {
+        val icon = rule.onNodeWithText("Calendar", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val item = rule.onNodeWithText("Calendar").fetchSemanticsNode().boundsInRoot
+        val px = rule.activity.resources.displayMetrics.density
+        rule.onNodeWithText("Calendar").performTouchInput { down(center) }
+        // Android's ripple is a RippleDrawable the render thread animates in real time.
+        Thread.sleep(600)
+        val root = rule.onRoot().captureToImage().asAndroidBitmap()
+        // The indicator is centred on the item, 32 dp tall, ending 4 dp above the label.
+        val left = (item.center.x - 28 * px).roundToInt()
+        val top = (icon.top - 4 * px - 32 * px).roundToInt()
+        val corner = root.getPixel(left + 6, top + 6)
+        val bar = root.getPixel(left - 4, top + 6)
+        rule.onNodeWithText("Calendar").performTouchInput { up() }
+        return corner to bar
+    }
+
+    @Test
+    fun squaredItems_pressRippleFillsTheSquareCorners() {
+        showFour(StylePack.Gallery.copy(bottomBarItems = BottomBarItemStyle.Squared))
+        val (corner, bar) = pressedCornerAndBar()
+        assertThat(corner == bar).isEqualTo(false)
     }
 
     /** Material's pill leaves that corner pixel empty; checked on the same geometry by tagging nothing. */
