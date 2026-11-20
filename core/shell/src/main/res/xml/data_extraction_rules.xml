@@ -3,7 +3,7 @@
     Android 12+: app data in JsonStore files (filesDir/datastore) is backed up and transferred, so a
     reinstall or a new phone restores it. The session and the signed-in user never leave the device:
     tokens are encrypted with a Keystore key that can't be restored. Nor do the .corrupt copies
-    JsonStore keeps of those files. Keep in sync with backup_rules.xml.
+    JsonStore keeps of those files, or a .corrupt.tmp a crash left behind. Keep in sync with backup_rules.xml.
 -->
 <data-extraction-rules>
     <cloud-backup>
@@ -12,6 +12,8 @@
         <exclude domain="file" path="datastore/user.json" />
         <exclude domain="file" path="datastore/session.json.corrupt" />
         <exclude domain="file" path="datastore/user.json.corrupt" />
+        <exclude domain="file" path="datastore/session.json.corrupt.tmp" />
+        <exclude domain="file" path="datastore/user.json.corrupt.tmp" />
     </cloud-backup>
     <device-transfer>
         <include domain="file" path="datastore/" />
@@ -19,5 +21,7 @@
         <exclude domain="file" path="datastore/user.json" />
         <exclude domain="file" path="datastore/session.json.corrupt" />
         <exclude domain="file" path="datastore/user.json.corrupt" />
+        <exclude domain="file" path="datastore/session.json.corrupt.tmp" />
+        <exclude domain="file" path="datastore/user.json.corrupt.tmp" />
     </device-transfer>
 </data-extraction-rules>

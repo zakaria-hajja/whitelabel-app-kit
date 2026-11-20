@@ -11,7 +11,7 @@ import org.w3c.dom.Element
 /**
  * App data in JsonStore files is backed up so a reinstall or a new phone restores it; the session
  * (tokens encrypted with a Keystore key that can't be restored) and the signed-in user never are,
- * nor the `.corrupt` copies JsonStore keeps of them.
+ * nor the `.corrupt` copies JsonStore keeps of them (or a `.corrupt.tmp` a crash left behind).
  */
 class BackupRulesTest {
 
@@ -20,6 +20,8 @@ class BackupRulesTest {
         "file:datastore/user.json",
         "file:datastore/session.json.corrupt",
         "file:datastore/user.json.corrupt",
+        "file:datastore/session.json.corrupt.tmp",
+        "file:datastore/user.json.corrupt.tmp",
     )
 
     private fun rules(name: String): Element =
