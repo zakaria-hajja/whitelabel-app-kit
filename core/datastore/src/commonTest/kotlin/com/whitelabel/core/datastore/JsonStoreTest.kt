@@ -1,6 +1,7 @@
 package com.whitelabel.core.datastore
 
 import assertk.assertThat
+import assertk.assertions.containsExactly
 import assertk.assertions.containsOnly
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
@@ -59,6 +60,9 @@ class JsonStoreTest {
     private val copy = "/data/doc.json.corrupt".toPath()
     private val events = mutableListOf<CorruptFileEvent>()
 
+    /** Runs inside `onCorruptFile`, to check the disk at the moment of the event. */
+    private var atEvent: () -> Unit = {}
+
     private fun FileSystem.text(path: Path): String = read(path) { readUtf8() }
 
     /** Runs [block] against a store whose scope is cancelled afterwards, so another store may open the file. */
@@ -69,6 +73,7 @@ class JsonStoreTest {
         val job = Job()
         val store = JsonStore(file, Doc.serializer(), Doc(), CoroutineScope(Dispatchers.Default + job), fileSystem, policy) {
             events += it
+            atEvent()
         }
         return try {
             block(store)
@@ -96,10 +101,14 @@ class JsonStoreTest {
         assertThat(events).containsOnly(CorruptFileEvent.COPY_KEPT)
     }
 
-    @Test fun `update on a corrupt file keeps the copy first`() = runTest {
+    @Test fun `update on a corrupt file keeps the copy before anything is written`() = runTest {
         fake.write(file) { writeUtf8("{not json") }
+        val seenAtEvent = mutableListOf<String>()
+        atEvent = { seenAtEvent += fake.text(copy); seenAtEvent += fake.text(file) }
 
         withStore { store -> store.update { it.copy(count = 5) } }
+
+        assertThat(seenAtEvent).containsExactly("{not json", "{not json")
 
         assertThat(fake.text(copy)).isEqualTo("{not json")
         assertThat(withStore { it.data.first() }).isEqualTo(Doc(count = 5))
@@ -131,6 +140,31 @@ class JsonStoreTest {
             assertThat(store.data.first()).isEqualTo(Doc())
         }
         assertThat(fake.text(copy)).isEqualTo("{not json")
+    }
+
+    @Test fun `copy failure in an update writes nothing and fails the update`() = runTest {
+        fake.write(file) { writeUtf8("{not json") }
+        fileSystem.failSinksEndingWith = ".corrupt.tmp"
+
+        withStore { store ->
+            assertFailsWith<CorruptStoreException> { store.update { it.copy(count = 5) } }
+        }
+
+        assertThat(fake.text(file)).isEqualTo("{not json")
+        assertThat(fake.exists(copy)).isFalse()
+        assertThat(events).containsOnly(CorruptFileEvent.COPY_FAILED)
+    }
+
+    @Test fun `FAIL fails an update on a fresh store`() = runTest {
+        fake.write(file) { writeUtf8("{not json") }
+
+        withStore(CorruptFilePolicy.FAIL) { store ->
+            assertFailsWith<CorruptStoreException> { store.update { it.copy(count = 1) } }
+        }
+
+        assertThat(fake.text(file)).isEqualTo("{not json")
+        assertThat(fake.exists(copy)).isFalse()
+        assertThat(events).containsOnly(CorruptFileEvent.LEFT_IN_PLACE)
     }
 
     @Test fun `FAIL leaves the file alone`() = runTest {
