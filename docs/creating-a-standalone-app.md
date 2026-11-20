@@ -139,7 +139,8 @@ needs the fake if it calls the API.
 The shell backs up the app's `JsonStore` files (`filesDir/datastore/`) through Android backup, so
 a reinstall or a new phone restores the user's data when they have Google backup on. The session
 (`session.json`) and the signed-in user (`user.json`) are never backed up: the tokens are encrypted
-with a Keystore key that can't be restored, so a restored phone starts signed out. Store app data
+with a Keystore key that can't be restored, so a restored phone starts signed out. Their
+`.corrupt` copies (kept when a file can't be decoded) are excluded too. Store app data
 with `JsonStore` under `jsonStoreFile(name)` to get this for free.
 
 ## 7. CI
