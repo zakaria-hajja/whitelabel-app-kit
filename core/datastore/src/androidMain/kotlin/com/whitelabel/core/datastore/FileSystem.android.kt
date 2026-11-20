@@ -10,6 +10,9 @@ import okio.Path.Companion.toOkioPath
 
 internal actual val SystemFileSystem: FileSystem = FileSystem.SYSTEM
 
+/** Nothing to do: okio's file handle `flush()` already fsyncs here (`FileDescriptor.sync()`). */
+internal actual fun syncToDisk(fileSystem: FileSystem, path: Path) = Unit
+
 /** `filesDir/datastore/<name>.json`, the conventional location for a [JsonStore] file on Android. */
 fun Context.jsonStorePath(name: String): Path = jsonStoreFile(name).toOkioPath()
 
@@ -17,5 +20,11 @@ fun Context.jsonStorePath(name: String): Path = jsonStoreFile(name).toOkioPath()
 fun Context.jsonStoreFile(name: String): File = File(filesDir, "datastore/$name.json")
 
 /** A [JsonStore] at [file], for Android code that works with files (e.g. `noBackupFilesDir`). */
-fun <T> JsonStore(file: File, serializer: KSerializer<T>, default: T, scope: CoroutineScope): JsonStore<T> =
-    JsonStore(file.toOkioPath(), serializer, default, scope)
+fun <T> JsonStore(
+    file: File,
+    serializer: KSerializer<T>,
+    default: T,
+    scope: CoroutineScope,
+    corruptFile: CorruptFilePolicy = CorruptFilePolicy.KEEP_COPY_THEN_DEFAULT,
+    onCorruptFile: (CorruptFileEvent) -> Unit = {},
+): JsonStore<T> = JsonStore(file.toOkioPath(), serializer, default, scope, SystemFileSystem, corruptFile, onCorruptFile)

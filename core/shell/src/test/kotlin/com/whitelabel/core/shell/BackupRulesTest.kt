@@ -10,9 +10,19 @@ import org.w3c.dom.Element
 
 /**
  * App data in JsonStore files is backed up so a reinstall or a new phone restores it; the session
- * (tokens encrypted with a Keystore key that can't be restored) and the signed-in user never are.
+ * (tokens encrypted with a Keystore key that can't be restored) and the signed-in user never are,
+ * nor the `.corrupt` copies JsonStore keeps of them (or a `.corrupt.tmp` a crash left behind).
  */
 class BackupRulesTest {
+
+    private val excluded = listOf(
+        "file:datastore/session.json",
+        "file:datastore/user.json",
+        "file:datastore/session.json.corrupt",
+        "file:datastore/user.json.corrupt",
+        "file:datastore/session.json.corrupt.tmp",
+        "file:datastore/user.json.corrupt.tmp",
+    )
 
     private fun rules(name: String): Element =
         DocumentBuilderFactory.newInstance().newDocumentBuilder()
@@ -32,7 +42,7 @@ class BackupRulesTest {
             val rules = root.children(section).single()
             assertThat(rules.rule("include")).containsExactly("file:datastore/")
             assertThat(rules.rule("exclude"))
-                .containsExactlyInAnyOrder("file:datastore/session.json", "file:datastore/user.json")
+                .containsExactlyInAnyOrder(*excluded.toTypedArray())
         }
     }
 
@@ -40,6 +50,6 @@ class BackupRulesTest {
         val root = rules("backup_rules")
         assertThat(root.rule("include")).containsExactly("file:datastore/")
         assertThat(root.rule("exclude"))
-            .containsExactlyInAnyOrder("file:datastore/session.json", "file:datastore/user.json")
+            .containsExactlyInAnyOrder(*excluded.toTypedArray())
     }
 }

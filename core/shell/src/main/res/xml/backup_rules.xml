@@ -4,4 +4,8 @@
     <include domain="file" path="datastore/" />
     <exclude domain="file" path="datastore/session.json" />
     <exclude domain="file" path="datastore/user.json" />
+    <exclude domain="file" path="datastore/session.json.corrupt" />
+    <exclude domain="file" path="datastore/user.json.corrupt" />
+    <exclude domain="file" path="datastore/session.json.corrupt.tmp" />
+    <exclude domain="file" path="datastore/user.json.corrupt.tmp" />
 </full-backup-content>

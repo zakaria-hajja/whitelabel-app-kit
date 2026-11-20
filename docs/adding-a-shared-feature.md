@@ -112,7 +112,10 @@ fun AppDefinitionBuilder.settings(options: SettingsOptions = SettingsOptions()) 
 - **Errors:** show `DataError.toUiText()` from `:core:ui`, after mapping the codes your screen
   handles specially (for example `INVALID_CREDENTIALS`).
 - **Local storage:** use `JsonStore` from `:core:datastore`, with one file per feature (e.g.
-  `context.jsonStoreFile("settings")`).
+  `context.jsonStoreFile("settings")`). A file it can't decode is kept as `settings.json.corrupt`
+  before it resets to the default. If that copy can't be written, the read fails with
+  `CorruptStoreException` instead. A document that must never reset (a lock, say) passes
+  `CorruptFilePolicy.FAIL`. Pass `onCorruptFile` to record the `CorruptFileEvent`.
 - **State shared between features** (current user, session, app config) lives in `:core:domain`
   and `:core:data`, never in one feature that another feature reads.
 
