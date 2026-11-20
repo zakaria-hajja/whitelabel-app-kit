@@ -27,6 +27,7 @@ class ControlStylesTest {
         for (pack in listOf(StylePack.Material, StylePack.Gallery)) {
             assertThat(pack.buttons).isEqualTo(ButtonStyle.Pill)
             assertThat(pack.selectionControls).isEqualTo(SelectionControlStyle.Material)
+            assertThat(pack.bottomBarItems).isEqualTo(BottomBarItemStyle.Material)
         }
     }
 
