@@ -61,17 +61,17 @@ class JsonStore<T>(
             onCorruptFile(CorruptFileEvent.LEFT_IN_PLACE)
             throw CorruptStoreException()
         }
-        CorruptFilePolicy.KEEP_COPY_THEN_DEFAULT -> when (val event = keepCorruptCopy(fileSystem, path, json::decodes)) {
-            CorruptFileEvent.COPY_FAILED -> {
-                onCorruptFile(event)
+        CorruptFilePolicy.KEEP_COPY_THEN_DEFAULT -> when (keepCorruptCopy(fileSystem, path, json::decodes)) {
+            CopyResult.FAILED -> {
+                onCorruptFile(CorruptFileEvent.COPY_FAILED)
                 throw CorruptStoreException()
             }
-            CorruptFileEvent.COPY_KEPT -> {
-                onCorruptFile(event)
+            CopyResult.KEPT -> {
+                onCorruptFile(CorruptFileEvent.COPY_KEPT)
                 default
             }
             // Missing or decodes by now: DataStore re-reads the file under its lock and sees that.
-            CorruptFileEvent.LEFT_IN_PLACE, null -> default
+            CopyResult.NOTHING_TO_KEEP -> default
         }
     }
 }

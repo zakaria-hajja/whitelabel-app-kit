@@ -10,6 +10,9 @@ import okio.Path.Companion.toOkioPath
 
 internal actual val SystemFileSystem: FileSystem = FileSystem.SYSTEM
 
+/** Nothing to do: okio's file handle `flush()` already fsyncs here (`FileDescriptor.sync()`). */
+internal actual fun syncToDisk(fileSystem: FileSystem, path: Path) = Unit
+
 /** `filesDir/datastore/<name>.json`, the conventional location for a [JsonStore] file on Android. */
 fun Context.jsonStorePath(name: String): Path = jsonStoreFile(name).toOkioPath()
 
