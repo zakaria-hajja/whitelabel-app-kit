@@ -351,7 +351,7 @@ class ShellNavHostTest {
         assertThat(corner == bar).isEqualTo(false)
     }
 
-    /** Material's pill leaves that corner pixel empty; checked on the same geometry by tagging nothing. */
+    /** No tag is drawn under Material's items, so the squared indicator can't be there. */
     @Test
     fun materialItems_haveNoSquaredIndicator() {
         showFour(StylePack.Gallery)
