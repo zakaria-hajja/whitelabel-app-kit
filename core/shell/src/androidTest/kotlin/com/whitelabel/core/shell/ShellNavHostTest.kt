@@ -31,6 +31,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.composable
 import com.whitelabel.core.designsystem.theme.AppTheme
+import com.whitelabel.core.designsystem.theme.BottomBarItemStyle
 import com.whitelabel.core.designsystem.theme.BottomBarStyle
 import androidx.compose.ui.graphics.asAndroidBitmap
 import com.whitelabel.core.designsystem.theme.StylePack
@@ -221,5 +222,45 @@ class ShellNavHostTest {
     fun fourTabsAt200Percent_labelsStayOnOneLine_material() {
         showFour(StylePack.Material, fontScale = 2f)
         assertLabelsOnOneLine()
+    }
+
+    @Test
+    fun squaredItems_selectedLabelIsOnSurface() {
+        showFour(StylePack.Gallery.copy(bottomBarItems = BottomBarItemStyle.Squared))
+        assertThat(label("Today").layoutInput.style.color).isEqualTo(scheme.onSurface)
+    }
+
+    @Test
+    fun materialItems_keepMaterialsSelectedLabel() {
+        showFour(StylePack.Gallery)
+        assertThat(label("Today").layoutInput.style.color == scheme.onSurface).isEqualTo(false)
+    }
+
+    /**
+     * The 56 x 32 indicator around the selected icon: its top-left corner pixel (3 px in) is filled
+     * with a 4 dp corner, and left empty by a pill.
+     */
+    private fun indicatorCornerFilled(): Boolean {
+        val icon = rule.onNodeWithTag(TAB_INDICATOR_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val root = rule.onRoot().captureToImage().asAndroidBitmap()
+        val px = rule.activity.resources.displayMetrics.density
+        val left = (icon.center.x - 28 * px).roundToInt()
+        val top = (icon.center.y - 16 * px).roundToInt()
+        val corner = root.getPixel(left + 3, top + 3)
+        val edge = root.getPixel(icon.center.x.roundToInt(), top + 3)
+        return corner == edge && Color(corner) == scheme.secondaryContainer
+    }
+
+    @Test
+    fun squaredItems_indicatorHasSmallCorners() {
+        showFour(StylePack.Gallery.copy(bottomBarItems = BottomBarItemStyle.Squared))
+        assertThat(indicatorCornerFilled()).isEqualTo(true)
+    }
+
+    /** Material's pill leaves that corner pixel empty; checked on the same geometry by tagging nothing. */
+    @Test
+    fun materialItems_haveNoSquaredIndicator() {
+        showFour(StylePack.Gallery)
+        rule.onNodeWithTag(TAB_INDICATOR_TAG, useUnmergedTree = true).assertDoesNotExist()
     }
 }

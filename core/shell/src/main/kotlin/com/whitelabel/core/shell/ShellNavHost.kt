@@ -12,10 +12,22 @@ import com.whitelabel.core.designsystem.motion.LocalNavIsPop
 import com.whitelabel.core.designsystem.motion.LocalSharedTransitionScope
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.designsystem.theme.BottomBarStyle
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import com.whitelabel.core.designsystem.theme.BottomBarItemStyle
 import com.whitelabel.core.designsystem.theme.SurfaceStyle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -234,6 +246,15 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
     // Opt-in (BottomBarStyle.Surface): the hairline alone separates a bar drawn on the page's
     // own surface. Material's bar has no tonal elevation, so surface stays untinted.
     val onSurface = hairline && AppTheme.style.bottomBar == BottomBarStyle.Surface
+    // Opt-in (BottomBarItemStyle.Squared): Material's item has no indicator shape, so its own
+    // indicator is hidden and the icon slot draws one with the pack's small corners.
+    val squared = AppTheme.style.bottomBarItems == BottomBarItemStyle.Squared
+    val scheme = MaterialTheme.colorScheme
+    val colors = if (squared) {
+        NavigationBarItemDefaults.colors(selectedTextColor = scheme.onSurface, indicatorColor = Color.Transparent)
+    } else {
+        NavigationBarItemDefaults.colors()
+    }
     Column {
         if (hairline) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         NavigationBar(
@@ -246,8 +267,12 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
                 NavigationBarItem(
                     selected = selected,
                     onClick = { navController.navigateToTab(tab.route) },
-                    icon = { Icon(tab.icon, contentDescription = null) },
+                    icon = {
+                        if (squared) SquaredIndicator(selected) { Icon(tab.icon, contentDescription = null) }
+                        else Icon(tab.icon, contentDescription = null)
+                    },
                     label = { TabLabel(label) },
+                    colors = colors,
                 )
             }
         }
@@ -276,6 +301,31 @@ private fun TabLabel(text: String) {
 internal fun tabLabelSizeFactor(fontScale: Float): Float = if (fontScale > MAX_TAB_LABEL_SCALE) MAX_TAB_LABEL_SCALE / fontScale else 1f
 
 private const val MAX_TAB_LABEL_SCALE = 1.5f
+
+internal const val TAB_INDICATOR_TAG = "ShellTabIndicator"
+
+/**
+ * Material's 56 x 32 indicator, with the pack's small corners, drawn behind the selected icon. It's
+ * drawn outside the 24 dp icon so Material's (hidden) indicator, and its press ripple, keep their size.
+ */
+@Composable
+private fun SquaredIndicator(selected: Boolean, icon: @Composable () -> Unit) {
+    val alpha by animateFloatAsState(if (selected) 1f else 0f, label = "indicator")
+    val color = MaterialTheme.colorScheme.secondaryContainer
+    val shape = MaterialTheme.shapes.small
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .then(if (selected) Modifier.testTag(TAB_INDICATOR_TAG) else Modifier)
+            .drawBehind {
+                val indicator = Size(56.dp.toPx(), 32.dp.toPx())
+                val outline = shape.createOutline(indicator, layoutDirection, this)
+                translate(left = (size.width - indicator.width) / 2, top = (size.height - indicator.height) / 2) {
+                    drawOutline(outline, color, alpha = alpha)
+                }
+            },
+    ) { icon() }
+}
 
 private fun NavHostController.navigateToTab(route: Any) {
     navigate(route) {
