@@ -22,7 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import assertk.assertThat
+import assertk.assertions.isCloseTo
 import assertk.assertions.isEqualTo
+import assertk.assertions.isGreaterThanOrEqualTo
+import assertk.assertions.isLessThan
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -181,14 +184,18 @@ class ShellNavHostTest {
     )
 
     private lateinit var scheme: androidx.compose.material3.ColorScheme
+    private lateinit var labelStyle: androidx.compose.ui.text.TextStyle
+    private lateinit var measurer: androidx.compose.ui.text.TextMeasurer
 
-    private fun showFour(pack: StylePack, fontScale: Float = 1f) {
+    private fun showFour(pack: StylePack, fontScale: Float = 1f, entries: List<FeatureEntry> = four) {
         rule.setContent {
             val density = LocalDensity.current
             androidx.compose.runtime.CompositionLocalProvider(LocalDensity provides androidx.compose.ui.unit.Density(density.density, fontScale)) {
                 AppTheme(darkTheme = false, stylePack = pack) {
                     scheme = MaterialTheme.colorScheme
-                    val definition = appDefinition { four.forEach { add(it) } }
+                    labelStyle = MaterialTheme.typography.labelMedium
+                    measurer = androidx.compose.ui.text.rememberTextMeasurer()
+                    val definition = appDefinition { entries.forEach { add(it) } }
                     ShellNavHost(definition = definition, visibleTabs = definition.tabs, deepLinkScheme = "test")
                 }
             }
@@ -222,6 +229,63 @@ class ShellNavHostTest {
     fun fourTabsAt200Percent_labelsStayOnOneLine_material() {
         showFour(StylePack.Material, fontScale = 2f)
         assertLabelsOnOneLine()
+    }
+
+    /**
+     * [text] laid out on one line at labelMedium's full size under the test's font scale. The
+     * semantics layout reports the label's style before auto-sizing, so sizes are compared by the
+     * rendered line's width, not by its reported font size.
+     */
+    private fun fullSize(text: String) = rule.runOnIdle { measurer.measure(text, labelStyle, softWrap = false) }
+
+    private fun lineWidth(layout: androidx.compose.ui.text.TextLayoutResult, line: Int = 0) =
+        layout.getLineRight(line) - layout.getLineLeft(line)
+
+    /** Short labels that fit at 200 % keep the user's full size: nothing caps them. */
+    @Test
+    fun threeTabsAt200Percent_labelsKeepTheirFullSize() {
+        showFour(StylePack.Gallery, fontScale = 2f, entries = four.take(3))
+        for (text in listOf("Today", "Calendar", "Garden")) {
+            val layout = label(text)
+            assertThat(layout.lineCount).isEqualTo(1)
+            assertThat(lineWidth(layout)).isCloseTo(lineWidth(fullSize(text)), 1f)
+        }
+    }
+
+    /** At 200 % four tabs shrink "Calendar" only as far as it needs: below full size, above its 100 % size. */
+    @Test
+    fun fourTabsAt200Percent_labelsShrinkNoFurtherThanTheirDefaultSize() {
+        showFour(StylePack.Gallery, fontScale = 2f)
+        val width = lineWidth(label("Calendar"))
+        val full = lineWidth(fullSize("Calendar"))
+        assertThat(width).isLessThan(full)
+        assertThat(width).isGreaterThanOrEqualTo(full / 2f)
+    }
+
+    /** A label too long for its tab at 100 % wraps between its words as before: no ellipsis, no shrink. */
+    @Test
+    fun longLabelAtDefaultScale_wrapsBetweenWordsAsBefore() {
+        val long = FeatureEntry(id = "long", tab = Tab(FourRoute, R.string.test_tab_long, Icons.Default.Star), routes = { composable<FourRoute> { Text("Screen four") } })
+        showFour(StylePack.Gallery, entries = four.take(3) + long)
+        val layout = label("Notification preferences")
+        assertThat(layout.lineCount).isEqualTo(2)
+        assertThat(layout.getLineEnd(0)).isEqualTo("Notification ".length)
+        assertThat(layout.isLineEllipsized(1)).isEqualTo(false)
+        assertThat(lineWidth(layout, line = 1)).isCloseTo(lineWidth(fullSize("preferences")), 1f)
+    }
+
+    /**
+     * A shrunk label's line height shrinks with it, keeping labelMedium's height-to-width ratio, so
+     * the bar doesn't keep the full size's empty line space.
+     */
+    @Test
+    fun shrunkLabel_lineHeightFollowsItsSize() {
+        showFour(StylePack.Gallery, fontScale = 2f)
+        val layout = label("Calendar")
+        val full = fullSize("Calendar")
+        val ratio = (layout.getLineBottom(0) - layout.getLineTop(0)) / lineWidth(layout)
+        val fullRatio = (full.getLineBottom(0) - full.getLineTop(0)) / lineWidth(full)
+        assertThat(ratio).isCloseTo(fullRatio, fullRatio * 0.05f)
     }
 
     @Test

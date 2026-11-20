@@ -131,8 +131,9 @@ appDefinition {
     `dragHandle = { AppSheetDragHandle() }` and radios `colors = appRadioButtonColors()`. Default `Material`.
   - `valueRows = ValueRowLayout.Disclosure`: `SettingsValueRow` puts the value at the trailing edge
     (at most half the row) with a chevron on rows that open something, as iOS draws them.
-- Bottom-bar labels stay on one line on every pack: they follow the font scale up to 150 % and stop
-  growing there, so one-word labels don't break mid-word at 200 %.
+- Bottom-bar labels never break inside a word, on every pack: a label renders at the user's full font
+  size whenever it fits, may wrap between words as Material's does, and shrinks (with its line
+  height) only as far as a word needs to fit its tab, never below its 100 % size.
 - Vary a pack with `copy`: `StylePack.Gallery.copy(sizing = StylePack.Gallery.sizing.copy(controlHeight = 56.dp))`.
 - With Android's "Remove animations" on, every transition becomes a 150 ms crossfade, and
   `AppTheme.reducedMotion` is true so features can stop their own ambient animations.

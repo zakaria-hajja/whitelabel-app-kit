@@ -15,7 +15,6 @@ import com.whitelabel.core.designsystem.theme.BottomBarStyle
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.drawBehind
@@ -23,9 +22,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.whitelabel.core.designsystem.theme.BottomBarItemStyle
 import com.whitelabel.core.designsystem.theme.SurfaceStyle
@@ -278,29 +274,6 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
         }
     }
 }
-
-/**
- * A tab's label on one line. It follows the font scale up to 150 %, then stops growing, so four
- * one-word labels still fit at 200 % instead of breaking mid-word; past that it ends in an ellipsis.
- * The full label stays in the semantics, so screen readers read it whole.
- */
-@Composable
-private fun TabLabel(text: String) {
-    val style = LocalTextStyle.current
-    val factor = tabLabelSizeFactor(LocalDensity.current.fontScale)
-    Text(
-        text = text,
-        fontSize = if (factor < 1f && style.fontSize.isSp) style.fontSize * factor else TextUnit.Unspecified,
-        maxLines = 1,
-        softWrap = false,
-        overflow = TextOverflow.Ellipsis,
-    )
-}
-
-/** How much to shrink a tab label so it renders at no more than 150 % of its size. */
-internal fun tabLabelSizeFactor(fontScale: Float): Float = if (fontScale > MAX_TAB_LABEL_SCALE) MAX_TAB_LABEL_SCALE / fontScale else 1f
-
-private const val MAX_TAB_LABEL_SCALE = 1.5f
 
 internal const val TAB_INDICATOR_TAG = "ShellTabIndicator"
 
