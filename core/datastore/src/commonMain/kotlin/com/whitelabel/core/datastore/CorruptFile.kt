@@ -19,7 +19,10 @@ enum class CorruptFilePolicy {
 
 /** What happened to a file a [JsonStore] couldn't decode. Names no file, path or content, by design. */
 enum class CorruptFileEvent {
-    /** The bytes were kept as `<name>.corrupt`; the store now holds its default. */
+    /**
+     * The bytes were kept as `<name>.corrupt`, and the store then writes its default over the file.
+     * If that write fails, the read still fails (with DataStore's `CorruptionException`).
+     */
     COPY_KEPT,
 
     /** The copy couldn't be written; nothing was replaced and the read failed. */

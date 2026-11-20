@@ -24,14 +24,23 @@ import okio.Path
  *
  * A file that doesn't decode is handled by [corruptFile]:
  * - [CorruptFilePolicy.KEEP_COPY_THEN_DEFAULT] (the default) keeps its exact bytes as
- *   `<name>.corrupt` next to it (only the newest copy is kept), then reads as [default], which
- *   DataStore writes over the file. If the copy can't be written, the read fails with
- *   [CorruptStoreException] and nothing is written; the next read tries again.
+ *   `<name>.corrupt` next to it (only the newest copy is kept, and it is on disk before anything
+ *   else happens), then reads as [default], which DataStore writes over the file. If the copy can't
+ *   be written, the read fails with [CorruptStoreException] and nothing is written; the next read
+ *   tries again. If the copy is kept but DataStore then fails to write the default, the read fails
+ *   with DataStore's own `CorruptionException` (after [CorruptFileEvent.COPY_KEPT]); the next read
+ *   copies the same bytes again, which is harmless.
  * - [CorruptFilePolicy.FAIL] leaves the file as it is and fails every read and update with
  *   [CorruptStoreException].
  *
- * [onCorruptFile] reports what happened. It runs on [scope] and must not throw. No failure from this
- * store, nor any event, carries the file's name, path or content.
+ * [onCorruptFile] reports what happened. It runs on [scope] and must not throw. It is called again on
+ * every read or update that meets the same broken file (a retry after `COPY_FAILED`, or every access
+ * under `FAIL`).
+ *
+ * No failure from this store and no event carries the file's **content**. A failure can still name
+ * the file: I/O errors from the platform (a failed read, or a failed default write, attached as a
+ * suppressed exception) pass through with their own message, which usually holds the path. Don't
+ * forward a failure's message or stack trace where a document name must not go.
  */
 class JsonStore<T>(
     private val path: Path,
