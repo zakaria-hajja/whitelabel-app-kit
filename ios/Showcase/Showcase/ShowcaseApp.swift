@@ -4,7 +4,10 @@ import WhitelabelAds
 import WhitelabelFirebase
 import WhitelabelKit
 
-/** Showcase on iOS: the foundation's features on the Material pack. In Debug, `-designCatalog` opens the design-system catalog instead. */
+/**
+ * Showcase on iOS: the foundation's features on the Material pack. In Debug, `-designCatalog` opens the
+ * design-system catalog instead, and `-galleryPack` runs the features on the Gallery pack (UI checks).
+ */
 @main struct ShowcaseApp: App {
     var body: some Scene {
         WindowGroup {
@@ -20,8 +23,15 @@ import WhitelabelKit
         }
     }
 
+    private static var pack: StylePack {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-galleryPack") { return .gallery }
+        #endif
+        return .material
+    }
+
     private var root: some View {
-        RootView(definition: AppDefinition(style: .material, startTab: HomeRoutes.shared.ROOT, modules: UiTestContentGateSetup.modules, services: [FirebaseService(), AdsService()],
+        RootView(definition: AppDefinition(style: Self.pack, startTab: HomeRoutes.shared.ROOT, modules: UiTestContentGateSetup.modules, services: [FirebaseService(), AdsService()],
                                               ads: [AdPlacement(name: "home", underTab: HomeRoutes.shared.ROOT)],
                                               // Debug UI tests only (`-uiTestContentGate`); otherwise none.
                                               lockScreen: UiTestContentGateSetup.lockScreen) {

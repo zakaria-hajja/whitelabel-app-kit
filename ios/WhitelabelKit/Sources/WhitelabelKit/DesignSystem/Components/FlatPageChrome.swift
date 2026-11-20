@@ -7,8 +7,17 @@ import SwiftUI
  */
 public struct FlatPageChrome: ViewModifier {
     @Environment(\.appStyle) private var style
+    private let largeTitle: Bool
 
-    public init() {}
+    /**
+     * [largeTitle]: the page shows a large navigation title (a tab's root). Forcing the bar's background
+     * visible hides a large title at rest on iOS 26 (it only appears once the page scrolls), so such a
+     * page leaves the background to the system: transparent over the page at rest, the page colour once
+     * content scrolls under it.
+     */
+    public init(largeTitle: Bool = false) {
+        self.largeTitle = largeTitle
+    }
 
     static func applies(to pack: StylePack) -> Bool { pack.topBar == .flat }
 
@@ -18,7 +27,7 @@ public struct FlatPageChrome: ViewModifier {
                 .scrollContentBackground(.hidden)
                 .background(style.colors.background)
                 .toolbarBackground(style.colors.background, for: .navigationBar)
-                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbarBackground(largeTitle ? .automatic : .visible, for: .navigationBar)
         } else {
             content
         }
@@ -26,6 +35,9 @@ public struct FlatPageChrome: ViewModifier {
 }
 
 public extension View {
-    /** The page as the style pack draws it: flat on the background (Gallery), or unchanged. */
-    func flatPageChrome() -> some View { modifier(FlatPageChrome()) }
+    /**
+     * The page as the style pack draws it: flat on the background (Gallery), or unchanged. Pass
+     * [largeTitle] true on a page with a large navigation title, so the title shows at rest.
+     */
+    func flatPageChrome(largeTitle: Bool = false) -> some View { modifier(FlatPageChrome(largeTitle: largeTitle)) }
 }

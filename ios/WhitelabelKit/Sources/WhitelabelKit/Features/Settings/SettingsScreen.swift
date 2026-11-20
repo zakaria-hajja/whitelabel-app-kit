@@ -36,8 +36,8 @@ struct SettingsScreen: View {
             onOpen: open
         )
         .navigationTitle(KitStrings.text("Settings"))
-        // Gallery: list and bar on the page background. Material: unchanged.
-        .flatPageChrome()
+        // Gallery: list and bar on the page background, the large title visible at rest. Material: unchanged.
+        .flatPageChrome(largeTitle: true)
         .sheet(item: $sheet) { sheet in
             switch sheet {
             case .theme:
