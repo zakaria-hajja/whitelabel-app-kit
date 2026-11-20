@@ -12,6 +12,10 @@ import com.whitelabel.core.designsystem.motion.LocalNavIsPop
 import com.whitelabel.core.designsystem.motion.LocalSharedTransitionScope
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.designsystem.theme.BottomBarStyle
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import com.whitelabel.core.designsystem.theme.SurfaceStyle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -238,16 +242,40 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
         ) {
             tabs.forEach { tab ->
                 val label = stringResource(tab.label)
+                val selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
                 NavigationBarItem(
-                    selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true,
+                    selected = selected,
                     onClick = { navController.navigateToTab(tab.route) },
                     icon = { Icon(tab.icon, contentDescription = null) },
-                    label = { Text(label) },
+                    label = { TabLabel(label) },
                 )
             }
         }
     }
 }
+
+/**
+ * A tab's label on one line. It follows the font scale up to 150 %, then stops growing, so four
+ * one-word labels still fit at 200 % instead of breaking mid-word; past that it ends in an ellipsis.
+ * The full label stays in the semantics, so screen readers read it whole.
+ */
+@Composable
+private fun TabLabel(text: String) {
+    val style = LocalTextStyle.current
+    val factor = tabLabelSizeFactor(LocalDensity.current.fontScale)
+    Text(
+        text = text,
+        fontSize = if (factor < 1f && style.fontSize.isSp) style.fontSize * factor else TextUnit.Unspecified,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
+    )
+}
+
+/** How much to shrink a tab label so it renders at no more than 150 % of its size. */
+internal fun tabLabelSizeFactor(fontScale: Float): Float = if (fontScale > MAX_TAB_LABEL_SCALE) MAX_TAB_LABEL_SCALE / fontScale else 1f
+
+private const val MAX_TAB_LABEL_SCALE = 1.5f
 
 private fun NavHostController.navigateToTab(route: Any) {
     navigate(route) {

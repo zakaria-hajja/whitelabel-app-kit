@@ -26,11 +26,13 @@ import assertk.assertions.isEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.composable
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.designsystem.theme.BottomBarStyle
+import androidx.compose.ui.graphics.asAndroidBitmap
 import com.whitelabel.core.designsystem.theme.StylePack
 import com.whitelabel.core.shell.test.R
 import kotlinx.serialization.Serializable
@@ -39,6 +41,8 @@ import org.junit.Test
 
 @Serializable data object OneRoute
 @Serializable data object TwoRoute
+@Serializable data object ThreeRoute
+@Serializable data object FourRoute
 
 class ShellNavHostTest {
 
@@ -165,5 +169,57 @@ class ShellNavHostTest {
     fun materialBar_ignoresSurfaceBarStyle() {
         val (pixel, scheme) = barPixel(StylePack.Material.copy(bottomBar = BottomBarStyle.Surface), dark = false)
         assertThat(pixel).isEqualTo(scheme.second.toArgb())
+    }
+
+    /** Tend's four tabs, the first selected. */
+    private val four = listOf(
+        FeatureEntry(id = "today", tab = Tab(OneRoute, R.string.test_tab_today, Icons.Default.Home), routes = { composable<OneRoute> { Text("Screen one") } }),
+        FeatureEntry(id = "calendar", tab = Tab(TwoRoute, R.string.test_tab_calendar, Icons.Default.Star), routes = { composable<TwoRoute> { Text("Screen two") } }),
+        FeatureEntry(id = "garden", tab = Tab(ThreeRoute, R.string.test_tab_garden, Icons.Default.Star), routes = { composable<ThreeRoute> { Text("Screen three") } }),
+        FeatureEntry(id = "settings", tab = Tab(FourRoute, R.string.test_tab_settings, Icons.Default.Star), routes = { composable<FourRoute> { Text("Screen four") } }),
+    )
+
+    private lateinit var scheme: androidx.compose.material3.ColorScheme
+
+    private fun showFour(pack: StylePack, fontScale: Float = 1f) {
+        rule.setContent {
+            val density = LocalDensity.current
+            androidx.compose.runtime.CompositionLocalProvider(LocalDensity provides androidx.compose.ui.unit.Density(density.density, fontScale)) {
+                AppTheme(darkTheme = false, stylePack = pack) {
+                    scheme = MaterialTheme.colorScheme
+                    val definition = appDefinition { four.forEach { add(it) } }
+                    ShellNavHost(definition = definition, visibleTabs = definition.tabs, deepLinkScheme = "test")
+                }
+            }
+        }
+        rule.waitForIdle()
+    }
+
+    private fun label(text: String): androidx.compose.ui.text.TextLayoutResult {
+        val results = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule.onNodeWithText(text, useUnmergedTree = true).fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult].action!!.invoke(results)
+        return results.first()
+    }
+
+    private fun assertLabelsOnOneLine() {
+        for (text in listOf("Today", "Calendar", "Garden", "Settings")) {
+            val layout = label(text)
+            assertThat(layout.lineCount).isEqualTo(1)
+            assertThat(layout.isLineEllipsized(0)).isEqualTo(false)
+        }
+    }
+
+    /** Bug 8zZ4HDYM: at 200 % every label stays on one line; none breaks mid-word ("Calenda/r"). */
+    @Test
+    fun fourTabsAt200Percent_labelsStayOnOneLine_gallery() {
+        showFour(StylePack.Gallery, fontScale = 2f)
+        assertLabelsOnOneLine()
+    }
+
+    @Test
+    fun fourTabsAt200Percent_labelsStayOnOneLine_material() {
+        showFour(StylePack.Material, fontScale = 2f)
+        assertLabelsOnOneLine()
     }
 }
