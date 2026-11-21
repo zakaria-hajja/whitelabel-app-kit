@@ -64,7 +64,9 @@ class ConsentGatedAnalytics(
     private fun settleLocked(state: ConsentState) {
         val waiting = pending ?: return
         pending = null
-        // Only with analytics allowed: with collection off the SDK can still store a property and send it later.
+        // Only with analytics allowed. Failed: collection is off, and the SDK could still store a property and
+        // send it later. Declined: collection stays on (consent mode, storage denied), but a user who declined
+        // gets the least data, so values queued before the answer are dropped.
         if (state is ConsentState.Resolved && state.analyticsAllowed) waiting.values.forEach(inner::setUserProperty)
     }
 }
