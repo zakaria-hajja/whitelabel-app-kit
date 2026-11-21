@@ -16,7 +16,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -31,10 +30,10 @@ class ConsentGatedAnalyticsTest {
         override fun record(throwable: Throwable) { crashes += throwable }
     }
 
-    @Test fun `events before consent is resolved are dropped and not queued`() {
+    @Test fun `events before consent is resolved are dropped and not queued`() = runTest {
         val inner = Recorder()
         val state = MutableStateFlow<ConsentState>(ConsentState.Unknown)
-        val gated = ConsentGatedAnalytics(inner, state, TestScope())
+        val gated = ConsentGatedAnalytics(inner, state, backgroundScope)
         gated.track(AnalyticsEvent("one"))
         gated.track(AnalyticsEvent("two"))
         state.value = ConsentState.Resolved(true, true)
@@ -42,9 +41,9 @@ class ConsentGatedAnalyticsTest {
         assertThat(inner.events.map { it.name }).containsExactly("three")
     }
 
-    @Test fun `failed consent drops events`() {
+    @Test fun `failed consent drops events`() = runTest {
         val inner = Recorder()
-        ConsentGatedAnalytics(inner, MutableStateFlow(ConsentState.Failed), TestScope()).track(AnalyticsEvent("one"))
+        ConsentGatedAnalytics(inner, MutableStateFlow(ConsentState.Failed), backgroundScope).track(AnalyticsEvent("one"))
         assertThat(inner.events).isEmpty()
     }
 
@@ -110,7 +109,7 @@ class ConsentGatedAnalyticsTest {
         val gated = ConsentGatedAnalytics(inner, state, backgroundScope.plus(UnconfinedTestDispatcher(testScheduler)))
         gated.setUserProperty(UserProperty("bucket", "early"))
 
-        // With collection off the SDK could still store a property locally and send it later.
+        // Collection stays on after a decline (consent mode), but a decliner gets the least data: the queued value is dropped.
         state.value = ConsentState.Resolved(canRequestAds = true, analyticsAllowed = false)
         assertThat(inner.userProperties).isEmpty()
 
