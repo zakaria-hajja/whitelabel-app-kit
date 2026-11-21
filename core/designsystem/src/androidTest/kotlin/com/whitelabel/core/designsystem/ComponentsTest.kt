@@ -41,6 +41,10 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isHeading
 import assertk.assertions.isLessThan
+import assertk.assertions.isGreaterThan
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.whitelabel.core.designsystem.theme.TextSpec
 import com.whitelabel.core.designsystem.component.AppConfirmDialog
 import com.whitelabel.core.designsystem.component.AppScaffold
 import com.whitelabel.core.designsystem.component.AppSectionHeader
@@ -265,5 +269,26 @@ class ComponentsTest {
         // The title's line (20 sp) plus 8 dp above and below; the Caption style's 24 dp top would exceed it.
         val height = rule.onNodeWithTag("header").getUnclippedBoundsInRoot().height
         assertThat(height.value).isLessThan(42f)
+    }
+
+    /** A pack's caption spec reaches the header: a 40 sp line makes it 40 dp plus its 24 + 8 dp padding. */
+    @Test fun captionSpecSetsTheHeaderText() {
+        val pack = StylePack.Gallery.copy(sectionCaptionText = TextSpec(12.sp, 40.sp, FontWeight.SemiBold, letterSpacing = 0.6.sp))
+        rule.setContent {
+            AppTheme(stylePack = pack) {
+                androidx.compose.foundation.layout.Box(Modifier.testTag("header")) { AppSectionHeader("Appearance") }
+            }
+        }
+        rule.onNodeWithText("APPEARANCE").assert(isHeading())
+        val height = rule.onNodeWithTag("header").getUnclippedBoundsInRoot().height
+        assertThat(height.value).isGreaterThan(70f)
+    }
+
+    /** A pack's flat-title spec reaches the top bar: a 40 sp line makes the title 40 dp tall. */
+    @Test fun flatTitleSpecSetsTheTitleText() {
+        val pack = StylePack.Gallery.copy(flatTopBarTitleText = TextSpec(18.sp, 40.sp, FontWeight.SemiBold))
+        rule.setContent { AppTheme(stylePack = pack) { AppScaffold(title = "Reminders") { Text("Content") } } }
+        val height = rule.onNodeWithText("Reminders").getUnclippedBoundsInRoot().height
+        assertThat(height.value).isGreaterThan(39f)
     }
 }

@@ -19,6 +19,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.platform.testTag
 import com.whitelabel.core.designsystem.theme.TopBarStyle
+import com.whitelabel.core.designsystem.theme.flatTopBarTitleStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -26,7 +27,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.whitelabel.core.designsystem.R
 import com.whitelabel.core.designsystem.theme.AppTheme
 
-/** A screen with a top bar drawn as the style pack says (raised or flat), an optional back button, actions, bottom bar and snackbars. */
+/**
+ * A screen with a top bar drawn as the style pack says (raised or flat; a pack can set the flat
+ * title's text with `StylePack.flatTopBarTitleText`), an optional back button, actions, bottom bar and snackbars.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppScaffold(
@@ -43,7 +47,12 @@ fun AppScaffold(
         topBar = {
             val flat = AppTheme.style.topBar == TopBarStyle.Flat
             TopAppBar(
-                title = { Text(title, style = if (flat) MaterialTheme.typography.headlineSmall else LocalTextStyle.current) },
+                title = {
+                    Text(
+                        title,
+                        style = if (flat) flatTopBarTitleStyle(AppTheme.style.flatTopBarTitleText, MaterialTheme.typography) else LocalTextStyle.current,
+                    )
+                },
                 modifier = Modifier.testTag("AppTopBar"),
                 // Flat: on the page background, with no tint when content scrolls under it.
                 colors = if (flat) {
