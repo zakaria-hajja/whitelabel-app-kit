@@ -65,6 +65,8 @@ public struct StylePack: Equatable {
 /**
  * A text style a pack sets for one piece of shared chrome, replacing the role it would use: size
  * (scaled with Dynamic Type), weight and tracking, in one of the brand fonts (Kotlin: TextSpec).
+ * The size needs a custom brand font: without one, the system fallback keeps its text style's
+ * size and only the weight and tracking apply.
  * Kotlin's line height has no field here: SwiftUI sets no line height for a single line, and the
  * chrome it styles is one line.
  */

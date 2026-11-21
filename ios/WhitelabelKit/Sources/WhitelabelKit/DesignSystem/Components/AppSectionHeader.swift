@@ -2,8 +2,9 @@ import SwiftUI
 
 /**
  * A section's title, as the app's style pack draws them: accent-colored (Material) or a small
- * uppercase caption (Gallery, its text set by `StylePack.sectionCaptionText`), as Android's `AppSectionHeader` (Material keeps the system header). Use it for app screens' sections so
- * they match the shared ones.
+ * uppercase caption (Gallery, its text set by `StylePack.sectionCaptionText`), as Android's
+ * `AppSectionHeader` (Material keeps the system header). Use it for app screens' sections so they
+ * match the shared ones.
  */
 public struct AppSectionHeader: View {
     @Environment(\.appStyle) private var style

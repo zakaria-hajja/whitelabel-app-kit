@@ -13,7 +13,8 @@ import com.whitelabel.core.designsystem.theme.sectionCaptionStyle
 
 /**
  * A section's title, as the app's style pack draws them: an accent title (Material) or a small
- * uppercase caption (Gallery), whose text a pack can set with `StylePack.sectionCaptionText`. Use it for app screens' sections so they match the shared ones.
+ * uppercase caption (Gallery), whose text a pack can set with `StylePack.sectionCaptionText`. Use it
+ * for app screens' sections so they match the shared ones.
  */
 @Composable
 fun AppSectionHeader(text: String, modifier: Modifier = Modifier) {

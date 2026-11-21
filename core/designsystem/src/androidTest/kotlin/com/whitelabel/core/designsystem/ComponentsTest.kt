@@ -20,6 +20,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasImeAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.whitelabel.core.designsystem.component.passwordKeyboardOptions
@@ -30,6 +31,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import androidx.compose.material3.MaterialTheme
@@ -42,13 +44,11 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isHeading
 import assertk.assertions.isLessThan
 import assertk.assertions.isGreaterThan
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-import com.whitelabel.core.designsystem.theme.TextSpec
 import com.whitelabel.core.designsystem.component.AppConfirmDialog
 import com.whitelabel.core.designsystem.component.AppScaffold
 import com.whitelabel.core.designsystem.component.AppSectionHeader
 import com.whitelabel.core.designsystem.theme.StylePack
+import com.whitelabel.core.designsystem.theme.TextSpec
 import com.whitelabel.core.designsystem.component.AppPrimaryButton
 import com.whitelabel.core.designsystem.component.AppTextField
 import com.whitelabel.core.designsystem.component.EmptyState
