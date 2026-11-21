@@ -39,9 +39,11 @@ interface Analytics {
     fun track(event: AnalyticsEvent)
 
     /**
-     * Sets [property] on the user, under the same consent rules as [track]. Never health data (see
-     * [UserProperty]). The default does nothing, so an existing implementation keeps compiling;
-     * every foundation implementation overrides it.
+     * Sets [property] on the user. Never health data (see [UserProperty]). Behind the consent gate a
+     * call made before consent resolves waits (latest value per name) instead of being dropped like an
+     * event; a queued value is sent only if analytics is allowed. So setting it once per app start is
+     * enough. The default does nothing, so an existing implementation keeps compiling; every
+     * foundation implementation overrides it.
      */
     fun setUserProperty(property: UserProperty) {}
 }

@@ -5,19 +5,72 @@ import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.analytics.UserProperty
 import com.whitelabel.core.consent.ConsentState
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
-/** Forwards events and user properties only once consent is [ConsentState.Resolved]. Earlier ones are dropped, not queued. */
+/**
+ * Forwards events and user properties only once consent is [ConsentState.Resolved].
+ *
+ * - Events are moments: one tracked before consent resolves is dropped, not queued.
+ * - User properties are state (last write wins), so one set while consent is [ConsentState.Unknown]
+ *   waits: the latest value per name is kept and sent once consent resolves with analytics allowed,
+ *   or discarded when it resolves with analytics declined or [fails][ConsentState.Failed]. After that
+ *   the gate is the same as for events. [scope] (the application scope) runs the flush, so a property
+ *   set once at app start reaches the SDK even when nothing is set after consent resolves.
+ *
+ * With Firebase on, [consent] is the consent the collection applier has already applied to the SDKs,
+ * not the raw consent state, so nothing reaches an SDK before its collection flag is switched on.
+ */
 class ConsentGatedAnalytics(
     private val inner: Analytics,
     private val consent: StateFlow<ConsentState>,
+    scope: CoroutineScope,
 ) : Analytics {
+    private val lock = SynchronizedObject()
+
+    // Waiting user properties by name, in first-set order. Null once the first resolution was handled.
+    // Normally at most 25 names (Firebase's per-project limit). Nothing enforces that, but it is in memory,
+    // for one launch.
+    private var pending: LinkedHashMap<String, UserProperty>? = LinkedHashMap()
+
+    init {
+        scope.launch {
+            val resolved = consent.first { it !is ConsentState.Unknown }
+            synchronized(lock) { settleLocked(resolved) }
+        }
+    }
+
     override fun track(event: AnalyticsEvent) {
         if (consent.value is ConsentState.Resolved) inner.track(event)
     }
 
     override fun setUserProperty(property: UserProperty) {
-        if (consent.value is ConsentState.Resolved) inner.setUserProperty(property)
+        synchronized(lock) {
+            val state = consent.value
+            val waiting = pending
+            if (waiting != null && state is ConsentState.Unknown) {
+                waiting[property.name] = property
+                return
+            }
+            // Consent resolved before the flush collector ran: flush first, so this newer value lands last.
+            if (waiting != null) settleLocked(state)
+            if (state is ConsentState.Resolved) inner.setUserProperty(property)
+        }
+    }
+
+    // Called with the lock held; it forwards inside the lock, so a queued value can't overtake a newer
+    // one for the same name.
+    private fun settleLocked(state: ConsentState) {
+        val waiting = pending ?: return
+        pending = null
+        // Only with analytics allowed. Failed: collection is off, and the SDK could still store a property and
+        // send it later. Declined: collection stays on (consent mode, storage denied), but a user who declined
+        // gets the least data, so values queued before the answer are dropped.
+        if (state is ConsentState.Resolved && state.analyticsAllowed) waiting.values.forEach(inner::setUserProperty)
     }
 }
 

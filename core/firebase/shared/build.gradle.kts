@@ -13,6 +13,8 @@ kotlin {
             // FirebaseServicesContributor extends ModuleContributor.
             api(project(":core:network"))
             implementation(libs.kotlinx.serialization.json)
+            // The user-property queue's lock (ConsentGatedAnalytics).
+            implementation(libs.kotlinx.atomicfu)
         }
     }
 }

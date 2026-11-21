@@ -2,6 +2,7 @@ package com.whitelabel.core.shell
 
 import assertk.assertFailure
 import assertk.assertThat
+import assertk.assertions.containsExactly
 import assertk.assertions.hasMessage
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
@@ -203,6 +204,56 @@ class FirebaseWiringTest {
             .isInstanceOf<com.whitelabel.core.firebase.ConsentGatedAnalytics>()
         assertThat(koin.get<com.whitelabel.core.analytics.CrashReporter>())
             .isInstanceOf<com.whitelabel.core.firebase.ConsentGatedCrashReporter>()
+    }
+
+    @Test fun `mode on sends a property queued before consent only after the switch turned collection on`() {
+        val firebase = org.koin.core.qualifier.named("firebase")
+        val log = mutableListOf<String>()
+        val contributor = stub(
+            org.koin.dsl.module {
+                single<com.whitelabel.core.firebase.RemoteConfigSource> {
+                    object : com.whitelabel.core.firebase.RemoteConfigSource {
+                        override fun raw(key: String): String? = null
+                        override fun fetchAndActivate(onDone: (Boolean) -> Unit) = onDone(false)
+                    }
+                }
+                single<com.whitelabel.core.consent.ConsentPort> {
+                    com.whitelabel.core.consent.FakeConsentPort(UmpResult(com.whitelabel.core.consent.UmpStatus.OBTAINED, true, "1011"))
+                }
+                single<com.whitelabel.core.analytics.Analytics>(firebase) {
+                    object : com.whitelabel.core.analytics.Analytics {
+                        override fun track(event: com.whitelabel.core.analytics.AnalyticsEvent) = Unit
+                        override fun setUserProperty(property: com.whitelabel.core.analytics.UserProperty) {
+                            log += "property ${property.name}"
+                        }
+                    }
+                }
+                single<com.whitelabel.core.analytics.CrashReporter>(firebase) { LoggingCrashReporter { _, _ -> } }
+                single<com.whitelabel.core.firebase.CollectionSwitch> {
+                    object : com.whitelabel.core.firebase.CollectionSwitch {
+                        override fun apply(collection: com.whitelabel.core.firebase.FirebaseCollection) {
+                            log += "apply analytics=${collection.analytics}"
+                        }
+                    }
+                }
+            },
+        )
+        // The real scope is Dispatchers.Default; an unconfined one makes the losing order (the gate sees the
+        // answer before the applier) repeatable.
+        val scope = org.koin.dsl.module {
+            single<kotlinx.coroutines.CoroutineScope>(com.whitelabel.core.data.di.ApplicationScope) {
+                kotlinx.coroutines.test.TestScope(kotlinx.coroutines.test.UnconfinedTestDispatcher())
+            }
+        }
+        val wiring = FirebaseWiring(FirebaseMode.ON, debugBuild = false, debugAnalytics = false)
+        val app = koinApplication(createEagerInstances = false) {
+            modules(foundationModules(withFirebase, listOf(contributor), wiring) + scope)
+        }
+        app.koin.get<com.whitelabel.core.analytics.Analytics>()
+            .setUserProperty(com.whitelabel.core.analytics.UserProperty("garden_size_bucket", "3_5"))
+        app.createEagerInstances()
+        app.koin.get<Consent>().gatherOnLaunch()
+        assertThat(log).containsExactly("apply analytics=true", "property garden_size_bucket")
     }
 
     @Test fun `consent is gathered once, after the splash, only when the app needs it`() {
