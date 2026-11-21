@@ -33,7 +33,7 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
             FakeRemoteConfigSource(mapOf("showcase_remote_note" to "from the fake"))
         }
         single<RemoteValues> { SourceRemoteValues(get(), get(applicationScope)) }
-        single<Analytics> { ConsentGatedAnalytics(LoggingAnalytics { println("Analytics: $it") }, get<Consent>().state) }
+        single<Analytics> { ConsentGatedAnalytics(LoggingAnalytics { println("Analytics: $it") }, get<Consent>().state, get(applicationScope)) }
         single<CrashReporter> {
             ConsentGatedCrashReporter(
                 LoggingCrashReporter { message, t -> println("$message: $t") },
@@ -44,7 +44,7 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
     FirebaseMode.ON -> module {
         single { SourceRemoteValues(get(), get(applicationScope)) }
         single<RemoteValues>(createdAtStart = true) { get<SourceRemoteValues>().also { it.start() } }
-        single<Analytics> { ConsentGatedAnalytics(get(firebase), get<Consent>().state) }
+        single<Analytics> { ConsentGatedAnalytics(get(firebase), get<Consent>().state, get(applicationScope)) }
         single<CrashReporter> { ConsentGatedCrashReporter(get(firebase), get<Consent>().state) }
         single(named("firebaseCollectionApplier"), createdAtStart = true) {
             val switch = get<CollectionSwitch>()
