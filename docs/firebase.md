@@ -214,9 +214,13 @@ analytics.setUserProperty("garden_size_bucket", "3_5")          // or setUserPro
 > (`garden_size_bucket=3_5`). Never a date, a cycle or period detail, a symptom, a mood, a note, a
 > name, an email or anything the user typed. Reviewers reject a property that carries any of it.
 
-- **Consent:** exactly the same gate as `track()`. Before consent is resolved, or when it failed,
-  the call is dropped, not queued. Set the property again on a later launch (once per app start is
-  the usual pattern), so a launch where consent was missing doesn't leave the property unset.
+- **Consent:** a property is state, not a moment, so it waits for consent instead of being dropped.
+  While consent is still unknown (every launch starts that way, until UMP answers), the latest value
+  of each name is kept in memory and sent once consent resolves; a name set twice is sent once, with
+  its last value. If consent fails, the waiting values are discarded and nothing is sent. After that
+  the gate is the same as `track()`: resolved sends at once, failed drops the call. So setting the
+  property once per app start (a ViewModel's `init`, app start-up) is enough. Waiting values live
+  only in memory and only for that launch; nothing is written to disk.
 - **Without Firebase** (`firebase.enabled=false`, or a Release build of `debug`) nothing is sent:
   the shell's logging `Analytics` writes `user_property name=value` to the log, as it does for events.
   The fake Firebase logs the same line behind the consent gate.
@@ -236,7 +240,8 @@ analytics.setUserProperty("garden_size_bucket", "3_5")          // or setUserPro
 Where the law requires it (EEA/UK, as UMP decides), the user is asked once per launch, after the
 first screen appears and never over the splash. Elsewhere nothing shows.
 
-- Nothing is collected before consent is resolved: events are dropped, not queued.
+- Nothing is collected before consent is resolved: events are dropped, not queued. User properties
+  wait in memory until it resolves ([User properties](#user-properties)).
 - A user who declines is still counted, without identifiers (analytics storage denied).
 - Crash reports that Crashlytics stored before consent are dropped. Reports from consented sessions
   are kept across launches.
