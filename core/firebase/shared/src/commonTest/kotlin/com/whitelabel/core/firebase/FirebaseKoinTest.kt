@@ -7,6 +7,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.CrashReporter
+import com.whitelabel.core.analytics.UserProperty
 import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.consent.ConsentPort
 import com.whitelabel.core.consent.ConsentState
@@ -121,5 +122,38 @@ class FirebaseKoinTest {
         port.next = UmpResult(UmpStatus.OBTAINED, true, "0")
         consent.showPrivacyOptions()
         assertThat(switch.applied).containsExactly(FirebaseCollection(analytics = true, analyticsStorage = false, crashes = true))
+    }
+
+    @Test fun `a property queued before consent reaches the sdk only after collection is switched on`() {
+        // The manifest/Info.plist start collection off; a property sent before the switch applies would be dropped.
+        val log = mutableListOf<String>()
+        val switch = object : CollectionSwitch {
+            override fun apply(collection: FirebaseCollection) { log += "apply analytics=${collection.analytics}" }
+        }
+        val inner = object : Analytics {
+            override fun track(event: com.whitelabel.core.analytics.AnalyticsEvent) { log += "event ${event.name}" }
+            override fun setUserProperty(property: UserProperty) { log += "property ${property.name}" }
+        }
+        val application = koinApplication(createEagerInstances = false) {
+            modules(
+                module {
+                    single<CoroutineScope>(named("applicationScope")) { TestScope(UnconfinedTestDispatcher()) }
+                    single<ConsentPort> { FakeConsentPort(UmpResult(UmpStatus.OBTAINED, true, "1011")) }
+                    single<CollectionSwitch> { switch }
+                    single<RemoteConfigSource> { FakeRemoteConfigSource(mapOf("k" to "v")) }
+                    single<Analytics>(named("firebase")) { inner }
+                    single<CrashReporter>(named("firebase")) { NoopAnalytics() }
+                },
+                consentModule(),
+                firebaseModule(FirebaseMode.ON, debugBuild = false, debugAnalytics = false),
+            )
+        }
+        val koin = application.koin
+        // On a device the gate and the applier collect on Dispatchers.Default, so either can see the answer first.
+        // Resolving Analytics before the eager applier makes the gate collect first, the losing order.
+        koin.get<Analytics>().setUserProperty(UserProperty("garden_size_bucket", "3_5"))
+        application.createEagerInstances()
+        koin.get<Consent>().gatherOnLaunch()
+        assertThat(log).containsExactly("apply analytics=true", "property garden_size_bucket")
     }
 }

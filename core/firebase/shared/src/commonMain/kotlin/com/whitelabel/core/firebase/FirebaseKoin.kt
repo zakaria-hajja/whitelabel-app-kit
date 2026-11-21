@@ -8,6 +8,9 @@ import com.whitelabel.core.consent.Consent
 import com.whitelabel.core.consent.ConsentState
 import com.whitelabel.core.domain.remote.RemoteValues
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -20,6 +23,9 @@ enum class FirebaseMode { OFF, ON, FAKE }
 // The same qualifier as com.whitelabel.core.data.di.ApplicationScope; repeated to avoid depending on :core:data.
 private val applicationScope = named("applicationScope")
 private val firebase = named("firebase")
+
+// The consent the collection applier has applied to the SDKs (ON mode only).
+private val appliedConsent = named("firebaseAppliedConsent")
 
 /**
  * OFF binds nothing (the defaults-only values stay). FAKE binds fake values and logging analytics behind the
@@ -44,10 +50,15 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
     FirebaseMode.ON -> module {
         single { SourceRemoteValues(get(), get(applicationScope)) }
         single<RemoteValues>(createdAtStart = true) { get<SourceRemoteValues>().also { it.start() } }
-        single<Analytics> { ConsentGatedAnalytics(get(firebase), get<Consent>().state, get(applicationScope)) }
-        single<CrashReporter> { ConsentGatedCrashReporter(get(firebase), get<Consent>().state) }
-        single(named("firebaseCollectionApplier"), createdAtStart = true) {
+        single<Analytics> { ConsentGatedAnalytics(get(firebase), get(appliedConsent), get(applicationScope)) }
+        single<CrashReporter> { ConsentGatedCrashReporter(get(firebase), get(appliedConsent)) }
+        // Applies consent to the SDKs, then publishes the consent it applied. The gates follow that flow, not
+        // Consent.state: both collect on the application scope (Dispatchers.Default), so with the raw state a
+        // queued user property (or an event) could reach an SDK before its collection flag, which the
+        // manifest/Info.plist start off, was switched on, and the SDK would drop it.
+        single<StateFlow<ConsentState>>(appliedConsent, createdAtStart = true) {
             val switch = get<CollectionSwitch>()
+            val applied = MutableStateFlow<ConsentState>(ConsentState.Unknown)
             // A debug build without the switch never collects, so it turns collection off at once: the SDKs'
             // persisted flags may still be on from an earlier -analyticsDebug run (turning off deletes nothing).
             val offAtStart = debugBuild && !debugAnalytics
@@ -57,8 +68,11 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
                 .onEach {
                     // One failing platform apply must not end the collector; later consent changes still apply.
                     runCatching { switch.apply(collectionFor(it, debugBuild, debugAnalytics)) }
+                    // Published even when the apply failed, so the gates still follow consent (as before).
+                    applied.value = it
                 }
                 .launchIn(get<CoroutineScope>(applicationScope))
+            applied.asStateFlow()
         }
     }
 }
