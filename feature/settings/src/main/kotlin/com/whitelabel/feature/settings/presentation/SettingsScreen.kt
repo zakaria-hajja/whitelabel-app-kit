@@ -132,7 +132,9 @@ internal fun SettingsScreen(
                 state.supportEmail?.let { email ->
                     SettingsLinkRow(stringResource(R.string.settings_contact_support), onClick = { onOpenUrl("mailto:$email") })
                 }
-                SettingsLinkRow(stringResource(R.string.settings_privacy), onClick = { onOpenUrl(state.privacyUrl) })
+                if (options.showPrivacyLink) {
+                    SettingsLinkRow(stringResource(R.string.settings_privacy), onClick = { onOpenUrl(state.privacyUrl) })
+                }
                 SettingsLinkRow(stringResource(R.string.settings_terms), onClick = { onOpenUrl(state.termsUrl) })
                 options.aboutRows?.invoke()
                 if (state.showDiagnostics) SettingsLinkRow(stringResource(R.string.settings_diagnostics), onClick = onOpenDiagnostics)

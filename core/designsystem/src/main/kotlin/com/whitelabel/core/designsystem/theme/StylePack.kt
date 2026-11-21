@@ -31,6 +31,12 @@ data class StylePack(
      * existing apps keep their bar.
      */
     val bottomBar: BottomBarStyle = BottomBarStyle.Container,
+    /** How buttons look (`AppPrimaryButton`, `AppSecondaryButton`, `AppTextButton`). Defaults to Material's pill. */
+    val buttons: ButtonStyle = ButtonStyle.Pill,
+    /** How the shell's bottom bar marks the selected tab. Defaults to Material's. */
+    val bottomBarItems: BottomBarItemStyle = BottomBarItemStyle.Material,
+    /** The sheet drag handle and unselected radio buttons (`AppSheetDragHandle`, `appRadioButtonColors`). */
+    val selectionControls: SelectionControlStyle = SelectionControlStyle.Material,
 ) {
     /** This pack with "Remove animations" applied: every motion becomes [MotionSpec.Reduced]. */
     fun reduced(): StylePack = copy(motion = MotionSpec.Reduced)
@@ -119,6 +125,45 @@ enum class ValueRowLayout {
 
     /** The label, then the value under it in a muted color. */
     Stacked,
+
+    /**
+     * The label at the start, the value hugging the trailing edge, then a chevron when the row opens
+     * something (iOS's disclosure row). A read-only row has no chevron.
+     */
+    Disclosure,
+}
+
+/** Whether a row in this layout ends with a chevron. */
+fun ValueRowLayout.showsChevron(clickable: Boolean): Boolean = this == ValueRowLayout.Disclosure && clickable
+
+/** Buttons. */
+enum class ButtonStyle {
+    /** Material's: fully rounded, Material's label weight and outlined colors. */
+    Pill,
+
+    /**
+     * Corners from `shapes.small`, 600-weight labels; the outlined button takes a 1 dp `outline`
+     * border and a `primary` label, so its edge reaches 3:1.
+     */
+    Squared,
+}
+
+/** How the bottom bar marks the selected tab. */
+enum class BottomBarItemStyle {
+    /** Material's: a pill indicator, the selected label in `onSurfaceVariant`. */
+    Material,
+
+    /** An indicator with `shapes.small` corners and the selected label in `onSurface`. */
+    Squared,
+}
+
+/** The sheet drag handle and an unselected radio button. */
+enum class SelectionControlStyle {
+    /** Material's `onSurfaceVariant`. */
+    Material,
+
+    /** The quieter `outline` role (still 3:1 on the surface in a brand that sets it so). */
+    Outline,
 }
 
 /** The shell's bottom navigation bar. */

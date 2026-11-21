@@ -196,10 +196,11 @@ both platforms name screens alike.
 
 **Settings** (`Settings(options:)`): theme, language, notifications (signed in), about, legal
 links (opened in Safari) and sign out. `SettingsOptions` mirrors Android's (`showNotifications`,
-`languages`, `sections`, `aboutNote`, `aboutRows`). An app's own `SettingsSection(title:) { rows }`
+`languages`, `sections`, `aboutNote`, `aboutRows`, `showPrivacyLink`). An app's own `SettingsSection(title:) { rows }`
 goes above the shared ones. `SettingsOptions(aboutNote: …) { rows }` adds the app's rows in About,
 under Terms of use; draw them with `SettingsLinkRow(label) { … }`, the style of Privacy and Terms.
-The diagnostics row is Android-only. A language picked in the app applies at the next launch, and
+The diagnostics row is Android-only. On a flat (Gallery) pack the tab keeps its large title visible
+at rest (`flatPageChrome(largeTitle: true)`); pages with inline titles use plain `flatPageChrome()`. A language picked in the app applies at the next launch, and
 the screen says so (a shared string).
 
 **Auth** (`Auth(options:)`, the gate): sign-in, registration, forgot password and the reset link

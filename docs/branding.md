@@ -120,6 +120,20 @@ appDefinition {
   `surface_container`. The default is `BottomBarStyle.Container`. `Surface` needs
   `SurfaceStyle.Hairline` and is ignored on a Shadow pack, which needs the container color to set
   the bar apart.
+- **Opt-in controls** (each default is Material's own look, so an app that doesn't set it renders
+  as before; Android, since iOS already draws these the platform's way):
+  - `buttons = ButtonStyle.Squared`: buttons take `shapes.small` corners and 600-weight labels; the
+    outlined button gets a 1 dp `outline` border and a `primary` label (3:1 edge). Default `Pill`.
+  - `bottomBarItems = BottomBarItemStyle.Squared`: the selected tab's 56 x 32 indicator takes
+    `shapes.small` corners, and its label is `onSurface`. Default `Material`.
+  - `selectionControls = SelectionControlStyle.Outline`: sheet drag handles and unselected radio
+    buttons in `outline`. Shared sheets use it; an app's own sheets pass
+    `dragHandle = { AppSheetDragHandle() }` and radios `colors = appRadioButtonColors()`. Default `Material`.
+  - `valueRows = ValueRowLayout.Disclosure`: `SettingsValueRow` puts the value at the trailing edge
+    (at most half the row) with a chevron on rows that open something, as iOS draws them.
+- Bottom-bar labels never break inside a word, on every pack: a label renders at the user's full font
+  size whenever it fits, may wrap between words as Material's does, and shrinks (with its line
+  height) only as far as a word needs to fit its tab, never below its 100 % size.
 - Vary a pack with `copy`: `StylePack.Gallery.copy(sizing = StylePack.Gallery.sizing.copy(controlHeight = 56.dp))`.
 - With Android's "Remove animations" on, every transition becomes a 150 ms crossfade, and
   `AppTheme.reducedMotion` is true so features can stop their own ambient animations.

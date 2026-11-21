@@ -12,6 +12,9 @@ import com.whitelabel.core.designsystem.motion.LocalNavIsPop
 import com.whitelabel.core.designsystem.motion.LocalSharedTransitionScope
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.designsystem.theme.BottomBarStyle
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.ui.graphics.Color
+import com.whitelabel.core.designsystem.theme.BottomBarItemStyle
 import com.whitelabel.core.designsystem.theme.SurfaceStyle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -230,6 +233,15 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
     // Opt-in (BottomBarStyle.Surface): the hairline alone separates a bar drawn on the page's
     // own surface. Material's bar has no tonal elevation, so surface stays untinted.
     val onSurface = hairline && AppTheme.style.bottomBar == BottomBarStyle.Surface
+    // Opt-in (BottomBarItemStyle.Squared): Material's item has no indicator shape, so its own
+    // indicator and ripple are hidden and SquaredNavigationBarItem draws both with the pack's small corners.
+    val squared = AppTheme.style.bottomBarItems == BottomBarItemStyle.Squared
+    val scheme = MaterialTheme.colorScheme
+    val colors = if (squared) {
+        NavigationBarItemDefaults.colors(selectedTextColor = scheme.onSurface, indicatorColor = Color.Transparent)
+    } else {
+        NavigationBarItemDefaults.colors()
+    }
     Column {
         if (hairline) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         NavigationBar(
@@ -238,12 +250,24 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
         ) {
             tabs.forEach { tab ->
                 val label = stringResource(tab.label)
-                NavigationBarItem(
-                    selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true,
-                    onClick = { navController.navigateToTab(tab.route) },
-                    icon = { Icon(tab.icon, contentDescription = null) },
-                    label = { Text(label) },
-                )
+                val selected = destination?.hierarchy?.any { it.hasRoute(tab.route::class) } == true
+                if (squared) {
+                    SquaredNavigationBarItem(
+                        selected = selected,
+                        onClick = { navController.navigateToTab(tab.route) },
+                        icon = { Icon(tab.icon, contentDescription = null) },
+                        label = { TabLabel(label) },
+                        colors = colors,
+                    )
+                } else {
+                    NavigationBarItem(
+                        selected = selected,
+                        onClick = { navController.navigateToTab(tab.route) },
+                        icon = { Icon(tab.icon, contentDescription = null) },
+                        label = { TabLabel(label) },
+                        colors = colors,
+                    )
+                }
             }
         }
     }

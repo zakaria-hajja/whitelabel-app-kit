@@ -57,6 +57,7 @@ settings(SettingsOptions(showNotifications = true, languages = listOf("en", "fr"
 | `sections` | none | The app's own sections, shown above the shared ones (see below) |
 | `aboutNote` | none | Follows the app name and version on the About line: "Munch 0.1.0 · Your data stays on this phone." |
 | `aboutRows` | none | The app's own rows in About, under Terms of use (and above Diagnostics), e.g. "Open-source licences". Draw them with `SettingsLinkRow` |
+| `showPrivacyLink` | `true` | `false` drops About's "Privacy policy" row, for an app that shows its own elsewhere on the tab. Terms of use stays |
 
 - **Appearance:** theme and language are rows showing their current value; a tap opens a sheet
   where a choice applies at once and **Done** closes it.

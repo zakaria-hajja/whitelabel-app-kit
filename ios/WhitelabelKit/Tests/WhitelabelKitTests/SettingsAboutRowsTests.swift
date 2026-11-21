@@ -36,4 +36,17 @@ final class SettingsAboutRowsTests: XCTestCase {
         XCTAssertEqual(taps, 1)
         XCTAssertEqual(row.label, "Open-source licences")
     }
+
+    /** P-19: an app that shows its own privacy row drops About's; Terms stays. */
+    func testThePrivacyLinkCanBeDropped() {
+        XCTAssertEqual(SettingsList.aboutLinks(hasSupport: true, hasAppRows: true, showsPrivacy: false), [.support, .terms, .appRows])
+        XCTAssertEqual(SettingsList.aboutLinks(hasSupport: false, hasAppRows: false, showsPrivacy: false), [.terms])
+    }
+
+    func testThePrivacyLinkShowsByDefault() {
+        XCTAssertTrue(SettingsOptions().showPrivacyLink)
+        XCTAssertTrue(SettingsOptions { SettingsLinkRow("Credits") {} }.showPrivacyLink)
+        XCTAssertFalse(SettingsOptions(showPrivacyLink: false).showPrivacyLink)
+        XCTAssertFalse(SettingsOptions(showPrivacyLink: false) { SettingsLinkRow("Credits") {} }.showPrivacyLink)
+    }
 }

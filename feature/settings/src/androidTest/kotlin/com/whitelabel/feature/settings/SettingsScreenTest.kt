@@ -28,6 +28,10 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import assertk.assertions.isEqualTo
 import assertk.assertions.isGreaterThanOrEqualTo
 import com.whitelabel.core.designsystem.theme.StylePack
+import com.whitelabel.core.designsystem.theme.ValueRowLayout
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -278,5 +282,59 @@ class SettingsScreenTest {
     @Test fun materialValueRowKeepsItsHeight() {
         rule.setContent { AppTheme(stylePack = StylePack.Material) { SettingsValueRow("Theme", "System default", onClick = {}) } }
         assertThat(kotlin.math.abs((rule.onNodeWithText("Theme").getUnclippedBoundsInRoot().height - 48.dp).value)).isLessThan(0.5f)
+    }
+
+    private val disclosure = StylePack.Gallery.copy(valueRows = ValueRowLayout.Disclosure)
+
+    private fun disclosureRow(value: String, onClick: (() -> Unit)?) {
+        rule.setContent {
+            AppTheme(stylePack = disclosure) {
+                SettingsValueRow("Remind me at", value, onClick = onClick, modifier = Modifier.testTag("row"))
+            }
+        }
+    }
+
+    /** P-17: the value hugs the trailing edge, then a chevron at the gutter (as iOS). */
+    @Test fun disclosureRow_valueHugsTheChevronAtTheEnd() {
+        disclosureRow("20:00", onClick = {})
+        val row = rule.onNodeWithTag("row").getUnclippedBoundsInRoot()
+        val chevron = rule.onNodeWithTag(SETTINGS_ROW_CHEVRON, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val value = bounds("20:00")
+        assertThat(kotlin.math.abs((row.right - 20.dp - chevron.right).value)).isLessThan(0.5f)
+        assertThat(chevron.left - value.right).isLessThan(12.dp)
+        assertThat(value.left).isGreaterThan(row.right - (row.right - row.left) / 2)
+    }
+
+    @Test fun disclosureRow_readOnlyHasNoChevron() {
+        disclosureRow("20:00", onClick = null)
+        rule.onNodeWithTag(SETTINGS_ROW_CHEVRON, useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test fun disclosureRow_isOneButton() {
+        disclosureRow("20:00", onClick = {})
+        rule.onNodeWithText("Remind me at")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(hasText("20:00"))
+    }
+
+    /** A long value wraps in at most half the row instead of crushing the label. */
+    @Test fun disclosureRow_longValueKeepsToHalfTheRow() {
+        disclosureRow("Two days before, at 20:00, and again on the morning", onClick = {})
+        val row = rule.onNodeWithTag("row").getUnclippedBoundsInRoot()
+        val value = bounds("Two days before, at 20:00, and again on the morning")
+        assertThat(value.right - value.left).isLessThan((row.right - row.left) / 2 + 0.5.dp)
+        assertThat(bounds("Remind me at").right).isLessThan(value.left + 0.5.dp)
+    }
+
+    /** P-19: an app with its own privacy row drops About's, keeping Terms. */
+    @Test fun aboutPrivacyLink_canBeDropped() {
+        show(SettingsState(appName = "Sample"), SettingsOptions(showPrivacyLink = false))
+        rule.onNodeWithText("Terms of use").performScrollTo().assertIsDisplayed()
+        rule.onNodeWithText("Privacy policy").assertDoesNotExist()
+    }
+
+    @Test fun aboutPrivacyLink_showsByDefault() {
+        show(SettingsState(appName = "Sample"))
+        rule.onNodeWithText("Privacy policy").performScrollTo().assertIsDisplayed()
     }
 }

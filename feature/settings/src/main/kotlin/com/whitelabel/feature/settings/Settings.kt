@@ -19,6 +19,8 @@ import kotlinx.serialization.Serializable
  * [aboutNote] follows the name and version on the About line (e.g. "Your data stays on this phone.").
  * [aboutRows] are the app's rows under the legal links in About, e.g. its open-source licences; draw
  * them with [SettingsLinkRow]. They come after Terms of use and before Diagnostics; null adds none.
+ * [showPrivacyLink] false drops About's "Privacy policy" row, for an app that shows its own elsewhere
+ * on the tab; Terms of use stays.
  */
 data class SettingsOptions(
     val showNotifications: Boolean = true,
@@ -26,6 +28,7 @@ data class SettingsOptions(
     val sections: List<SettingsSection> = emptyList(),
     @StringRes val aboutNote: Int? = null,
     val aboutRows: (@Composable () -> Unit)? = null,
+    val showPrivacyLink: Boolean = true,
 )
 
 /**

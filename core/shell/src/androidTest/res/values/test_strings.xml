@@ -2,4 +2,9 @@
 <resources>
     <string name="test_tab_one">Tab one</string>
     <string name="test_tab_two">Tab two</string>
+    <string name="test_tab_today">Today</string>
+    <string name="test_tab_calendar">Calendar</string>
+    <string name="test_tab_garden">Garden</string>
+    <string name="test_tab_settings">Settings</string>
+    <string name="test_tab_long">Notification preferences</string>
 </resources>
