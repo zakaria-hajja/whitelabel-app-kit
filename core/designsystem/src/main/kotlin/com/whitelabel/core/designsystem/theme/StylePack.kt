@@ -93,6 +93,11 @@ data class Corners(
     val small: Dp,
     val medium: Dp,
     val large: Dp,
+    /**
+     * `labelLarge`'s weight, which every Material button label uses, including raw `TextButton`s in
+     * dialogs, date and time pickers and snackbar actions. `null` keeps Material's 500.
+     */
+    val labelWeight: FontWeight? = null,
     val extraSmall: Dp? = null,
     val extraLarge: Dp? = null,
 )
