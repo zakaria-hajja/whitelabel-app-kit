@@ -140,6 +140,17 @@ appDefinition {
   - `bottomBarLabelMaxFontScale = 1.5f`: bottom-bar labels stop growing at 150 % of their default
     size (at least 1; iOS tab labels don't scale at all). They still shrink to fit as below, never
     under their 100 % size. Default `null`: they follow the user's full font scale.
+- **Opt-in chrome text** (a `TextSpec`: size, line height, weight, letter spacing and which brand
+  font, `BrandFont.Body` by default; unset keeps today's role, so Munch and every app that doesn't
+  set it render as before):
+  - `sectionCaptionText`: the Caption section header's text, on every `AppSectionHeader` (the shared
+    Settings sections and an app's own). Still uppercase and `onSurfaceVariant`. Unset:
+    `labelSmall` (11 sp / 500) tracked 0.12 em on Android, the label role tracked 1.32 pt on iOS.
+    Example, a 12/16 600 eyebrow: `sectionCaptionText = TextSpec(12.sp, 16.sp, FontWeight.SemiBold, letterSpacing = 0.6.sp)`.
+    iOS has the same field (`TextSpec(size: 12, weight: .semibold, tracking: 0.6)`; no line height,
+    as the header is one line); set it in the app's Swift pack too, so both platforms match.
+  - `flatTopBarTitleText` (Android): the flat `AppScaffold` title, for example on Settings
+    sub-pages. Unset: `headlineSmall`. iOS pages keep the system navigation title.
 - Bottom-bar labels never break inside a word, on every pack: a label renders at the user's full font
   size (or the pack's cap) whenever it fits, may wrap between words as Material's does, and shrinks
   (with its line height) only as far as a word needs to fit its tab, never below its 100 % size.
