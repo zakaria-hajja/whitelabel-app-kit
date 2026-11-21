@@ -131,9 +131,16 @@ appDefinition {
     `dragHandle = { AppSheetDragHandle() }` and radios `colors = appRadioButtonColors()`. Default `Material`.
   - `valueRows = ValueRowLayout.Disclosure`: `SettingsValueRow` puts the value at the trailing edge
     (at most half the row) with a chevron on rows that open something, as iOS draws them.
+  - `type = ….type.copy(labelWeight = FontWeight.SemiBold)`: `labelLarge` takes that weight, so
+    every Material button label follows it, including raw `TextButton`s in dialogs, the date and
+    time pickers' buttons and snackbar actions (which `ButtonStyle.Squared` doesn't reach). Other
+    `labelLarge` users (chips, segmented buttons) follow too. Default `null`: Material's 500.
+  - `bottomBarLabelMaxFontScale = 1.5f`: bottom-bar labels stop growing at 150 % of their default
+    size (at least 1; iOS tab labels don't scale at all). They still shrink to fit as below, never
+    under their 100 % size. Default `null`: they follow the user's full font scale.
 - Bottom-bar labels never break inside a word, on every pack: a label renders at the user's full font
-  size whenever it fits, may wrap between words as Material's does, and shrinks (with its line
-  height) only as far as a word needs to fit its tab, never below its 100 % size.
+  size (or the pack's cap) whenever it fits, may wrap between words as Material's does, and shrinks
+  (with its line height) only as far as a word needs to fit its tab, never below its 100 % size.
 - Vary a pack with `copy`: `StylePack.Gallery.copy(sizing = StylePack.Gallery.sizing.copy(controlHeight = 56.dp))`.
 - With Android's "Remove animations" on, every transition becomes a 150 ms crossfade, and
   `AppTheme.reducedMotion` is true so features can stop their own ambient animations.
