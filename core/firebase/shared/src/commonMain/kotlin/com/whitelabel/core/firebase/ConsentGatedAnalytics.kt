@@ -17,8 +17,9 @@ import kotlinx.coroutines.launch
  *
  * - Events are moments: one tracked before consent resolves is dropped, not queued.
  * - User properties are state (last write wins), so one set while consent is [ConsentState.Unknown]
- *   waits: the latest value per name is kept and sent once consent resolves, or discarded when it
- *   [fails][ConsentState.Failed]. After that the gate is the same as for events. [scope] (the
+ *   waits: the latest value per name is kept and sent once consent resolves with analytics allowed,
+ *   or discarded when it resolves with analytics declined or [fails][ConsentState.Failed]. After that
+ *   the gate is the same as for events. [scope] (the
  *   application scope) runs the flush, so a property set once at app start reaches the SDK even
  *   when nothing is set after consent resolves.
  */
@@ -63,7 +64,8 @@ class ConsentGatedAnalytics(
     private fun settleLocked(state: ConsentState) {
         val waiting = pending ?: return
         pending = null
-        if (state is ConsentState.Resolved) waiting.values.forEach(inner::setUserProperty)
+        // Only with analytics allowed: with collection off the SDK can still store a property and send it later.
+        if (state is ConsentState.Resolved && state.analyticsAllowed) waiting.values.forEach(inner::setUserProperty)
     }
 }
 

@@ -104,6 +104,35 @@ class ConsentGatedAnalyticsTest {
         assertThat(inner.userProperties).isEmpty()
     }
 
+    @Test fun `queued user properties are discarded when consent resolves with analytics declined`() = runTest {
+        val inner = RecordingAnalytics()
+        val state = MutableStateFlow<ConsentState>(ConsentState.Unknown)
+        val gated = ConsentGatedAnalytics(inner, state, backgroundScope.plus(UnconfinedTestDispatcher(testScheduler)))
+        gated.setUserProperty(UserProperty("bucket", "early"))
+
+        // With collection off the SDK could still store a property locally and send it later.
+        state.value = ConsentState.Resolved(canRequestAds = true, analyticsAllowed = false)
+        assertThat(inner.userProperties).isEmpty()
+
+        // Allowing analytics later in the launch does not bring the discarded value back.
+        state.value = ConsentState.Resolved(canRequestAds = true, analyticsAllowed = true)
+        assertThat(inner.userProperties).isEmpty()
+    }
+
+    @Test fun `a set after analytics was declined but before the flush ran discards the queue`() = runTest {
+        val inner = RecordingAnalytics()
+        val state = MutableStateFlow<ConsentState>(ConsentState.Unknown)
+        val gated = ConsentGatedAnalytics(inner, state, backgroundScope.plus(StandardTestDispatcher(testScheduler)))
+        gated.setUserProperty(UserProperty("bucket", "queued"))
+        state.value = ConsentState.Resolved(canRequestAds = false, analyticsAllowed = false)
+
+        // After resolution the gate is unchanged: a Resolved state forwards the new call itself.
+        gated.setUserProperty(UserProperty("streak", "after"))
+        advanceUntilIdle()
+
+        assertThat(inner.userProperties).containsExactly(UserProperty("streak", "after"))
+    }
+
     @Test fun `user properties after consent resolved are forwarded at once`() = runTest {
         val inner = RecordingAnalytics()
         val state = MutableStateFlow<ConsentState>(ConsentState.Resolved(canRequestAds = false, analyticsAllowed = true))

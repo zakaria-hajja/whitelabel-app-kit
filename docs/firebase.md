@@ -216,11 +216,13 @@ analytics.setUserProperty("garden_size_bucket", "3_5")          // or setUserPro
 
 - **Consent:** a property is state, not a moment, so it waits for consent instead of being dropped.
   While consent is still unknown (every launch starts that way, until UMP answers), the latest value
-  of each name is kept in memory and sent once consent resolves; a name set twice is sent once, with
-  its last value. If consent fails, the waiting values are discarded and nothing is sent. After that
-  the gate is the same as `track()`: resolved sends at once, failed drops the call. So setting the
-  property once per app start (a ViewModel's `init`, app start-up) is enough. Waiting values live
-  only in memory and only for that launch; nothing is written to disk.
+  of each name is kept in memory and sent once consent resolves with analytics allowed; a name set
+  twice is sent once, with its last value. If the user declines analytics, or consent fails, the
+  waiting values are discarded and nothing is sent (with collection off, the SDK could still store a
+  property and send it later). After that the gate is the same as `track()`: resolved sends at once,
+  failed drops the call. So setting the property once per app start (a ViewModel's `init`, app
+  start-up) is enough. Waiting values live only in memory and only for that launch; nothing is
+  written to disk.
 - **Without Firebase** (`firebase.enabled=false`, or a Release build of `debug`) nothing is sent:
   the shell's logging `Analytics` writes `user_property name=value` to the log, as it does for events.
   The fake Firebase logs the same line behind the consent gate.
