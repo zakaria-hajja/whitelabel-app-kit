@@ -37,7 +37,18 @@ data class StylePack(
     val bottomBarItems: BottomBarItemStyle = BottomBarItemStyle.Material,
     /** The sheet drag handle and unselected radio buttons (`AppSheetDragHandle`, `appRadioButtonColors`). */
     val selectionControls: SelectionControlStyle = SelectionControlStyle.Material,
+    /**
+     * The biggest font scale the shell's bottom-bar labels follow (1.5 = they stop growing at 150 %),
+     * as iOS tab labels don't scale. At least 1. `null`, the default, follows the user's full scale.
+     */
+    val bottomBarLabelMaxFontScale: Float? = null,
 ) {
+    init {
+        require(bottomBarLabelMaxFontScale == null || bottomBarLabelMaxFontScale >= 1f) {
+            "bottomBarLabelMaxFontScale must be at least 1, was $bottomBarLabelMaxFontScale"
+        }
+    }
+
     /** This pack with "Remove animations" applied: every motion becomes [MotionSpec.Reduced]. */
     fun reduced(): StylePack = copy(motion = MotionSpec.Reduced)
 
@@ -82,6 +93,13 @@ data class TypeTweaks(
     val headlineWeight: FontWeight?,
     /** Title styles use the body font instead of the display font. */
     val titlesUseBodyFont: Boolean,
+    /**
+     * `labelLarge`'s weight, so everything styled `labelLarge` follows it: every Material button
+     * label, including raw `TextButton`s in dialogs, date and time pickers and snackbar actions;
+     * `DropdownMenuItem`s, extended FABs, segmented buttons and chips; the native-ad call to action;
+     * and any `Text` an app styles `labelLarge`. `null` keeps Material's 500.
+     */
+    val labelWeight: FontWeight? = null,
 )
 
 /**

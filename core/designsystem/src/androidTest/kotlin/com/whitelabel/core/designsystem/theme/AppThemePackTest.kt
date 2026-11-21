@@ -1,9 +1,11 @@
 package com.whitelabel.core.designsystem.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Typography
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -46,6 +48,27 @@ class AppThemePackTest {
         capture(StylePack.Gallery)
         assertThat(shapes.small).isEqualTo(RoundedCornerShape(4.dp))
         assertThat(typography.displayLarge.fontWeight).isEqualTo(FontWeight.Normal)
+    }
+
+    /** The text style a raw Material TextButton (dialog, picker, snackbar action) gives its label. */
+    private fun textButtonLabelWeight(pack: StylePack): FontWeight? {
+        var weight: FontWeight? = null
+        compose.setContent {
+            AppTheme(darkTheme = false, stylePack = pack) {
+                TextButton(onClick = {}) { weight = LocalTextStyle.current.fontWeight; Text("OK") }
+            }
+        }
+        compose.waitForIdle()
+        return weight
+    }
+
+    @Test fun labelWeightReachesRawMaterialTextButtons() {
+        val pack = StylePack.Gallery.copy(type = StylePack.Gallery.type.copy(labelWeight = FontWeight.SemiBold))
+        assertThat(textButtonLabelWeight(pack)).isEqualTo(FontWeight.SemiBold)
+    }
+
+    @Test fun unsetLabelWeightKeepsMaterialsButtonLabel() {
+        assertThat(textButtonLabelWeight(StylePack.Gallery)).isEqualTo(Typography().labelLarge.fontWeight)
     }
 
     @Test fun galleryCardIsOutlined() {

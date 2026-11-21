@@ -5,8 +5,10 @@ import androidx.compose.foundation.text.modifiers.TextAutoSizeLayoutScope
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -17,29 +19,50 @@ import androidx.compose.ui.unit.sp
  * Material's label does, but it never breaks inside a word ("Calenda/r", bug 8zZ4HDYM): when a
  * word doesn't fit its tab, the label shrinks only as far as it needs to, and never below its
  * size at 100 % font scale. Its line height shrinks with it. The text, and so what a screen
- * reader reads, is always the whole label.
+ * reader reads, is always the whole label. With [maxFontScale] the full size stops growing at that
+ * scale.
  */
 @Composable
-internal fun TabLabel(text: String) {
+internal fun TabLabel(text: String, maxFontScale: Float? = null) {
     val style = LocalTextStyle.current
     if (!style.fontSize.isSp) {
         Text(text)
         return
     }
     val lineHeight = if (style.lineHeight.isSp) (style.lineHeight.value / style.fontSize.value).em else style.lineHeight
-    Text(text = text, style = style.copy(lineHeight = lineHeight), autoSize = TabLabelAutoSize(style.fontSize))
+    val maxFontSize = LocalDensity.current.tabLabelMaxFontSize(style.fontSize, maxFontScale)
+    Text(text = text, style = style.copy(lineHeight = lineHeight), autoSize = TabLabelAutoSize(maxFontSize, fullFontSize = style.fontSize))
 }
 
 /**
- * Picks the biggest size, from [maxFontSize] (the user's full size) down in 0.25 sp steps, at which
- * no word breaks across lines. The floor is [maxFontSize] at 100 % font scale; if even that breaks
- * a word, the label stays at the floor and wraps as Material's would.
+ * The size a tab label starts from: [fontSize] (the user's full size), or with [maxFontScale] no
+ * bigger than [fontSize] at 100 % times that scale (StylePack.bottomBarLabelMaxFontScale). Going
+ * through px keeps Android 14's non-linear font scaling right.
  */
-private data class TabLabelAutoSize(val maxFontSize: TextUnit) : TextAutoSize {
+internal fun Density.tabLabelMaxFontSize(fontSize: TextUnit, maxFontScale: Float?): TextUnit {
+    if (maxFontScale == null) return fontSize
+    val capped = (fontSize.value * maxFontScale).dp.toSp()
+    return if (capped.value < fontSize.value) capped else fontSize
+}
+
+/**
+ * The smallest size a tab label shrinks to: [fullFontSize] at 100 % font scale (the px size it
+ * would render at with no scaling), but never above [maxFontSize]. It comes from the full size,
+ * not from a capped [maxFontSize], so a cap never lets the label drop below 100 %.
+ */
+internal fun Density.tabLabelFloor(fullFontSize: TextUnit, maxFontSize: TextUnit): TextUnit =
+    minOf(maxFontSize.value, fullFontSize.value.dp.toSp().value).sp
+
+/**
+ * Picks the biggest size, from [maxFontSize] (the user's full size, or the pack's cap) down in
+ * 0.25 sp steps, at which no word breaks across lines. The floor is [fullFontSize] at 100 % font
+ * scale; if even that breaks a word, the label stays at the floor and wraps as Material's would.
+ */
+private data class TabLabelAutoSize(val maxFontSize: TextUnit, val fullFontSize: TextUnit) : TextAutoSize {
 
     override fun TextAutoSizeLayoutScope.getFontSize(constraints: Constraints, text: AnnotatedString): TextUnit {
         val max = maxFontSize.value
-        val floor = minOf(max, maxFontSize.value.dp.toSp().value)
+        val floor = tabLabelFloor(fullFontSize, maxFontSize).value
         fun fits(size: Float): Boolean {
             val layout = performLayout(constraints, text, size.sp)
             val ends = (0 until layout.lineCount - 1).map { layout.getLineEnd(it) }

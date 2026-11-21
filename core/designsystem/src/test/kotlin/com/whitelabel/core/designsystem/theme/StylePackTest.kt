@@ -2,10 +2,12 @@ package com.whitelabel.core.designsystem.theme
 
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import assertk.assertFailure
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
+import assertk.assertions.isInstanceOf
 import assertk.assertions.isTrue
 import assertk.assertions.isNull
 import com.whitelabel.core.designsystem.theme.MotionCurve.Spring
@@ -48,6 +50,16 @@ class StylePackTest {
         assertThat(StylePack.Material.bottomBar).isEqualTo(BottomBarStyle.Container)
         assertThat(StylePack.Gallery.bottomBar).isEqualTo(BottomBarStyle.Container)
         assertThat(StylePack.Gallery.copy(bottomBar = BottomBarStyle.Surface).bottomBar).isEqualTo(BottomBarStyle.Surface)
+    }
+
+    @Test fun `bottom-bar labels scale with the user's font unless an app caps them`() {
+        assertThat(StylePack.Material.bottomBarLabelMaxFontScale).isNull()
+        assertThat(StylePack.Gallery.bottomBarLabelMaxFontScale).isNull()
+        assertThat(StylePack.Gallery.copy(bottomBarLabelMaxFontScale = 1.5f).bottomBarLabelMaxFontScale).isEqualTo(1.5f)
+    }
+
+    @Test fun `a bottom-bar label cap below 100 % is rejected`() {
+        assertFailure { StylePack.Gallery.copy(bottomBarLabelMaxFontScale = 0.9f) }.isInstanceOf(IllegalArgumentException::class)
     }
 
     @Test fun `gallery chrome follows the design`() {

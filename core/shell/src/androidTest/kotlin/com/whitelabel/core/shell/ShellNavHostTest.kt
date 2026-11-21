@@ -263,6 +263,31 @@ class ShellNavHostTest {
         assertThat(width).isGreaterThanOrEqualTo(full / 2f)
     }
 
+    /**
+     * With StylePack.bottomBarLabelMaxFontScale = 1.5 at 200 %, labels that fit render at 150 % of
+     * their default size (three quarters of the 200 % width) instead of the user's full size.
+     */
+    @Test
+    fun cappedLabelsAt200Percent_renderAtTheCap() {
+        showFour(StylePack.Gallery.copy(bottomBarLabelMaxFontScale = 1.5f), fontScale = 2f, entries = four.take(3))
+        for (text in listOf("Today", "Calendar", "Garden")) {
+            val layout = label(text)
+            assertThat(layout.lineCount).isEqualTo(1)
+            val full = lineWidth(fullSize(text))
+            assertThat(lineWidth(layout)).isLessThan(full * 0.9f)
+            assertThat(lineWidth(layout)).isGreaterThanOrEqualTo(full / 2f)
+        }
+    }
+
+    /** Below the cap the cap changes nothing: at 130 % a 1.5 cap keeps the full size. */
+    @Test
+    fun cappedLabelsBelowTheCap_keepTheirFullSize() {
+        showFour(StylePack.Gallery.copy(bottomBarLabelMaxFontScale = 1.5f), fontScale = 1.3f, entries = four.take(3))
+        for (text in listOf("Today", "Calendar", "Garden")) {
+            assertThat(lineWidth(label(text))).isCloseTo(lineWidth(fullSize(text)), 1f)
+        }
+    }
+
     /** A label too long for its tab at 100 % wraps between its words as before: no ellipsis, no shrink. */
     @Test
     fun longLabelAtDefaultScale_wrapsBetweenWordsAsBefore() {
