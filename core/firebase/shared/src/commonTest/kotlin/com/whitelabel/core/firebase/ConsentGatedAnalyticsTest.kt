@@ -12,6 +12,7 @@ import com.whitelabel.core.analytics.CrashReporter
 import com.whitelabel.core.analytics.RecordingAnalytics
 import com.whitelabel.core.analytics.UserProperty
 import com.whitelabel.core.consent.ConsentState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -21,6 +22,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ConsentGatedAnalyticsTest {
     private class Recorder : Analytics, CrashReporter {
         val events = mutableListOf<AnalyticsEvent>()
