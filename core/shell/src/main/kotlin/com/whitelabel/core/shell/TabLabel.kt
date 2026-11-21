@@ -46,6 +46,14 @@ internal fun Density.tabLabelMaxFontSize(fontSize: TextUnit, maxFontScale: Float
 }
 
 /**
+ * The smallest size a tab label shrinks to: [fullFontSize] at 100 % font scale (the px size it
+ * would render at with no scaling), but never above [maxFontSize]. It comes from the full size,
+ * not from a capped [maxFontSize], so a cap never lets the label drop below 100 %.
+ */
+internal fun Density.tabLabelFloor(fullFontSize: TextUnit, maxFontSize: TextUnit): TextUnit =
+    minOf(maxFontSize.value, fullFontSize.value.dp.toSp().value).sp
+
+/**
  * Picks the biggest size, from [maxFontSize] (the user's full size, or the pack's cap) down in
  * 0.25 sp steps, at which no word breaks across lines. The floor is [fullFontSize] at 100 % font
  * scale; if even that breaks a word, the label stays at the floor and wraps as Material's would.
@@ -54,7 +62,7 @@ private data class TabLabelAutoSize(val maxFontSize: TextUnit, val fullFontSize:
 
     override fun TextAutoSizeLayoutScope.getFontSize(constraints: Constraints, text: AnnotatedString): TextUnit {
         val max = maxFontSize.value
-        val floor = minOf(max, fullFontSize.value.dp.toSp().value)
+        val floor = tabLabelFloor(fullFontSize, maxFontSize).value
         fun fits(size: Float): Boolean {
             val layout = performLayout(constraints, text, size.sp)
             val ends = (0 until layout.lineCount - 1).map { layout.getLineEnd(it) }
