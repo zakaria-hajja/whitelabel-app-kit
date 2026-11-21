@@ -19,9 +19,11 @@ import kotlinx.coroutines.launch
  * - User properties are state (last write wins), so one set while consent is [ConsentState.Unknown]
  *   waits: the latest value per name is kept and sent once consent resolves with analytics allowed,
  *   or discarded when it resolves with analytics declined or [fails][ConsentState.Failed]. After that
- *   the gate is the same as for events. [scope] (the
- *   application scope) runs the flush, so a property set once at app start reaches the SDK even
- *   when nothing is set after consent resolves.
+ *   the gate is the same as for events. [scope] (the application scope) runs the flush, so a property
+ *   set once at app start reaches the SDK even when nothing is set after consent resolves.
+ *
+ * With Firebase on, [consent] is the consent the collection applier has already applied to the SDKs,
+ * not the raw consent state, so nothing reaches an SDK before its collection flag is switched on.
  */
 class ConsentGatedAnalytics(
     private val inner: Analytics,
@@ -31,7 +33,8 @@ class ConsentGatedAnalytics(
     private val lock = SynchronizedObject()
 
     // Waiting user properties by name, in first-set order. Null once the first resolution was handled.
-    // At most 25 names (Firebase's per-project limit), so it stays small.
+    // Normally at most 25 names (Firebase's per-project limit). Nothing enforces that, but it is in memory,
+    // for one launch.
     private var pending: LinkedHashMap<String, UserProperty>? = LinkedHashMap()
 
     init {

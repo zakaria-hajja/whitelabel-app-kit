@@ -224,6 +224,10 @@ analytics.setUserProperty("garden_size_bucket", "3_5")          // or setUserPro
   dropped. After that the gate is the same as `track()`: resolved sends at once, failed drops the
   call. So setting the property once per app start (a ViewModel's `init`, app start-up) is enough.
   Waiting values live only in memory and only for that launch; nothing is written to disk.
+  With Firebase on, the gate follows the consent the collection switch has already applied, not the
+  raw answer: the queue is sent only after collection is switched on (the manifest and `Info.plist`
+  start it off, and the SDK drops a call made while it is off). Events and crash reports follow the
+  same order.
 - **After a decline:** a property set once consent has resolved with analytics declined still
   follows that gate and is sent (consent mode, no identifiers), while the same property queued a
   moment before the answer is dropped. Whether a decliner should get no user properties at all is
