@@ -94,8 +94,10 @@ data class TypeTweaks(
     /** Title styles use the body font instead of the display font. */
     val titlesUseBodyFont: Boolean,
     /**
-     * `labelLarge`'s weight, which every Material button label uses, including raw `TextButton`s in
-     * dialogs, date and time pickers and snackbar actions. `null` keeps Material's 500.
+     * `labelLarge`'s weight, so everything styled `labelLarge` follows it: every Material button
+     * label, including raw `TextButton`s in dialogs, date and time pickers and snackbar actions;
+     * `DropdownMenuItem`s, extended FABs, segmented buttons and chips; the native-ad call to action;
+     * and any `Text` an app styles `labelLarge`. `null` keeps Material's 500.
      */
     val labelWeight: FontWeight? = null,
 )
