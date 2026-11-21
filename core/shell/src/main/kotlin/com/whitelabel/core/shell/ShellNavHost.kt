@@ -236,6 +236,8 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
     // Opt-in (BottomBarItemStyle.Squared): Material's item has no indicator shape, so its own
     // indicator and ripple are hidden and SquaredNavigationBarItem draws both with the pack's small corners.
     val squared = AppTheme.style.bottomBarItems == BottomBarItemStyle.Squared
+    // Opt-in: labels stop growing at the pack's font-scale cap; by default they follow the user's.
+    val labelMaxFontScale = AppTheme.style.bottomBarLabelMaxFontScale
     val scheme = MaterialTheme.colorScheme
     val colors = if (squared) {
         NavigationBarItemDefaults.colors(selectedTextColor = scheme.onSurface, indicatorColor = Color.Transparent)
@@ -256,7 +258,7 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
                         selected = selected,
                         onClick = { navController.navigateToTab(tab.route) },
                         icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { TabLabel(label) },
+                        label = { TabLabel(label, labelMaxFontScale) },
                         colors = colors,
                     )
                 } else {
@@ -264,7 +266,7 @@ private fun BottomBar(tabs: List<Tab>, navController: NavHostController) {
                         selected = selected,
                         onClick = { navController.navigateToTab(tab.route) },
                         icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { TabLabel(label) },
+                        label = { TabLabel(label, labelMaxFontScale) },
                         colors = colors,
                     )
                 }
