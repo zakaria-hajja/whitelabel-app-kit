@@ -7,13 +7,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.em
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.designsystem.theme.SectionHeaderStyle
+import com.whitelabel.core.designsystem.theme.sectionCaptionStyle
 
 /**
  * A section's title, as the app's style pack draws them: an accent title (Material) or a small
- * uppercase caption (Gallery). Use it for app screens' sections so they match the shared ones.
+ * uppercase caption (Gallery), whose text a pack can set with `StylePack.sectionCaptionText`. Use it
+ * for app screens' sections so they match the shared ones.
  */
 @Composable
 fun AppSectionHeader(text: String, modifier: Modifier = Modifier) {
@@ -33,7 +34,7 @@ fun AppSectionHeader(text: String, modifier: Modifier = Modifier) {
         )
         SectionHeaderStyle.Caption -> Text(
             text = text.uppercase(),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.12.em),
+            style = sectionCaptionStyle(AppTheme.style.sectionCaptionText, MaterialTheme.typography),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = padded,
         )

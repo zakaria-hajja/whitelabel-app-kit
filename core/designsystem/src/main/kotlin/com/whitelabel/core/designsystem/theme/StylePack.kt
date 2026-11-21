@@ -2,7 +2,9 @@ package com.whitelabel.core.designsystem.theme
 
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * Everything about an app's look except colors and fonts (those stay in brand resources): type
@@ -42,6 +44,13 @@ data class StylePack(
      * as iOS tab labels don't scale. At least 1. `null`, the default, follows the user's full scale.
      */
     val bottomBarLabelMaxFontScale: Float? = null,
+    /**
+     * The [SectionHeaderStyle.Caption] header's text (still uppercase, in `onSurfaceVariant`).
+     * `null` keeps `labelSmall` tracked 0.12 em. Ignored by [SectionHeaderStyle.Accent].
+     */
+    val sectionCaptionText: TextSpec? = null,
+    /** The [TopBarStyle.Flat] top bar's title. `null` keeps `headlineSmall`. Ignored by [TopBarStyle.Raised]. */
+    val flatTopBarTitleText: TextSpec? = null,
 ) {
     init {
         require(bottomBarLabelMaxFontScale == null || bottomBarLabelMaxFontScale >= 1f) {
@@ -101,6 +110,22 @@ data class TypeTweaks(
      */
     val labelWeight: FontWeight? = null,
 )
+
+/**
+ * A text style a pack sets for one piece of shared chrome, replacing the Material role it would
+ * use: size, line height, weight and tracking, in one of the brand fonts. Sizes are `sp`, so they
+ * still follow the system font scale.
+ */
+data class TextSpec(
+    val size: TextUnit,
+    val lineHeight: TextUnit,
+    val weight: FontWeight,
+    val letterSpacing: TextUnit = 0.sp,
+    val font: BrandFont = BrandFont.Body,
+)
+
+/** One of the app's two fonts: `brand_display` or `brand_body`. */
+enum class BrandFont { Display, Body }
 
 /**
  * Corner radii for Material's shape scale. [small], [medium] and [large] drive buttons, fields and

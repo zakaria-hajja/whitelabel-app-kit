@@ -79,4 +79,34 @@ final class StylePackTests: XCTestCase {
         XCTAssertFalse(FlatPageChrome.applies(to: .material))
         XCTAssertTrue(FlatPageChrome.applies(to: .gallery))
     }
+
+    /** No pack sets the caption's text, so Munch and every existing app keep theirs (Kotlin: ChromeTextTest). */
+    func testNoPackSetsCaptionText() {
+        XCTAssertNil(StylePack.material.sectionCaptionText)
+        XCTAssertNil(StylePack.gallery.sectionCaptionText)
+    }
+
+    func testUnsetCaptionKeepsTheLabelRoleAndItsTracking() {
+        let style = AppStyle(pack: .gallery, fonts: BrandFonts(displayName: nil, bodyName: nil))
+        XCTAssertEqual(AppSectionHeader.captionFont(style), style.typography.label)
+        XCTAssertEqual(AppSectionHeader.captionTracking(style.pack), 0.12 * 11, accuracy: 0.0001)
+    }
+
+    func testCaptionSpecSetsTheFontAndTracking() {
+        var pack = StylePack.gallery
+        pack.sectionCaptionText = TextSpec(size: 12, weight: .semibold, tracking: 0.6)
+        let fonts = BrandFonts(displayName: nil, bodyName: nil)
+        let style = AppStyle(pack: pack, fonts: fonts)
+        XCTAssertEqual(AppSectionHeader.captionFont(style), fonts.body(size: 12, relativeTo: .caption).weight(.semibold))
+        XCTAssertNotEqual(AppSectionHeader.captionFont(style), style.typography.label)
+        XCTAssertEqual(AppSectionHeader.captionTracking(pack), 0.6, accuracy: 0.0001)
+    }
+
+    func testCaptionSpecCanAskForTheDisplayFont() {
+        var pack = StylePack.gallery
+        pack.sectionCaptionText = TextSpec(size: 12, weight: .semibold, font: .display)
+        let fonts = BrandFonts(displayName: nil, bodyName: nil)
+        XCTAssertEqual(AppSectionHeader.captionFont(AppStyle(pack: pack, fonts: fonts)), fonts.display(size: 12, relativeTo: .caption).weight(.semibold))
+    }
 }
+

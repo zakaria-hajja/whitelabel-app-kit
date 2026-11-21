@@ -20,6 +20,11 @@ public struct StylePack: Equatable {
     public var sectionHeader: SectionHeaderStyle = .accent
     /** How a setting and its value sit in a row (`AppValueRow`). */
     public var valueRows: ValueRowLayout = .inline
+    /**
+     * The `.caption` section header's text (still uppercase, in `onSurfaceVariant`). `nil` keeps the
+     * label role tracked 0.12 em of 11 pt (Kotlin: StylePack.sectionCaptionText).
+     */
+    public var sectionCaptionText: TextSpec? = nil
 
     /** This pack with Reduce Motion applied: every movement becomes a short crossfade. */
     public func reduced() -> StylePack {
@@ -56,6 +61,31 @@ public struct StylePack: Equatable {
         valueRows: .stacked
     )
 }
+
+/**
+ * A text style a pack sets for one piece of shared chrome, replacing the role it would use: size
+ * (scaled with Dynamic Type), weight and tracking, in one of the brand fonts (Kotlin: TextSpec).
+ * The size needs a custom brand font: without one, the system fallback keeps its text style's
+ * size and only the weight and tracking apply.
+ * Kotlin's line height has no field here: SwiftUI sets no line height for a single line, and the
+ * chrome it styles is one line.
+ */
+public struct TextSpec: Equatable {
+    public var size: CGFloat
+    public var weight: Font.Weight
+    public var tracking: CGFloat
+    public var font: BrandFont
+
+    public init(size: CGFloat, weight: Font.Weight, tracking: CGFloat = 0, font: BrandFont = .body) {
+        self.size = size
+        self.weight = weight
+        self.tracking = tracking
+        self.font = font
+    }
+}
+
+/** One of the app's two fonts (Kotlin: BrandFont). */
+public enum BrandFont: Equatable { case display, body }
 
 /** Changes to the type roles; the fonts themselves come from the app's brand fonts. */
 public struct TypeTweaks: Equatable {
