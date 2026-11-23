@@ -45,6 +45,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
@@ -312,6 +313,27 @@ class AppActionScaffoldTest {
         withMessage = true
         rule.waitForIdle()
         assertThat(bounds("AppActionDock").top).isEqualTo(none)
+    }
+
+    @Test
+    fun aSlotKeepsItsStateWhenTheCallerPassesANewLambda() {
+        // The caller's lambda captures a value, so a new instance comes with each change of it.
+        var label by mutableStateOf("A")
+        show {
+            val captured = label
+            AppActionScaffold(
+                primary = { Box(Modifier.fillMaxWidth().height(56.dp)) },
+                secondary = {
+                    var taps by remember { mutableStateOf(0) }
+                    AppTextButton("$captured $taps", { taps++ }, Modifier.testTag("secondary"))
+                },
+            ) { Rows(2) }
+        }
+        rule.onNodeWithTag("secondary").performClick()
+        rule.onNodeWithTag("secondary").assertTextEquals("A 1")
+        label = "B"
+        rule.waitForIdle()
+        rule.onNodeWithTag("secondary").assertTextEquals("B 1")
     }
 
     // A keyboard over the shell's consumed nav bar: 300 from the window's bottom, so 252 below the
