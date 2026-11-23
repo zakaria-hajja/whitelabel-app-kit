@@ -171,8 +171,8 @@ class AppActionScaffoldTest {
         show(fontScale = 2f) {
             AppActionScaffold(
                 primary = { AppPrimaryButton("Continue to the next step", {}, Modifier.testTag("primary")) },
-                secondary = { AppTextButton("I don't remember", {}) },
-                finePrint = { Text("Everything stays on this phone. Nothing is shared, ever, with anyone.") },
+                secondary = { AppTextButton("Not now", {}) },
+                finePrint = { Text("A longer fine print line that wraps over several lines at large text sizes.") },
             ) { Rows(40) }
         }
         rule.onNodeWithTag("primary").assert(inDock).assertIsDisplayed()
@@ -240,7 +240,7 @@ class AppActionScaffoldTest {
         show {
             AppActionScaffold(
                 primary = { AppPrimaryButton("Continue", {}) },
-                snackbarHost = { Snackbar(Modifier.testTag("snackbar")) { Text("Removed 13 Oct") } },
+                snackbarHost = { Snackbar(Modifier.testTag("snackbar")) { Text("Item removed") } },
             ) { Rows(40) }
         }
         assertThat(bounds("snackbar").bottom).isLessThanOrEqualTo(bounds("AppActionDock").top - 8.dp)

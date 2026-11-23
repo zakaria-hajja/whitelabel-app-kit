@@ -76,9 +76,9 @@ final class ActionScaffoldTests: XCTestCase {
         let extras = ActionScaffold(scrolls: false) { rows } primary: {
             Button(longLabel) {}.buttonStyle(PrimaryButtonStyle())
         } secondary: {
-            Button("I don't remember") {}.buttonStyle(TextButtonStyle())
+            Button("Not now") {}.buttonStyle(TextButtonStyle())
         } finePrint: {
-            Text("Everything stays on this phone. Nothing is shared, ever, with anyone at all.")
+            Text("A longer fine print line that wraps over several lines at large text sizes.")
         }
         let plainSize = render(plain, dynamicType: .accessibility3)
         let extrasSize = render(extras, dynamicType: .accessibility3)

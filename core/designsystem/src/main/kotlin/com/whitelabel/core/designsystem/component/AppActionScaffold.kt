@@ -297,9 +297,9 @@ private fun PreviewDock(
         AppActionScaffold(
             primary = { AppPrimaryButton("Continue", {}, loading = loading) },
             topBar = { Text("Title", Modifier.padding(AppTheme.spacing.md), style = MaterialTheme.typography.titleLarge) },
-            secondary = if (withExtras) ({ AppTextButton("I don't remember", {}) }) else null,
+            secondary = if (withExtras) ({ AppTextButton("Not now", {}) }) else null,
             finePrint = if (withExtras) {
-                { Text("Everything stays on this phone.", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center) }
+                { Text("Fine print about this step.", style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center) }
             } else {
                 null
             },

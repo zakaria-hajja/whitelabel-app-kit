@@ -317,9 +317,9 @@ private struct ActionScaffoldPreview: View {
         } primary: {
             Button("Continue") {}.buttonStyle(PrimaryButtonStyle())
         } secondary: {
-            Button("I don't remember") {}.buttonStyle(TextButtonStyle())
+            Button("Not now") {}.buttonStyle(TextButtonStyle())
         } finePrint: {
-            Text("Everything stays on this phone.").font(.footnote).multilineTextAlignment(.center)
+            Text("Fine print about this step.").font(.footnote).multilineTextAlignment(.center)
         }
     }
 }
@@ -332,7 +332,7 @@ private struct ActionScaffoldPreview: View {
     ActionScaffold(alignment: .center) {
         Circle().fill(.tint).frame(width: 120, height: 120).frame(maxWidth: .infinity)
     } primary: {
-        Button("Plant it in my garden") {}.buttonStyle(PrimaryButtonStyle())
+        Button("Get started") {}.buttonStyle(PrimaryButtonStyle())
     }
 }
 #Preview("Keyboard") {
