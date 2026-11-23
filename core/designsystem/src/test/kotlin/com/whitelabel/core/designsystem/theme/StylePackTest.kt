@@ -39,6 +39,13 @@ class StylePackTest {
         assertThat(m.motion.pressScale).isEqualTo(0.98f)
     }
 
+    @Test fun `both packs size the action dock the same by default`() {
+        for (pack in listOf(StylePack.Material, StylePack.Gallery)) {
+            assertThat(pack.sizing.dockFadeHeight).isEqualTo(24.dp)
+            assertThat(pack.sizing.dockMaxFraction).isEqualTo(0.4f)
+        }
+    }
+
     @Test fun `material keeps today's chrome`() {
         val m = StylePack.Material
         assertThat(m.topBar).isEqualTo(TopBarStyle.Raised)

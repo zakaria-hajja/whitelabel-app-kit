@@ -222,7 +222,18 @@ enum class BottomBarStyle {
     Surface,
 }
 
-data class Sizing(val controlHeight: Dp, val listRowMinHeight: Dp, val screenGutter: Dp)
+data class Sizing(
+    val controlHeight: Dp,
+    val listRowMinHeight: Dp,
+    val screenGutter: Dp,
+    /** Height of the action dock's fade over content that scrolls on under it (`AppActionScaffold`). */
+    val dockFadeHeight: Dp = 24.dp,
+    /**
+     * The most of the available height the action dock may take before its fine print, then its
+     * secondary action, move to the end of the content (`AppActionScaffold`). The primary never moves.
+     */
+    val dockMaxFraction: Float = 0.4f,
+)
 
 /** Moments that may give haptic feedback. */
 enum class HapticEvent { Confirm, Success, Toggle }

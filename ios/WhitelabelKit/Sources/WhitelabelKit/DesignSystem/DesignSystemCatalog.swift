@@ -70,6 +70,20 @@ private struct PackSection: View {
             AppToggleRow("Push notifications", isOn: $notifications)
             EmptyStateView(title: "No items yet", message: "Add your first one to see it here.").frame(height: 140)
             ErrorStateView(message: "No internet connection. Check your connection and try again.") {}.frame(height: 140)
+            // The action dock in a small frame; real screens fill the window.
+            ActionScaffold {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    ForEach(1...8, id: \.self) { Text("Row \($0)").font(style.typography.body) }
+                }
+            } primary: {
+                Button("Continue") {}.buttonStyle(PrimaryButtonStyle())
+            } secondary: {
+                Button("Not now") {}.buttonStyle(TextButtonStyle())
+            } finePrint: {
+                Text("Fine print sits last.").font(style.typography.label).foregroundStyle(style.colors.onSurfaceVariant)
+            }
+            .frame(height: 320)
+            .overlay(Rectangle().stroke(style.colors.outlineVariant, lineWidth: 1))
         }
         .padding(style.pack.sizing.screenGutter)
         .background(style.colors.background)

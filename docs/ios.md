@@ -95,6 +95,13 @@ Kotlin, and the screens are SwiftUI. The Swift half of the foundation lives in `
     the pack's `press` curve. `AppValueRow` keeps the native List highlight. Munch's `CreatureRow`
     adopts it in the foundation bump;
   - `LoadingView`, `EmptyStateView`, `ErrorStateView`, `.appConfirm(…)`.
+  - `ActionScaffold` (Kotlin: `AppActionScaffold`): a full screen with its actions pinned in an
+    action dock at the bottom, above the keyboard and the home indicator (rules in
+    [`branding.md`](branding.md#action-dock-appactionscaffold--actionscaffold)). Pass
+    `scrolls: false` in `ImageRenderer` snapshot tests: the content is laid out without a
+    `ScrollView`, clipped to the space above the dock, and the 40 % rule still applies.
+    Put a screen's banner in its `banner` slot (8 above the dock), not in a bottom `.overlay`, and
+    pass the message line's text as `messageAnnouncement`.
 
   Labels wrap at every Dynamic Type size.
 - **Kit labels:** the kit's own labels live in `Resources/WhitelabelKit.xcstrings` (en, fr), which
