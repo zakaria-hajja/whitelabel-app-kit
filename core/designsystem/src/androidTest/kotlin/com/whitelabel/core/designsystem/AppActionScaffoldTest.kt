@@ -1,6 +1,15 @@
 package com.whitelabel.core.designsystem
 
 import androidx.activity.ComponentActivity
+import android.view.View
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.ui.platform.LocalView
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,9 +24,9 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
@@ -56,6 +65,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 
+private val StatusBar = 24.dp
+private val NavBar = 48.dp
+
 class AppActionScaffoldTest {
     @get:Rule
     val rule = createAndroidComposeRule<ComponentActivity>()
@@ -63,21 +75,51 @@ class AppActionScaffoldTest {
     private val inDock = hasAnyAncestor(hasTestTag("AppActionDock"))
     private val inContent = hasAnyAncestor(hasTestTag("AppActionScaffoldContent"))
 
-    /** A fixed-size window with no system insets, so heights are exact. */
+    /**
+     * The scaffold gets exactly [width] x [height], hosted as every app hosts it: in the shell,
+     * which pads for the system bars and consumes them (`ShellNavHost`). The window insets are
+     * fixed, so the thresholds don't depend on the device: a 24 status bar, a 48 three-button
+     * navigation bar and, when [keyboard] > 0, a keyboard of that height (measured, like the nav
+     * bar, from the bottom of the window).
+     */
     private fun show(
         width: Dp = 360.dp,
         height: Dp = 640.dp,
         fontScale: Float = 1f,
+        keyboard: Dp = 0.dp,
         content: @Composable () -> Unit,
     ) {
+        lateinit var view: View
+        var seenNavBar = -1
+        var seenKeyboard = -1
         rule.setContent {
+            view = LocalView.current
             val density = LocalDensity.current
+            seenNavBar = WindowInsets.navigationBars.getBottom(density)
+            seenKeyboard = WindowInsets.ime.getBottom(density)
             CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
                 AppTheme(stylePack = StylePack.Gallery) {
-                    Box(Modifier.size(width, height).consumeWindowInsets(WindowInsets.safeDrawing)) { content() }
+                    Box(Modifier.size(width, height + StatusBar + NavBar)) {
+                        val bars = WindowInsets.systemBars.asPaddingValues()
+                        Box(Modifier.fillMaxSize().padding(bars).consumeWindowInsets(bars)) { content() }
+                    }
                 }
             }
         }
+        fun px(dp: Dp) = with(rule.density) { dp.roundToPx() }
+        rule.runOnIdle {
+            val insets = WindowInsetsCompat.Builder()
+                .setInsets(WindowInsetsCompat.Type.statusBars(), Insets.of(0, px(StatusBar), 0, 0))
+                .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, px(NavBar)))
+                .setInsets(WindowInsetsCompat.Type.ime(), Insets.of(0, 0, 0, px(keyboard)))
+                .setVisible(WindowInsetsCompat.Type.ime(), keyboard > 0.dp)
+                .build()
+            ViewCompat.dispatchApplyWindowInsets(view, insets)
+        }
+        rule.waitForIdle()
+        // Fail loudly if the system replaced the fixed insets with the device's own.
+        assertThat(seenNavBar).isEqualTo(px(NavBar))
+        assertThat(seenKeyboard).isEqualTo(px(keyboard))
     }
 
     @Composable
@@ -146,8 +188,8 @@ class AppActionScaffoldTest {
 
     @Test
     fun overflowMovesFinePrintThenSecondary() {
-        // Dock chrome 12 + 16, items 8 apart: full dock 264, without fine print 156.
-        // 480 high: cap 192, so only the fine print moves.
+        // Dock chrome 12 + 16 (the shell already padded for the nav bar), items 8 apart: full dock
+        // 264, without fine print 156. 480 high: cap 192, so only the fine print moves.
         show(height = 480.dp, fontScale = 2f) { FixedDock() }
         rule.onNodeWithTag("fine").assert(inContent)
         rule.onNodeWithTag("secondary").assert(inDock)
@@ -271,6 +313,43 @@ class AppActionScaffoldTest {
         assertThat(bounds("AppActionDock").top).isEqualTo(none)
     }
 
+    // A keyboard over the shell's consumed nav bar: 300 from the window's bottom, so 252 below the
+    // scaffold. Extras are fixed: dock 12 + 56 + 8 + 20 + 8 + 20 + 16 = 140.
+
+    @Composable
+    private fun SmallDock() {
+        AppActionScaffold(
+            primary = { Box(Modifier.fillMaxWidth().height(56.dp).testTag("primary")) },
+            secondary = { Box(Modifier.size(120.dp, 20.dp).testTag("secondary")) },
+            finePrint = { Box(Modifier.size(120.dp, 20.dp).testTag("fine")) },
+        ) { Rows(3) }
+    }
+
+    @Test
+    fun theDockSitsOnAKeyboardOverAConsumedNavBar() {
+        show(height = 617.dp, keyboard = 300.dp) { SmallDock() }
+        // The dock's background runs to the edge; its parts sit on the keyboard.
+        assertThat(bounds("AppActionDock").bottom).isEqualTo(bounds("AppActionScaffold").bottom)
+        assertThat(bounds("primary").bottom).isLessThanOrEqualTo(bounds("AppActionScaffold").bottom - 252.dp)
+    }
+
+    @Test
+    fun aConsumedNavBarIsNotCountedTwiceAboveTheKeyboard() {
+        // 617 - 252 = 365 left above the keyboard: over 360, and 140 fits in 40 % of it (146).
+        show(height = 617.dp, keyboard = 300.dp) { SmallDock() }
+        rule.onNodeWithTag("fine").assert(inDock)
+        rule.onNodeWithTag("secondary").assert(inDock)
+    }
+
+    @Test
+    fun underThreeSixtyAboveAKeyboardOnlyThePrimaryStays() {
+        // 607 - 252 = 355 left: under 360, though 140 fits in 40 % of it (142).
+        show(height = 607.dp, keyboard = 300.dp) { SmallDock() }
+        rule.onNodeWithTag("fine").assert(inContent)
+        rule.onNodeWithTag("secondary").assert(inContent)
+        rule.onNodeWithTag("primary").assert(inDock)
+    }
+
     // Keyboard. The team AVD has a hardware keyboard, so the soft keyboard is forced on for these
     // tests (and set back after). The activity is edge to edge and resizes for the IME, as apps are.
     private fun withSoftKeyboard(block: () -> Unit) {
@@ -288,8 +367,8 @@ class AppActionScaffoldTest {
 
     /**
      * Extras are fixed 20 dp boxes, so only the keyboard decides where they go. [aboveKeyboard] sizes
-     * the window so that this much is left above the keyboard while it is up; without the keyboard,
-     * or when null, it fills the window.
+     * the window so that exactly this much is left between the status bar and the keyboard while it
+     * is up; without the keyboard, or when null, it fills the window.
      */
     private fun showWithField(aboveKeyboard: Dp?) {
         rule.runOnUiThread {
@@ -300,7 +379,9 @@ class AppActionScaffoldTest {
             val density = LocalDensity.current
             imeBottom = WindowInsets.ime.getBottom(density)
             AppTheme(stylePack = StylePack.Gallery) {
-                val window = aboveKeyboard?.takeIf { imeBottom > 0 }?.let { with(density) { it + imeBottom.toDp() } }
+                // The scaffold pads for the status bar itself, so it is added to the window too.
+                val top = WindowInsets.safeDrawing.getTop(density)
+                val window = aboveKeyboard?.takeIf { imeBottom > 0 }?.let { with(density) { it + (top + imeBottom).toDp() } }
                 Box(if (window == null) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(window)) {
                     AppActionScaffold(
                         primary = { AppPrimaryButton("Continue", {}, Modifier.testTag("primary")) },

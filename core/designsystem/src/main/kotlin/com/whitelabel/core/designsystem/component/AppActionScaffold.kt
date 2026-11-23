@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -31,6 +33,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -105,9 +108,13 @@ fun AppActionScaffold(
     val secondaryPart = remember(secondary) { secondary?.let { movableContentOf(it) } }
     val finePrintPart = remember(finePrint) { finePrint?.let { movableContentOf(it) } }
     val bottomInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
+    // What a parent already padded for (the shell pads for the system bars): the rules below weigh
+    // only the insets left to this scaffold, the same ones its padding uses.
+    var consumed by remember { mutableStateOf(NoInsets) }
 
     BoxWithConstraints(
         modifier
+            .onConsumedWindowInsetsChanged { consumed = it }
             .fillMaxSize()
             .testTag("AppActionScaffold")
             .background(background)
@@ -115,13 +122,13 @@ fun AppActionScaffold(
     ) {
         // With the keyboard up, the window effectively ends at the keyboard's top: the rule then
         // weighs the dock against the height left above it, and the keyboard isn't dock chrome.
-        val keyboard = WindowInsets.ime.getBottom(density)
+        val keyboard = WindowInsets.ime.exclude(consumed).getBottom(density)
         val available = if (constraints.hasBoundedHeight) constraints.maxHeight - keyboard else Int.MAX_VALUE
         val overflow = with(density) {
             dockOverflow(
                 available = available,
                 chrome = (DockTopPadding + DockBottomPadding).roundToPx() +
-                    (bottomInsets.getBottom(density) - keyboard).coerceAtLeast(0),
+                    (bottomInsets.exclude(consumed).getBottom(density) - keyboard).coerceAtLeast(0),
                 gap = spacing.sm.roundToPx(),
                 message = if (message != null) heights.message else 0,
                 primary = heights.primary,
@@ -193,6 +200,8 @@ fun AppActionScaffold(
         }
     }
 }
+
+private val NoInsets = WindowInsets(0, 0, 0, 0)
 
 /** The measured heights of the dock's parts in px, wherever each is shown (same width in both places). */
 @Stable
