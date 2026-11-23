@@ -159,12 +159,26 @@ final class ActionScaffoldTests: XCTestCase {
         emptyWindow.isHidden = true
         noneWindow.isHidden = true
     }
+
+    // MARK: Live: banner, announcement, keyboard
+
+    /** A banner (an undo, a snackbar) sits 8 above the dock, so it never covers the primary. */
+    func testABannerSitsEightAboveTheDock() {
+        let probe = Probe()
+        let window = host(BannerScreen(probe: probe))
+        settle { probe.primary != .zero && probe.banner != .zero }
+        XCTAssertNotEqual(probe.banner, .zero)
+        // The dock's top is its 12 top padding above the primary (no message).
+        XCTAssertEqual(probe.banner.maxY, probe.primary.minY - 12 - 8, accuracy: 0.5)
+        window.isHidden = true
+    }
 }
 
 @MainActor
 private final class Probe: ObservableObject {
     /** The message's height; nil renders nothing in the (still present) slot. */
     @Published var message: CGFloat? = 200
+    var banner: CGRect = .zero
     var primary: CGRect = .zero
     var finePrint: CGRect = .zero
     /** The content's frame; with `scrolls: false` it fills the space above the dock. */
@@ -201,5 +215,19 @@ private struct ProbeScreen: View {
     private var finePrint: some View {
         Color.green.frame(height: 40)
             .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: { probe.finePrint = $0 })
+    }
+}
+
+private struct BannerScreen: View {
+    let probe: Probe
+
+    var body: some View {
+        ActionScaffold { Color.clear.frame(height: 20) } primary: {
+            Color.blue.frame(height: 48)
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: { probe.primary = $0 })
+        } banner: {
+            Color.orange.frame(height: 60)
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: { probe.banner = $0 })
+        }
     }
 }

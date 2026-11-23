@@ -20,10 +20,13 @@ public enum ActionScaffoldAlignment: Equatable {
  * down, a `Sizing.dockFadeHeight` fade of the background sits above the dock. The dock sits on the
  * keyboard and its background runs under the home indicator. It comes last for VoiceOver.
  *
+ * `banner` (an undo banner, a one-off message) shows 8 above the dock, over the bottom of the
+ * content, so it never covers the primary (Kotlin: snackbarHost).
+ *
  * `scrolls: false` lays the content out without a `ScrollView` (clipped to the space above the
  * dock), for `ImageRenderer` snapshot tests.
  */
-public struct ActionScaffold<Content: View, Primary: View, Message: View, Secondary: View, FinePrint: View>: View {
+public struct ActionScaffold<Content: View, Primary: View, Message: View, Secondary: View, FinePrint: View, Banner: View>: View {
     @Environment(\.appStyle) private var style
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -34,6 +37,7 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
     private let message: Message
     private let secondary: Secondary
     private let finePrint: FinePrint
+    private let banner: Banner
 
     @State private var heights = DockPartHeights()
     @State private var frame = ScaffoldFrame()
@@ -55,7 +59,8 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
         @ViewBuilder primary: () -> Primary,
         @ViewBuilder message: () -> Message = { EmptyView() },
         @ViewBuilder secondary: () -> Secondary = { EmptyView() },
-        @ViewBuilder finePrint: () -> FinePrint = { EmptyView() }
+        @ViewBuilder finePrint: () -> FinePrint = { EmptyView() },
+        @ViewBuilder banner: () -> Banner = { EmptyView() }
     ) {
         self.alignment = alignment
         self.scrolls = scrolls
@@ -64,12 +69,14 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
         self.message = message()
         self.secondary = secondary()
         self.finePrint = finePrint()
+        self.banner = banner()
     }
 
     public var body: some View {
         let overflow = currentOverflow
         VStack(spacing: 0) {
             contentArea(overflow)
+                .overlay(alignment: .bottom) { banner.padding(.bottom, Spacing.sm) }
             dock(overflow)
         }
         .background(style.colors.background.ignoresSafeArea())
