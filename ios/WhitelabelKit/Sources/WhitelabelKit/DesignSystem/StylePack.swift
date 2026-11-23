@@ -108,6 +108,13 @@ public struct Sizing: Equatable {
     public var controlHeight: CGFloat
     public var listRowMinHeight: CGFloat
     public var screenGutter: CGFloat
+    /** Height of the action dock's fade over content that scrolls on under it (`ActionScaffold`; Kotlin: Sizing.dockFadeHeight). */
+    public var dockFadeHeight: CGFloat = 24
+    /**
+     * The most of the available height the action dock may take before its fine print, then its
+     * secondary action, move to the end of the content. The primary never moves (Kotlin: Sizing.dockMaxFraction).
+     */
+    public var dockMaxFraction: CGFloat = 0.4
 }
 
 /** A screen's top bar: the standard bar, or flat on the page background (Kotlin: TopBarStyle). */

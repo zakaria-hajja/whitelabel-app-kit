@@ -5,6 +5,14 @@ import SwiftUI
 /** The Swift packs carry the Kotlin packs' values (core/designsystem StylePack, MotionSpec, Spacing): Kotlin wins. */
 final class StylePackTests: XCTestCase {
 
+    /** Kotlin: StylePackTest `both packs size the action dock the same by default`. */
+    func testSizingHasDockDefaults() {
+        for pack in [StylePack.material, .gallery] {
+            XCTAssertEqual(pack.sizing.dockFadeHeight, 24, pack.name)
+            XCTAssertEqual(pack.sizing.dockMaxFraction, 0.4, pack.name)
+        }
+    }
+
     func testGalleryMatchesKotlin() {
         let gallery = StylePack.gallery
         XCTAssertEqual(gallery.name, "Gallery")
