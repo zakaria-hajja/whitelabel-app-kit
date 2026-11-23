@@ -141,7 +141,7 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
         let secondaryMoved = Self.isPresent(Secondary.self) && overflow == .finePrintAndSecondary
         let finePrintMoved = Self.isPresent(FinePrint.self) && overflow != .none
         if secondaryMoved || finePrintMoved {
-            VStack(spacing: Spacing.sm) {
+            DockStack(gap: Spacing.sm) {
                 if secondaryMoved { secondary.measuredHeight { heights.secondary = $0 } }
                 if finePrintMoved { finePrint.measuredHeight { heights.finePrint = $0 } }
             }
@@ -165,7 +165,7 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
     // MARK: Dock
 
     private func dock(_ overflow: DockOverflow) -> some View {
-        VStack(spacing: Spacing.sm) {
+        DockStack(gap: Spacing.sm) {
             if Self.isPresent(Message.self) {
                 message.measuredHeight { heights.message = $0 }
             }
@@ -207,6 +207,44 @@ private struct ScaffoldFrame: Equatable {
 private extension View {
     func measuredHeight(_ update: @escaping (CGFloat) -> Void) -> some View {
         onGeometryChange(for: CGFloat.self, of: { $0.size.height }, action: update)
+    }
+}
+
+/**
+ * Stacks the dock's parts, centred, `gap` apart. A part of height 0 (a slot whose content shows
+ * nothing, such as `if let error { … }` with no error) adds no gap, as the overflow rule counts it
+ * (Kotlin: DockStack).
+ */
+private struct DockStack: Layout {
+    let gap: CGFloat
+
+    private func sizes(_ proposal: ProposedViewSize, _ subviews: Subviews) -> [CGSize] {
+        subviews.map { $0.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil)) }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = sizes(proposal, subviews)
+        let shown = sizes.filter { $0.height > 0 }.count
+        let height = sizes.reduce(0) { $0 + $1.height } + gap * CGFloat(max(shown - 1, 0))
+        return CGSize(width: proposal.width ?? sizes.map(\.width).max() ?? 0, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = sizes(proposal, subviews)
+        var y = bounds.minY
+        var placedAny = false
+        for (subview, size) in zip(subviews, sizes) {
+            if size.height > 0 {
+                if placedAny { y += gap }
+                placedAny = true
+            }
+            subview.place(
+                at: CGPoint(x: bounds.midX, y: y),
+                anchor: .top,
+                proposal: ProposedViewSize(width: bounds.width, height: size.height)
+            )
+            y += size.height
+        }
     }
 }
 
