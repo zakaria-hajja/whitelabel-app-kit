@@ -25,6 +25,10 @@ public enum ActionScaffoldAlignment: Equatable {
  * `messageAnnouncement` and VoiceOver announces it each time it changes to a new line (Kotlin: the
  * message is a polite live region).
  *
+ * The keyboard is told from the home indicator by the bottom inset's height (over 100 pt). An iPad
+ * hardware keyboard's shortcut bar (about 55–70 pt) therefore counts as the home indicator: it
+ * stays dock chrome, so the extras may leave the dock a little earlier there.
+ *
  * `scrolls: false` lays the content out without a `ScrollView` (clipped to the space above the
  * dock), for `ImageRenderer` snapshot tests.
  */

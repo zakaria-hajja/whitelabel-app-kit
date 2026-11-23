@@ -191,6 +191,33 @@ final class ActionScaffoldTests: XCTestCase {
         XCTAssertEqual(posted, ["Couldn't save"], "a cleared message isn't announced")
         window.isHidden = true
     }
+
+    /**
+     * Stands in for the keyboard with a tall bottom safe area, leaving [height] above it. The dock
+     * (28 + 48 + 8 + 40 = 124) fits in 40 % of both heights, so only the 360 rule decides.
+     */
+    private func assertFinePrintWithKeyboard(leaving height: CGFloat, inDock: Bool, file: StaticString = #filePath, line: UInt = #line) {
+        let probe = Probe()
+        probe.message = nil
+        let window = host(ProbeScreen(probe: probe))
+        settle { probe.finePrintInDock }
+        XCTAssertTrue(probe.finePrintInDock, "without the keyboard, the fine print is in the dock", file: file, line: line)
+        let controller = window.rootViewController!
+        let safe = controller.view.safeAreaInsets
+        controller.additionalSafeAreaInsets.bottom = window.bounds.height - safe.top - safe.bottom - height
+        settle { inDock ? false : probe.finePrintInContent }
+        XCTAssertEqual(probe.finePrintInDock, inDock, file: file, line: line)
+        XCTAssertEqual(probe.finePrintInContent, !inDock, file: file, line: line)
+        window.isHidden = true
+    }
+
+    func testUnder360AboveTheKeyboardTheExtrasMoveToTheContent() {
+        assertFinePrintWithKeyboard(leaving: 340, inDock: false)
+    }
+
+    func testOver360AboveTheKeyboardTheExtrasStayInTheDock() {
+        assertFinePrintWithKeyboard(leaving: 380, inDock: true)
+    }
 }
 
 @MainActor
