@@ -170,11 +170,14 @@ in WhitelabelKit.
 
 - **When:** full screens with a primary action (onboarding steps, forms, a hero "plant it" moment).
   Not tab roots, sheets, dialogs, centred empty or error states, settings pages or keypads.
-- **Slots**, top to bottom in the dock: `message` (an error line, a live region on Android),
-  `primary` (full width, at least the pack's control height), at most one `secondary`, then
-  `finePrint`. Never two buttons side by side. Plus `topBar`, `snackbarHost` (Android, 8 dp above the
-  dock), `contentAlignment` / `alignment` (`Top` for forms, `Center` for a hero that is centred
-  between the top bar and the dock when it is shorter) and `scrollState` (Android).
+- **Slots**, top to bottom in the dock: `message` (an error line), `primary` (full width, at least
+  the pack's control height), at most one `secondary`, then `finePrint`. Never two buttons side by
+  side. Plus `topBar`, a banner 8 above the dock (`snackbarHost` on Android, `banner` on iOS: put
+  undo banners and one-off messages there, never in a bottom overlay of the screen, which would cover
+  the primary), `contentAlignment` / `alignment` (`Top` for forms, `Center` for a hero that is
+  centred between the top bar and the dock when it is shorter) and `scrollState` (Android).
+- **The message is announced:** on Android it is a polite live region; on iOS pass its text as
+  `messageAnnouncement` and VoiceOver announces each new line.
 - **Spacing:** dock sides `sizing.screenGutter`, top 12, bottom 16 plus the bottom inset; items
   `spacing.sm` (8) apart; the content gets the same gutter and 24 (`spacing.lg`) below it.
 - **Tokens** (`Sizing`, with defaults, so existing packs are unchanged):
@@ -190,10 +193,15 @@ in WhitelabelKit.
 - **Keyboard:** the dock sits on the keyboard (Android: the IME inset is in the dock's bottom
   padding; iOS: the dock respects the keyboard's safe area). With the keyboard up, the rule weighs
   the dock against the height left above it, and with less than 360 left the fine print and the
-  secondary move to the content too.
+  secondary move to the content too. iOS tells the keyboard from the home indicator by the bottom
+  inset (over 100 pt), so an iPad hardware keyboard's shortcut bar counts as the home indicator.
 - **Insets belong to the scaffold:** it pads the top and sides around everything and the bottom
   inside the dock, so the dock's background runs to the edge. Callers don't add their own
-  `safeDrawingPadding()` / `windowInsetsPadding`.
+  `safeDrawingPadding()` / `windowInsetsPadding`. On Android, insets a parent already consumed (the
+  shell pads for the system bars) are left out, both from the padding and from the 40 % and 360
+  rules. The top bar sits below the status bar, so a top bar with its own surface color leaves a
+  strip of page background above it when the screen isn't in the shell (the shell already pads the
+  top).
 - A disabled or loading primary keeps its place and size. The dock comes last in the reading order
   (TalkBack and VoiceOver).
 - Test tags (Android): `AppActionScaffold`, `AppActionScaffoldContent` (the scroll),
