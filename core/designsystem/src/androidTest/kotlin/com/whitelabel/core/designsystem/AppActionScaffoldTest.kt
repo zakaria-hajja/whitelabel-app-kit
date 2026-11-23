@@ -1,6 +1,7 @@
 package com.whitelabel.core.designsystem
 
 import androidx.activity.ComponentActivity
+import android.os.ParcelFileDescriptor
 import android.view.View
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
@@ -351,15 +352,22 @@ class AppActionScaffoldTest {
     }
 
     // Keyboard. The team AVD has a hardware keyboard, so the soft keyboard is forced on for these
-    // tests (and set back after). The activity is edge to edge and resizes for the IME, as apps are.
+    // tests and the device's own setting is put back after. The activity is edge to edge and
+    // resizes for the IME, as apps are.
     private fun withSoftKeyboard(block: () -> Unit) {
         val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
-        fun shell(command: String) = automation.executeShellCommand(command).close()
-        shell("settings put secure show_ime_with_hard_keyboard 1")
+        // Reading the output to its end waits for the command to finish.
+        fun shell(command: String): String =
+            ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command))
+                .bufferedReader()
+                .use { it.readText().trim() }
+        val setting = "secure show_ime_with_hard_keyboard"
+        val previous = shell("settings get $setting")
+        shell("settings put $setting 1")
         try {
             block()
         } finally {
-            shell("settings put secure show_ime_with_hard_keyboard 0")
+            if (previous.isEmpty() || previous == "null") shell("settings delete $setting") else shell("settings put $setting $previous")
         }
     }
 
