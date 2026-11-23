@@ -6,7 +6,6 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -47,6 +46,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.whitelabel.core.designsystem.theme.AppTheme
 import com.whitelabel.core.designsystem.theme.StylePack
@@ -155,11 +155,7 @@ fun AppActionScaffold(
                             val movedSecondary = secondaryPart != null && !secondaryInDock
                             val movedFinePrint = finePrintPart != null && !finePrintInDock
                             if (movedSecondary || movedFinePrint) {
-                                Column(
-                                    Modifier.fillMaxWidth().padding(top = spacing.lg),
-                                    verticalArrangement = Arrangement.spacedBy(spacing.sm),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                ) {
+                                DockStack(spacing.sm, Modifier.fillMaxWidth().padding(top = spacing.lg)) {
                                     if (movedSecondary) Part({ heights.secondary = it }) { secondaryPart?.invoke() }
                                     if (movedFinePrint) Part({ heights.finePrint = it }) { finePrintPart?.invoke() }
                                 }
@@ -170,7 +166,8 @@ fun AppActionScaffold(
                 DockFade(scrollState, Modifier.align(Alignment.BottomCenter))
                 Box(Modifier.align(Alignment.BottomCenter).padding(bottom = spacing.sm)) { snackbarHost() }
             }
-            Column(
+            DockStack(
+                spacing.sm,
                 Modifier
                     .fillMaxWidth()
                     .testTag("AppActionDock")
@@ -182,8 +179,6 @@ fun AppActionScaffold(
                         top = DockTopPadding,
                         bottom = DockBottomPadding,
                     ),
-                verticalArrangement = Arrangement.spacedBy(spacing.sm),
-                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (message != null) {
                     Part({ heights.message = it }, Modifier.semantics { liveRegion = LiveRegionMode.Polite }) { message() }
@@ -211,6 +206,33 @@ private class DockPartHeights {
 @Composable
 private fun Part(onHeight: (Int) -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Box(modifier.onSizeChanged { onHeight(it.height) }, contentAlignment = Alignment.Center) { content() }
+}
+
+/**
+ * Stacks the dock's parts, centred, [gap] apart. A part of height 0 (a slot whose content shows
+ * nothing, such as an error line with no error) adds no gap, as `dockOverflow` counts it.
+ */
+@Composable
+private fun DockStack(gap: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Layout(content, modifier) { measurables, constraints ->
+        val placeables = measurables.map { it.measure(constraints.copy(minWidth = 0, minHeight = 0)) }
+        val gapPx = gap.roundToPx()
+        val shown = placeables.count { it.height > 0 }
+        val height = placeables.sumOf { it.height } + gapPx * (shown - 1).coerceAtLeast(0)
+        val width = if (constraints.hasBoundedWidth) constraints.maxWidth else placeables.maxOfOrNull { it.width } ?: 0
+        layout(width, height.coerceIn(constraints.minHeight, constraints.maxHeight)) {
+            var y = 0
+            var placedAny = false
+            placeables.forEach { placeable ->
+                if (placeable.height > 0) {
+                    if (placedAny) y += gapPx
+                    placedAny = true
+                }
+                placeable.place((width - placeable.width) / 2, y)
+                y += placeable.height
+            }
+        }
+    }
 }
 
 /**

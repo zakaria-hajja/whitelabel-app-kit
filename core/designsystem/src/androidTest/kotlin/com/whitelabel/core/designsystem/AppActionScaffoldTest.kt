@@ -232,6 +232,45 @@ class AppActionScaffoldTest {
         assertThat(tags.indexOf("AppActionScaffoldContent") >= 0).isTrue()
     }
 
+    // A slot's content changing while the screen shows (the slot itself stays, as with
+    // `message = { ui.error?.let { ErrorLine(it) } }`).
+
+    @Composable
+    private fun MessageDock(message: Dp?, withMessage: Boolean = true) {
+        AppActionScaffold(
+            primary = { Box(Modifier.fillMaxWidth().height(56.dp).testTag("primary")) },
+            message = if (withMessage) ({ if (message != null) Box(Modifier.fillMaxWidth().height(message)) }) else null,
+            finePrint = { Box(Modifier.fillMaxWidth().height(40.dp).testTag("fine")) },
+        ) { Rows(2) }
+    }
+
+    /** 480 high, cap 192: a 200 message moves the fine print; with it shrunk or gone, the dock is 132 or less. */
+    private fun assertFinePrintReturns(shrunk: Dp?) {
+        var message by mutableStateOf<Dp?>(200.dp)
+        show(height = 480.dp) { MessageDock(message) }
+        rule.onNodeWithTag("fine").assert(inContent)
+        message = shrunk
+        rule.waitForIdle()
+        rule.onNodeWithTag("fine").assert(inDock)
+    }
+
+    @Test
+    fun extrasReturnToTheDockWhenTheMessageDisappears() = assertFinePrintReturns(shrunk = null)
+
+    @Test
+    fun extrasReturnToTheDockWhenTheMessageShrinks() = assertFinePrintReturns(shrunk = 10.dp)
+
+    @Test
+    fun anEmptyMessageAddsNoGap() {
+        var withMessage by mutableStateOf(false)
+        show { MessageDock(message = null, withMessage = withMessage) }
+        // The dock is pinned at the bottom, so a stray gap would raise its top.
+        val none = bounds("AppActionDock").top
+        withMessage = true
+        rule.waitForIdle()
+        assertThat(bounds("AppActionDock").top).isEqualTo(none)
+    }
+
     // Keyboard. The team AVD has a hardware keyboard, so the soft keyboard is forced on for these
     // tests (and set back after). The activity is edge to edge and resizes for the IME, as apps are.
     private fun withSoftKeyboard(block: () -> Unit) {
