@@ -1,7 +1,14 @@
 package com.whitelabel.core.designsystem.catalog
 
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,6 +24,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.whitelabel.core.designsystem.component.AppActionScaffold
 import com.whitelabel.core.designsystem.component.AppCard
 import com.whitelabel.core.designsystem.component.AppLoadingIndicator
 import com.whitelabel.core.designsystem.component.AppPrimaryButton
@@ -65,6 +74,24 @@ fun DesignSystemCatalog(modifier: Modifier = Modifier) {
         Section("Error") { ErrorState(message = "Something went wrong.", onRetry = {}) }
         Section("Empty") {
             EmptyState(title = "Nothing here", message = "Items will show up here.", actionLabel = "Add", onAction = {})
+        }
+        Section("Action dock") {
+            // A framed, inset-free instance; real screens fill the window.
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(320.dp)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    .consumeWindowInsets(WindowInsets.safeDrawing),
+            ) {
+                AppActionScaffold(
+                    primary = { AppPrimaryButton(text = "Continue", onClick = {}) },
+                    secondary = { AppTextButton(text = "Not now", onClick = {}) },
+                    finePrint = { Text("Fine print sits last.", style = MaterialTheme.typography.bodySmall) },
+                ) {
+                    repeat(8) { Text("Row ${it + 1}", modifier = Modifier.padding(vertical = AppTheme.spacing.xs)) }
+                }
+            }
         }
     }
 }
