@@ -21,7 +21,9 @@ public enum ActionScaffoldAlignment: Equatable {
  * keyboard and its background runs under the home indicator. It comes last for VoiceOver.
  *
  * `banner` (an undo banner, a one-off message) shows 8 above the dock, over the bottom of the
- * content, so it never covers the primary (Kotlin: snackbarHost).
+ * content, so it never covers the primary (Kotlin: snackbarHost). Pass the message line's text as
+ * `messageAnnouncement` and VoiceOver announces it each time it changes to a new line (Kotlin: the
+ * message is a polite live region).
  *
  * `scrolls: false` lays the content out without a `ScrollView` (clipped to the space above the
  * dock), for `ImageRenderer` snapshot tests.
@@ -38,6 +40,7 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
     private let secondary: Secondary
     private let finePrint: FinePrint
     private let banner: Banner
+    private let messageAnnouncement: String?
 
     @State private var heights = DockPartHeights()
     @State private var frame = ScaffoldFrame()
@@ -55,6 +58,7 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
     public init(
         alignment: ActionScaffoldAlignment = .top,
         scrolls: Bool = true,
+        messageAnnouncement: String? = nil,
         @ViewBuilder content: () -> Content,
         @ViewBuilder primary: () -> Primary,
         @ViewBuilder message: () -> Message = { EmptyView() },
@@ -70,6 +74,7 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
         self.secondary = secondary()
         self.finePrint = finePrint()
         self.banner = banner()
+        self.messageAnnouncement = messageAnnouncement
     }
 
     public var body: some View {
@@ -83,6 +88,9 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
         .onGeometryChange(for: ScaffoldFrame.self) { proxy in
             ScaffoldFrame(height: proxy.size.height, bottomInset: proxy.safeAreaInsets.bottom)
         } action: { frame = $0 }
+        .onChange(of: messageAnnouncement) { _, text in
+            if let text, !text.isEmpty { ActionScaffoldAnnouncement.post(text) }
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ActionScaffold")
     }
@@ -195,6 +203,11 @@ public struct ActionScaffold<Content: View, Primary: View, Message: View, Second
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ActionDock")
     }
+}
+
+/** Posts the dock's message to VoiceOver; tests swap it to see what is announced. */
+enum ActionScaffoldAnnouncement {
+    static var post: (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) }
 }
 
 /** The measured heights of the dock's parts, wherever each is shown (same width in both places). */

@@ -172,12 +172,32 @@ final class ActionScaffoldTests: XCTestCase {
         XCTAssertEqual(probe.banner.maxY, probe.primary.minY - 12 - 8, accuracy: 0.5)
         window.isHidden = true
     }
+
+    /** VoiceOver hears a new message line (Android: the message is a polite live region). */
+    func testANewMessageIsAnnounced() {
+        var posted: [String] = []
+        let saved = ActionScaffoldAnnouncement.post
+        ActionScaffoldAnnouncement.post = { posted.append($0) }
+        defer { ActionScaffoldAnnouncement.post = saved }
+        let probe = Probe()
+        probe.announcement = nil
+        let window = host(AnnouncingScreen(probe: probe))
+        settle { probe.primary != .zero }
+        probe.announcement = "Couldn't save"
+        settle { !posted.isEmpty }
+        XCTAssertEqual(posted, ["Couldn't save"])
+        probe.announcement = nil
+        settle { false }
+        XCTAssertEqual(posted, ["Couldn't save"], "a cleared message isn't announced")
+        window.isHidden = true
+    }
 }
 
 @MainActor
 private final class Probe: ObservableObject {
     /** The message's height; nil renders nothing in the (still present) slot. */
     @Published var message: CGFloat? = 200
+    @Published var announcement: String?
     var banner: CGRect = .zero
     var primary: CGRect = .zero
     var finePrint: CGRect = .zero
@@ -228,6 +248,19 @@ private struct BannerScreen: View {
         } banner: {
             Color.orange.frame(height: 60)
                 .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: { probe.banner = $0 })
+        }
+    }
+}
+
+private struct AnnouncingScreen: View {
+    @ObservedObject var probe: Probe
+
+    var body: some View {
+        ActionScaffold(messageAnnouncement: probe.announcement) { Color.clear.frame(height: 20) } primary: {
+            Color.blue.frame(height: 48)
+                .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .global) }, action: { probe.primary = $0 })
+        } message: {
+            if let text = probe.announcement { Text(text) }
         }
     }
 }
