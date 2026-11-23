@@ -1,6 +1,16 @@
 package com.whitelabel.core.designsystem
 
 import androidx.activity.ComponentActivity
+import android.view.WindowManager
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
+import androidx.compose.runtime.remember
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.test.espresso.Espresso
+import androidx.test.platform.app.InstrumentationRegistry
+import com.whitelabel.core.designsystem.component.AppTextField
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -220,5 +230,92 @@ class AppActionScaffoldTest {
         assertThat(tags.last()).isEqualTo("AppActionDock")
         assertThat(tags.indexOf("top")).isLessThan(tags.indexOf("AppActionScaffoldContent"))
         assertThat(tags.indexOf("AppActionScaffoldContent") >= 0).isTrue()
+    }
+
+    // Keyboard. The team AVD has a hardware keyboard, so the soft keyboard is forced on for these
+    // tests (and set back after). The activity is edge to edge and resizes for the IME, as apps are.
+    private fun withSoftKeyboard(block: () -> Unit) {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        fun shell(command: String) = automation.executeShellCommand(command).close()
+        shell("settings put secure show_ime_with_hard_keyboard 1")
+        try {
+            block()
+        } finally {
+            shell("settings put secure show_ime_with_hard_keyboard 0")
+        }
+    }
+
+    private var imeBottom = 0
+
+    /**
+     * Extras are fixed 20 dp boxes, so only the keyboard decides where they go. [aboveKeyboard] sizes
+     * the window so that this much is left above the keyboard while it is up; without the keyboard,
+     * or when null, it fills the window.
+     */
+    private fun showWithField(aboveKeyboard: Dp?) {
+        rule.runOnUiThread {
+            rule.activity.enableEdgeToEdge()
+            rule.activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
+        rule.setContent {
+            val density = LocalDensity.current
+            imeBottom = WindowInsets.ime.getBottom(density)
+            AppTheme(stylePack = StylePack.Gallery) {
+                val window = aboveKeyboard?.takeIf { imeBottom > 0 }?.let { with(density) { it + imeBottom.toDp() } }
+                Box(if (window == null) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(window)) {
+                    AppActionScaffold(
+                        primary = { AppPrimaryButton("Continue", {}, Modifier.testTag("primary")) },
+                        secondary = { Box(Modifier.size(120.dp, 20.dp).testTag("secondary")) },
+                        finePrint = { Box(Modifier.size(120.dp, 20.dp).testTag("fine")) },
+                    ) {
+                        var text by remember { mutableStateOf("") }
+                        AppTextField(text, { text = it }, "Name", Modifier.testTag("field"))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun openKeyboard() {
+        rule.onNodeWithTag("field").performClick()
+        rule.waitUntil(5_000) { imeBottom > 0 }
+        rule.waitForIdle()
+    }
+
+    @Test
+    fun dockRidesTheKeyboard() = withSoftKeyboard {
+        showWithField(aboveKeyboard = null)
+        openKeyboard()
+        val keyboardTop = with(rule.density) { (rule.onRoot().getUnclippedBoundsInRoot().bottom.toPx() - imeBottom).toDp() }
+        rule.onNodeWithTag("primary").assertIsDisplayed()
+        assertThat(bounds("primary").bottom).isLessThanOrEqualTo(keyboardTop)
+    }
+
+    @Test
+    fun aTallWindowKeepsExtrasInTheDockWithTheKeyboardUp() = withSoftKeyboard {
+        // The whole window: well over 360 stays above the keyboard and the small dock fits in 40 % of it.
+        showWithField(aboveKeyboard = null)
+        openKeyboard()
+        rule.onNodeWithTag("fine").assert(inDock)
+        rule.onNodeWithTag("secondary").assert(inDock)
+    }
+
+    @Test
+    fun compactKeyboardMovesExtrasIntoContent() = withSoftKeyboard {
+        // 355 left above the keyboard: under 360, though the dock (12 + 52 + 8 + 20 + 8 + 20 + 16 =
+        // 136) fits in 40 % of it (142), so only the keyboard rule moves the extras.
+        showWithField(aboveKeyboard = 355.dp)
+        rule.onNodeWithTag("fine").assert(inDock)
+        rule.onNodeWithTag("secondary").assert(inDock)
+        openKeyboard()
+        rule.onNodeWithTag("fine").assert(inContent)
+        rule.onNodeWithTag("secondary").assert(inContent)
+        rule.onNodeWithTag("primary").assert(inDock)
+
+        Espresso.closeSoftKeyboard()
+        rule.waitUntil(5_000) { imeBottom == 0 }
+        rule.waitForIdle()
+        rule.onNodeWithTag("fine").assert(inDock)
+        rule.onNodeWithTag("secondary").assert(inDock)
     }
 }

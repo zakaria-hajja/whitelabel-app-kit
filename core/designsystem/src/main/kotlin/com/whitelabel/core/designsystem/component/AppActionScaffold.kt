@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -62,6 +63,9 @@ enum class ActionScaffoldAlignment {
 private val DockTopPadding = 12.dp
 private val DockBottomPadding = 16.dp
 
+/** Under this much height above the keyboard, the dock keeps only its message and primary. */
+private val CompactKeyboardHeight = 360.dp
+
 /**
  * A full screen whose actions stay pinned at the bottom in an action dock, outside the scroll, on
  * the page background. Use it for full screens with a primary action; not for tab roots, sheets,
@@ -75,7 +79,9 @@ private val DockBottomPadding = 16.dp
  * above the dock.
  *
  * The scaffold owns the window insets (top and sides around everything, bottom inside the dock),
- * so callers must not add their own `safeDrawingPadding()`. The dock comes last in the reading order.
+ * so callers must not add their own `safeDrawingPadding()`. The dock sits on the keyboard; with less
+ * than 360 dp left above it, the fine print and the secondary move to the content. The dock comes
+ * last in the reading order.
  */
 @Composable
 fun AppActionScaffold(
@@ -107,17 +113,23 @@ fun AppActionScaffold(
             .background(background)
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)),
     ) {
+        // With the keyboard up, the window effectively ends at the keyboard's top: the rule then
+        // weighs the dock against the height left above it, and the keyboard isn't dock chrome.
+        val keyboard = WindowInsets.ime.getBottom(density)
+        val available = if (constraints.hasBoundedHeight) constraints.maxHeight - keyboard else Int.MAX_VALUE
         val overflow = with(density) {
             dockOverflow(
-                available = if (constraints.hasBoundedHeight) constraints.maxHeight else Int.MAX_VALUE,
-                chrome = (DockTopPadding + DockBottomPadding).roundToPx() + bottomInsets.getBottom(density),
+                available = available,
+                chrome = (DockTopPadding + DockBottomPadding).roundToPx() +
+                    (bottomInsets.getBottom(density) - keyboard).coerceAtLeast(0),
                 gap = spacing.sm.roundToPx(),
                 message = if (message != null) heights.message else 0,
                 primary = heights.primary,
                 secondary = if (secondary != null) heights.secondary else 0,
                 finePrint = if (finePrint != null) heights.finePrint else 0,
                 maxFraction = sizing.dockMaxFraction,
-                compact = false,
+                // Little room above the keyboard: only the primary (and message) stay in the dock.
+                compact = keyboard > 0 && available < CompactKeyboardHeight.roundToPx(),
             )
         }
         val secondaryInDock = overflow != DockOverflow.FinePrintAndSecondary
