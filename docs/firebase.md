@@ -228,11 +228,12 @@ analytics.setUserProperty("garden_size_bucket", "3_5")          // or setUserPro
   raw answer: the queue is sent only after collection is switched on (the manifest and `Info.plist`
   start it off, and the SDK drops a call made while it is off). Events and crash reports follow the
   same order.
-- **After a decline:** a property set once consent has resolved with analytics declined still
-  follows that gate and is sent (consent mode, no identifiers), while the same property queued a
-  moment before the answer is dropped. Whether a decliner should get no user properties at all is
-  an open owner question ([Tend card ni4iAPsR](https://trello.com/c/ni4iAPsR)); until then this
-  asymmetry is intended.
+- **After a decline:** it depends on the mode.
+  - *Consent mode (the default):* a property set once consent has resolved with analytics declined
+    still follows that gate and is sent (no identifiers), while the same property queued a moment
+    before the answer is dropped. This asymmetry is intended.
+  - *[Strict opt-in](#strict-opt-in):* nothing is sent after a decline, whether it was queued
+    before the answer or set after it.
 - **Without Firebase** (`firebase.enabled=false`, or a Release build of `debug`) nothing is sent:
   the shell's logging `Analytics` writes `user_property name=value` to the log, as it does for events.
   The fake Firebase logs the same line behind the consent gate.
@@ -254,7 +255,9 @@ first screen appears and never over the splash. Elsewhere nothing shows.
 
 - Nothing is collected before consent is resolved: events are dropped, not queued. User properties
   wait in memory until it resolves ([User properties](#user-properties)).
-- A user who declines is still counted, without identifiers (analytics storage denied).
+- A user who declines is still counted, without identifiers (analytics storage denied). This is
+  the default (consent mode). With [strict opt-in](#strict-opt-in) a user who declines isn't
+  counted at all.
 - Crash reports that Crashlytics stored before consent are dropped. Reports from consented sessions
   are kept across launches.
 - If the consent request fails or the form is dismissed, nothing is collected that launch and it is
@@ -264,6 +267,40 @@ first screen appears and never over the splash. Elsewhere nothing shows.
   included, applies as soon as the form closes: the app re-reads UMP's answer then.
 - A Debug build without the DebugView switch turns collection off at startup, before consent, so
   flags left on by an earlier `analytics-debug` / `-analyticsDebug` run don't keep it collecting.
+
+### Strict opt-in
+
+For an app that must not count a user who declines, strict opt-in turns
+Firebase Analytics collection fully off after a decline: no events and no user properties are
+sent, either before or after consent resolves. It is off by default, so an app that doesn't ask
+for it keeps consent mode.
+
+| | Consent mode (default) | Strict opt-in |
+|---|---|---|
+| Analytics allowed, or consent not required | Everything is collected | Same |
+| Analytics declined | Counted without identifiers: collection on, analytics storage denied; events and later user properties are sent | Collection and analytics storage off; no events and no user properties are sent |
+| Consent unknown or failed | Nothing is collected | Same |
+| Crash reports | Follow the build (and the debug switch) once consent resolves | Same: strict opt-in changes analytics only |
+
+Turning it on:
+
+```kotlin
+// Android: the app definition.
+appDefinition { /* ... */ firebase(analyticsOptIn = true) }
+```
+
+```swift
+// iOS: the Firebase service. It hands the flag to SharedGraph in every mode (on and fake).
+AppDefinition(services: [FirebaseService(analyticsOptIn: true), AdsService()]) { /* ... */ }
+```
+
+Both are checked in two places. `collectionFor(..., analyticsOptIn)` switches collection off on
+the SDKs, and `ConsentGatedAnalytics` forwards an event or a user property only while consent is
+resolved with analytics allowed. A later change in the privacy options applies at once: a
+withdrawal stops sending, and a grant starts it.
+
+The trade-off: a user who declines is invisible, so audience sizes, retention and funnels count
+only the users who allowed analytics, and the share of decliners can't be measured from Firebase.
 
 Put `PrivacyChoicesRow()` in the app's own settings section, so users can reopen the form. It shows
 only while UMP says privacy options are required, and draws nothing in an app without Firebase:
