@@ -14,14 +14,24 @@ import WhitelabelKit
  *   (`GADApplicationIdentifier`), or the app stops at launch.
  * - `fake`: nothing; the shared graph binds the fakes (with `-fakeConsent`'s answer).
  * - `off`: nothing.
+ *
+ * `FirebaseService(analyticsOptIn: true)` is strict opt-in, Android's `firebase(analyticsOptIn = true)`:
+ * when the user declines analytics, collection stays off and no events or user properties are sent.
+ * Off by default (a decliner is still counted, without identifiers). See docs/firebase.md.
  */
 public struct FirebaseService: AppService {
-    public init() {}
+    /** Strict analytics opt-in; handed to the shared graph in every mode, so `fake` behaves like `on`. */
+    public let analyticsOptIn: Bool
+
+    public init(analyticsOptIn: Bool = false) {
+        self.analyticsOptIn = analyticsOptIn
+    }
 
     /** Follows `WL_FIREBASE`. */
     public var kind: AppServiceKind { .firebase }
 
     @MainActor public func install(mode: String) {
+        SharedGraph.shared.useAnalyticsOptIn(enabled: analyticsOptIn)
         guard mode == "on" else { return }
         let info = Bundle.main.infoDictionary ?? [:]
         if let problem = Self.collectionProblem(info) ?? Self.adMobProblem(info) { fatalError(problem) }

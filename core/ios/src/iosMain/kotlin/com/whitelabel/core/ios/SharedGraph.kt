@@ -152,6 +152,9 @@ object SharedGraph {
         analyticsOptIn = enabled
     }
 
+    /** Whether [useAnalyticsOptIn] turned strict opt-in on (Swift tests). */
+    fun isAnalyticsOptIn(): Boolean = analyticsOptIn
+
     /** The app's definition has a Firebase service (as Android's `firebase()`), even if it installs nothing in `off` mode. */
     fun declareFirebase() {
         firebaseDeclared = true

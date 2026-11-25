@@ -100,9 +100,16 @@ class SharedGraphStrictOptInTest {
         assertEquals(listOf("event after", "property streak"), sent)
     }
 
+    @Test fun `the flag reads back as set and starts off`() {
+        assertEquals(false, SharedGraph.isAnalyticsOptIn())
+        SharedGraph.useAnalyticsOptIn(true)
+        assertEquals(true, SharedGraph.isAnalyticsOptIn())
+    }
+
     @Test fun `clearing the services turns strict opt-in off again`() {
         SharedGraph.useAnalyticsOptIn(true)
         SharedGraph.clearFirebaseServices()
+        assertEquals(false, SharedGraph.isAnalyticsOptIn())
         val (collection, _) = declineAndSend(analyticsOptIn = null)
         assertEquals(true, collection?.analytics)
     }
