@@ -13,6 +13,9 @@ import com.whitelabel.core.consent.ConsentPort
 import com.whitelabel.core.consent.FakeConsentPort
 import com.whitelabel.core.consent.UmpResult
 import com.whitelabel.core.consent.UmpStatus
+import com.whitelabel.core.consent.fakeConsentResult
+import com.whitelabel.core.analytics.RecordingAnalytics
+import assertk.assertions.isEmpty
 import com.whitelabel.core.data.di.ApplicationScope
 import com.whitelabel.core.firebase.CollectionSwitch
 import com.whitelabel.core.firebase.FirebaseCollection
@@ -95,5 +98,34 @@ class StrictOptInWiringTest {
         val definition = appDefinition { add(entry("a", RouteA)); firebase() }
         declineAndSend(definition, FirebaseWiring(FirebaseMode.ON, debugBuild = false, debugAnalytics = false))
         assertThat(log).containsExactly("apply analytics=true storage=false", "event after", "property streak")
+    }
+
+    // Fake mode: the fake's sink is the "firebase" Analytics; a module after the foundation's replaces it.
+    private fun fakeDeclineAndSend(definition: AppDefinition, analyticsOptIn: Boolean): RecordingAnalytics {
+        val inner = RecordingAnalytics()
+        val wiring = FirebaseWiring(
+            FirebaseMode.FAKE, debugBuild = true, debugAnalytics = false,
+            fakeConsent = fakeConsentResult("declined"), analyticsOptIn = analyticsOptIn,
+        )
+        val recorder = module { single<Analytics>(named("firebase")) { inner } }
+        val koin = koinApplication { modules(foundationModules(definition, emptyList(), wiring) + scope + recorder) }.koin
+        val analytics = koin.get<Analytics>()
+        analytics.setUserProperty(UserProperty("bucket", "queued"))
+        koin.get<Consent>().gatherOnLaunch()
+        analytics.track(AnalyticsEvent("after"))
+        analytics.setUserProperty(UserProperty("streak", "after"))
+        return inner
+    }
+
+    @Test fun `mode fake with strict opt-in sends nothing after a decline`() {
+        val inner = fakeDeclineAndSend(appDefinition { add(entry("a", RouteA)); firebase(analyticsOptIn = true) }, analyticsOptIn = true)
+        assertThat(inner.events).isEmpty()
+        assertThat(inner.userProperties).isEmpty()
+    }
+
+    @Test fun `mode fake without strict opt-in still counts a decliner`() {
+        val inner = fakeDeclineAndSend(appDefinition { add(entry("a", RouteA)); firebase() }, analyticsOptIn = false)
+        assertThat(inner.events.map { it.name }).containsExactly("after")
+        assertThat(inner.userProperties).containsExactly(UserProperty("streak", "after"))
     }
 }
