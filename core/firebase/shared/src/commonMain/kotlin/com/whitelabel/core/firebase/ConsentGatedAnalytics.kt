@@ -24,11 +24,16 @@ import kotlinx.coroutines.launch
  *
  * With Firebase on, [consent] is the consent the collection applier has already applied to the SDKs,
  * not the raw consent state, so nothing reaches an SDK before its collection flag is switched on.
+ *
+ * With [analyticsOptIn] (strict opt-in), events and user properties are forwarded only while consent is
+ * resolved with analytics allowed: a user who declined sends nothing, before or after the answer, and
+ * withdrawing or granting consent later stops or starts sending.
  */
 class ConsentGatedAnalytics(
     private val inner: Analytics,
     private val consent: StateFlow<ConsentState>,
     scope: CoroutineScope,
+    private val analyticsOptIn: Boolean = false,
 ) : Analytics {
     private val lock = SynchronizedObject()
 
@@ -45,8 +50,12 @@ class ConsentGatedAnalytics(
     }
 
     override fun track(event: AnalyticsEvent) {
-        if (consent.value is ConsentState.Resolved) inner.track(event)
+        if (forwards(consent.value)) inner.track(event)
     }
+
+    // Whether a call made now reaches the SDK; queued properties have their own rule (settleLocked).
+    private fun forwards(state: ConsentState): Boolean =
+        state is ConsentState.Resolved && (state.analyticsAllowed || !analyticsOptIn)
 
     override fun setUserProperty(property: UserProperty) {
         synchronized(lock) {
@@ -58,7 +67,7 @@ class ConsentGatedAnalytics(
             }
             // Consent resolved before the flush collector ran: flush first, so this newer value lands last.
             if (waiting != null) settleLocked(state)
-            if (state is ConsentState.Resolved) inner.setUserProperty(property)
+            if (forwards(state)) inner.setUserProperty(property)
         }
     }
 
