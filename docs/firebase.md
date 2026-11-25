@@ -294,10 +294,19 @@ appDefinition { /* ... */ firebase(analyticsOptIn = true) }
 AppDefinition(services: [FirebaseService(analyticsOptIn: true), AdsService()]) { /* ... */ }
 ```
 
-Both are checked in two places. `collectionFor(..., analyticsOptIn)` switches collection off on
+The flag is enforced in two places. `collectionFor(..., analyticsOptIn)` switches collection off on
 the SDKs, and `ConsentGatedAnalytics` forwards an event or a user property only while consent is
 resolved with analytics allowed. A later change in the privacy options applies at once: a
-withdrawal stops sending, and a grant starts it.
+withdrawal stops sending, and a grant starts it. A grant doesn't replay what was dropped: a user
+property set while the user had declined stays unsent until the app sets it again (usually at the
+next app start).
+
+"Declines" means the UMP answer doesn't consent to TCF Purpose 1 (store and/or access information
+on a device). Outside the EEA/UK (consent not required) everyone is counted.
+
+Turn it on before the app's first public release. Turning it on in an update leaves earlier
+decliners collecting until consent resolves on the first launch of the new version, because the
+SDKs' collection flags persist from the last consent applied.
 
 The trade-off: a user who declines is invisible, so audience sizes, retention and funnels count
 only the users who allowed analytics, and the share of decliners can't be measured from Firebase.
