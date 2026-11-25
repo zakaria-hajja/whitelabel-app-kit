@@ -109,6 +109,7 @@ object SharedGraph {
     private var debugFake = false
     private var debugBuild = false
     private var debugAnalytics = false
+    private var analyticsOptIn = false
     private var fakeConsent: UmpResult? = fakeConsentResult(DebugConsent.DEFAULT_FAKE_STATE)
     private var mode = FirebaseMode.OFF
     private var debugGuest: DebugGuestAccount? = null
@@ -140,6 +141,15 @@ object SharedGraph {
     fun useFirebase(source: RemoteConfigSource, analytics: Analytics, crashReporter: CrashReporter, collection: CollectionSwitch) {
         firebaseServices = FirebaseServices(source, analytics, crashReporter, collection)
         firebaseDeclared = true
+    }
+
+    /**
+     * Strict analytics opt-in, Android's `firebase(analyticsOptIn = true)`: when the user declines analytics,
+     * collection stays off and no events or user properties are sent. Off unless called. `FirebaseService`
+     * calls it before [start], in every mode.
+     */
+    fun useAnalyticsOptIn(enabled: Boolean) {
+        analyticsOptIn = enabled
     }
 
     /** The app's definition has a Firebase service (as Android's `firebase()`), even if it installs nothing in `off` mode. */
@@ -212,6 +222,7 @@ object SharedGraph {
         debugFake = false
         debugBuild = false
         debugAnalytics = false
+        analyticsOptIn = false
         fakeConsent = fakeConsentResult(DebugConsent.DEFAULT_FAKE_STATE)
     }
 
@@ -371,7 +382,7 @@ object SharedGraph {
                 }
             },
             // Fake mode's Firebase module goes last (fakeOverrides), not here.
-            if (mode == FirebaseMode.FAKE) null else firebaseModule(mode, debugBuild, debugAnalytics),
+            if (mode == FirebaseMode.FAKE) null else firebaseModule(mode, debugBuild, debugAnalytics, analyticsOptIn),
         )
     }
 
@@ -380,7 +391,7 @@ object SharedGraph {
         if (mode != FirebaseMode.FAKE) return emptyList()
         val answer = fakeConsent
         return listOf(
-            firebaseModule(FirebaseMode.FAKE, debugBuild, debugAnalytics),
+            firebaseModule(FirebaseMode.FAKE, debugBuild, debugAnalytics, analyticsOptIn),
             module { single<ConsentPort> { FakeConsentPort(answer) } },
         )
     }
