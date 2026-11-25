@@ -46,12 +46,11 @@ fun firebaseModule(
             FakeRemoteConfigSource(mapOf("showcase_remote_note" to "from the fake"))
         }
         single<RemoteValues> { SourceRemoteValues(get(), get(applicationScope)) }
-        single<Analytics> { ConsentGatedAnalytics(
-                LoggingAnalytics { println("Analytics: $it") },
-                get<Consent>().state,
-                get(applicationScope),
-                analyticsOptIn,
-            ) }
+        // The fake's sink, under the name ON gives the SDK adapter, so a test can replace it with a recorder.
+        single<Analytics>(firebase) { LoggingAnalytics { println("Analytics: $it") } }
+        single<Analytics> {
+            ConsentGatedAnalytics(get(firebase), get<Consent>().state, get(applicationScope), analyticsOptIn)
+        }
         single<CrashReporter> {
             ConsentGatedCrashReporter(
                 LoggingCrashReporter { message, t -> println("$message: $t") },

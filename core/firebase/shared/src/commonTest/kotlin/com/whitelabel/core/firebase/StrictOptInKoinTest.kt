@@ -3,10 +3,6 @@ package com.whitelabel.core.firebase
 import assertk.assertThat
 import assertk.assertions.containsExactly
 import assertk.assertions.isEmpty
-import assertk.assertions.isEqualTo
-import assertk.assertions.isFalse
-import assertk.assertions.isInstanceOf
-import assertk.assertions.isTrue
 import com.whitelabel.core.analytics.Analytics
 import com.whitelabel.core.analytics.AnalyticsEvent
 import com.whitelabel.core.analytics.CrashReporter
@@ -91,23 +87,44 @@ class StrictOptInKoinTest {
         assertThat(inner.events.map { it.name }).containsExactly("after")
     }
 
-    @Test fun `fake passes strict opt-in to its gate`() {
-        val on = app(FirebaseMode.FAKE, analyticsOptIn = true).koin.get<Analytics>()
-        val off = app(FirebaseMode.FAKE, analyticsOptIn = false).koin.get<Analytics>()
-        assertThat(on).isInstanceOf<ConsentGatedAnalytics>()
-        assertThat((on as ConsentGatedAnalytics).analyticsOptIn).isTrue()
-        assertThat((off as ConsentGatedAnalytics).analyticsOptIn).isFalse()
-    }
-
-    @Test fun `the flag defaults to off`() {
+    // FAKE binds its logging sink as the "firebase" Analytics; a later module replaces it with the recorder.
+    private fun fake(analyticsOptIn: Boolean?): RecordingAnalytics {
+        val inner = RecordingAnalytics()
         val koin = koinApplication {
             modules(
                 module { single<CoroutineScope>(named("applicationScope")) { TestScope(UnconfinedTestDispatcher()) } },
                 module { single<ConsentPort> { FakeConsentPort(declined) } },
                 consentModule(),
-                firebaseModule(FirebaseMode.FAKE, debugBuild = false, debugAnalytics = false),
+                if (analyticsOptIn == null) {
+                    firebaseModule(FirebaseMode.FAKE, debugBuild = false, debugAnalytics = false)
+                } else {
+                    firebaseModule(FirebaseMode.FAKE, debugBuild = false, debugAnalytics = false, analyticsOptIn = analyticsOptIn)
+                },
+                module { single<Analytics>(named("firebase")) { inner } },
             )
         }.koin
-        assertThat((koin.get<Analytics>() as ConsentGatedAnalytics).analyticsOptIn).isEqualTo(false)
+        val analytics = koin.get<Analytics>()
+        analytics.setUserProperty(UserProperty("bucket", "queued"))
+        koin.get<Consent>().gatherOnLaunch()
+        analytics.track(AnalyticsEvent("after"))
+        analytics.setUserProperty(UserProperty("streak", "after"))
+        return inner
+    }
+
+    @Test fun `fake with strict opt-in forwards nothing after a decline`() {
+        val inner = fake(analyticsOptIn = true)
+        assertThat(inner.events).isEmpty()
+        assertThat(inner.userProperties).isEmpty()
+    }
+
+    @Test fun `fake without strict opt-in keeps counting a decliner`() {
+        val inner = fake(analyticsOptIn = false)
+        assertThat(inner.events.map { it.name }).containsExactly("after")
+        assertThat(inner.userProperties).containsExactly(UserProperty("streak", "after"))
+    }
+
+    @Test fun `the flag defaults to off`() {
+        val inner = fake(analyticsOptIn = null)
+        assertThat(inner.events.map { it.name }).containsExactly("after")
     }
 }

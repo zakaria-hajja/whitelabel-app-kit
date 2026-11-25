@@ -33,8 +33,7 @@ class ConsentGatedAnalytics(
     private val inner: Analytics,
     private val consent: StateFlow<ConsentState>,
     scope: CoroutineScope,
-    // Internal so the module tests can see what firebaseModule passed.
-    internal val analyticsOptIn: Boolean = false,
+    private val analyticsOptIn: Boolean = false,
 ) : Analytics {
     private val lock = SynchronizedObject()
 
