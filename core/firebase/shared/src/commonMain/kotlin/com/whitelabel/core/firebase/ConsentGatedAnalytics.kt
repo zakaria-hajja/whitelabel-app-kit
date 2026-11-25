@@ -45,8 +45,9 @@ class ConsentGatedAnalytics(
 
     init {
         scope.launch {
-            val resolved = consent.first { it !is ConsentState.Unknown }
-            synchronized(lock) { settleLocked(resolved) }
+            consent.first { it !is ConsentState.Unknown }
+            // The consent now, read under the lock, not the answer first{} saw: it may have changed again since.
+            synchronized(lock) { settleLocked(consent.value) }
         }
     }
 
@@ -78,8 +79,8 @@ class ConsentGatedAnalytics(
         val waiting = pending ?: return
         pending = null
         // Only with analytics allowed. Failed: collection is off, and the SDK could still store a property and
-        // send it later. Declined: collection stays on (consent mode, storage denied), but a user who declined
-        // gets the least data, so values queued before the answer are dropped.
+        // send it later. Declined: in consent mode collection stays on (storage denied), under strict opt-in it is
+        // off; either way a user who declined gets the least data, so values queued before the answer are dropped.
         if (state is ConsentState.Resolved && state.analyticsAllowed) waiting.values.forEach(inner::setUserProperty)
     }
 }

@@ -9,6 +9,11 @@ import com.whitelabel.core.analytics.UserProperty
 import com.whitelabel.core.consent.ConsentState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -102,6 +107,34 @@ class StrictOptInAnalyticsTest {
         gated.track(AnalyticsEvent("one"))
         gated.setUserProperty(UserProperty("bucket", "x"))
         assertThat(inner.events).isEmpty()
+        assertThat(inner.userProperties).isEmpty()
+    }
+
+    /**
+     * A consent flow whose collector is handed [emitted] values while [value] has already moved on: the state
+     * changing again between the flush collector's `first {}` and its taking the lock.
+     */
+    @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
+    private class SkewedConsent(var current: ConsentState) : StateFlow<ConsentState> {
+        val emitted = MutableSharedFlow<ConsentState>()
+        override val value: ConsentState get() = current
+        override val replayCache: List<ConsentState> get() = listOf(current)
+        override suspend fun collect(collector: FlowCollector<ConsentState>): Nothing {
+            emitted.collect(collector)
+            awaitCancellation()
+        }
+    }
+
+    @Test fun `the flush follows the consent when it takes the lock not the answer it first saw`() = runTest {
+        val inner = RecordingAnalytics()
+        val consent = SkewedConsent(ConsentState.Unknown)
+        val gated = ConsentGatedAnalytics(inner, consent, backgroundScope.plus(UnconfinedTestDispatcher(testScheduler)), analyticsOptIn = true)
+        gated.setUserProperty(UserProperty("bucket", "queued"))
+
+        // Allowed, then declined before the collector ran: the queue must follow the decline.
+        consent.current = declined
+        consent.emitted.emit(allowed)
+
         assertThat(inner.userProperties).isEmpty()
     }
 }
