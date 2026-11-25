@@ -97,7 +97,7 @@ internal fun foundationModules(
 /** Fake mode's Firebase module isn't here: it goes last ([fakeOverrides]). */
 private fun firebaseModules(definition: AppDefinition, wiring: FirebaseWiring): List<Module> = when {
     !definition.usesFirebase || wiring.mode == FirebaseMode.FAKE -> emptyList()
-    else -> listOf(firebaseModule(wiring.mode, wiring.debugBuild, wiring.debugAnalytics))
+    else -> listOf(firebaseModule(wiring.mode, wiring.debugBuild, wiring.debugAnalytics, wiring.analyticsOptIn))
 }
 
 /**
@@ -107,7 +107,7 @@ private fun firebaseModules(definition: AppDefinition, wiring: FirebaseWiring): 
 private fun fakeOverrides(definition: AppDefinition, wiring: FirebaseWiring): List<Module> =
     if (definition.usesFirebase && wiring.mode == FirebaseMode.FAKE) {
         listOf(
-            firebaseModule(FirebaseMode.FAKE, wiring.debugBuild, wiring.debugAnalytics),
+            firebaseModule(FirebaseMode.FAKE, wiring.debugBuild, wiring.debugAnalytics, wiring.analyticsOptIn),
             module { single<ConsentPort> { FakeConsentPort(wiring.fakeConsent) } },
         )
     } else {

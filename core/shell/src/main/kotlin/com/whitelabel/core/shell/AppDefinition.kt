@@ -73,6 +73,8 @@ class AppDefinition internal constructor(
     internal val appModules: List<Module> = emptyList(),
     /** The app called `firebase()`: remote values, analytics and crash reports come from Firebase. */
     val usesFirebase: Boolean = false,
+    /** `firebase(analyticsOptIn = true)`: strict opt-in, a user who declines analytics sends nothing. */
+    internal val analyticsOptIn: Boolean = false,
     /** The app called `ads { }`: it shows banners, behind the user's consent. */
     val usesAds: Boolean = false,
     /** The banner slots from `ads { }`, in declaration order. */
@@ -103,6 +105,7 @@ class AppDefinitionBuilder internal constructor() {
     private var stylePack: StylePack = StylePack.Material
     private val appModules = mutableListOf<Module>()
     private var usesFirebase = false
+    private var analyticsOptIn = false
     private var ads: AdsBuilder? = null
     private var lockScreen: (@Composable () -> Unit)? = null
 
@@ -138,9 +141,15 @@ class AppDefinitionBuilder internal constructor() {
      * Uses Firebase for remote values, analytics and crash reports, behind the user's consent. It
      * needs `firebase.enabled` (`true` or `debug`) in app.properties, and replaces [analytics] and
      * [crashReporter].
+     *
+     * [analyticsOptIn] turns on strict opt-in: when the user declines analytics, Firebase Analytics
+     * collection stays off and no events or user properties are sent, before or after the answer. Off
+     * by default (consent mode: a decliner is still counted, without identifiers). Crash reports are
+     * unchanged either way. See docs/firebase.md.
      */
-    fun firebase() {
+    fun firebase(analyticsOptIn: Boolean = false) {
         usesFirebase = true
+        this.analyticsOptIn = analyticsOptIn
     }
 
     /**
@@ -170,6 +179,7 @@ class AppDefinitionBuilder internal constructor() {
         }
         val definition = AppDefinition(
             entries.toList(), startTabRoute, analytics, crashReporter, stylePack, appModules.toList(), usesFirebase,
+            analyticsOptIn = analyticsOptIn,
             usesAds = ads != null, adPlacements = ads?.build().orEmpty(), lockScreen = lockScreen,
         )
         definition.toSpec().validate()
