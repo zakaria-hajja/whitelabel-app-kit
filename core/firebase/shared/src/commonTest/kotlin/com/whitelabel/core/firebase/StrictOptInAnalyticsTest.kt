@@ -37,7 +37,7 @@ class StrictOptInAnalyticsTest {
         assertThat(inner.events).isEmpty()
     }
 
-    @Test fun `a decline sends no user properties, queued or set after it resolves`() = runTest {
+    @Test fun `a decline sends no user properties whether queued or set after it resolves`() = runTest {
         val inner = RecordingAnalytics()
         val state = MutableStateFlow<ConsentState>(ConsentState.Unknown)
         val gated = gate(inner, state)

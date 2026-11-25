@@ -19,6 +19,7 @@ import com.whitelabel.core.consent.UmpResult
 import com.whitelabel.core.consent.UmpStatus
 import com.whitelabel.core.consent.consentModule
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.koin.core.KoinApplication
@@ -28,6 +29,7 @@ import org.koin.dsl.module
 import kotlin.test.Test
 
 /** firebaseModule passes strict opt-in to both the collection applier and the analytics gate. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class StrictOptInKoinTest {
     private class RecordingSwitch : CollectionSwitch {
         val applied = mutableListOf<FirebaseCollection>()
