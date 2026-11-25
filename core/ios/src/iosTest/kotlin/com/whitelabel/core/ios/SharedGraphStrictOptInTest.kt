@@ -32,6 +32,7 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
 import okio.FileSystem
 import org.koin.core.qualifier.named
+import org.koin.dsl.module
 import org.koin.mp.KoinPlatform
 
 /** `SharedGraph.useAnalyticsOptIn(enabled:)` (Swift: `FirebaseService(analyticsOptIn: true)`): a decliner sends nothing. */
@@ -112,5 +113,29 @@ class SharedGraphStrictOptInTest {
         assertEquals(false, SharedGraph.isAnalyticsOptIn())
         val (collection, _) = declineAndSend(analyticsOptIn = null)
         assertEquals(true, collection?.analytics)
+    }
+
+    /** Fake mode with a declined fake consent; the fake's "firebase" sink is replaced by a recorder before use. */
+    private fun fakeDeclineAndSend(analyticsOptIn: Boolean): List<String> {
+        val inner = Recording()
+        SharedGraph.declareFirebase()
+        SharedGraph.useAnalyticsOptIn(analyticsOptIn)
+        SharedGraph.useFirebaseDebug(fake = true, analytics = false, fakeConsent = "declined")
+        SharedGraph.start(testPlatform(dir, firebase = "fake"), settingsOnly, emptyList(), useMockApi = false)
+        KoinPlatform.getKoin().loadModules(listOf(module { single<Analytics>(named("firebase")) { inner } }), allowOverride = true)
+        val analytics = KoinPlatform.getKoin().get<Analytics>()
+        analytics.setUserProperty(UserProperty("bucket", "queued"))
+        SharedGraph.consent().gatherOnLaunch()
+        analytics.track(AnalyticsEvent("after"))
+        analytics.setUserProperty(UserProperty("streak", "after"))
+        return inner.log
+    }
+
+    @Test fun `fake mode with strict opt-in sends nothing after a decline`() {
+        assertEquals(emptyList(), fakeDeclineAndSend(analyticsOptIn = true))
+    }
+
+    @Test fun `fake mode without strict opt-in still counts a decliner`() {
+        assertEquals(listOf("event after", "property streak"), fakeDeclineAndSend(analyticsOptIn = false))
     }
 }
