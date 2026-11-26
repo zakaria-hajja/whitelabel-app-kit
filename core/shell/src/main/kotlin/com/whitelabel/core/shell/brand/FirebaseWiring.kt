@@ -11,13 +11,18 @@ import com.whitelabel.core.shell.AppDefinition
 import com.whitelabel.core.shell.checkFirebaseDeclared
 import com.whitelabel.core.shell.debug.DebugMarkers
 
-/** How the Firebase part of the graph is wired: its mode, the build kind, and (fake mode) the consent answer. */
+/**
+ * How the Firebase part of the graph is wired: its mode, the build kind, (fake mode) the consent answer,
+ * and whether the app asked for strict analytics opt-in.
+ */
 internal data class FirebaseWiring(
     val mode: FirebaseMode,
     val debugBuild: Boolean,
     val debugAnalytics: Boolean,
     /** What the fake consent port answers; `null` makes the gather fail. Used only in fake mode. */
     val fakeConsent: UmpResult? = null,
+    /** Strict opt-in, from `firebase(analyticsOptIn = true)`: a user who declines analytics sends nothing. */
+    val analyticsOptIn: Boolean = false,
 ) {
     companion object {
         val OFF = FirebaseWiring(FirebaseMode.OFF, debugBuild = false, debugAnalytics = false)
@@ -75,5 +80,6 @@ internal fun firebaseWiringFor(context: Context, definition: AppDefinition, cont
         debugBuild = debugBuild,
         debugAnalytics = markers.has(DebugMarkers.ANALYTICS_DEBUG),
         fakeConsent = fakeConsentResult(markers.fakeConsentState()),
+        analyticsOptIn = definition.analyticsOptIn,
     )
 }

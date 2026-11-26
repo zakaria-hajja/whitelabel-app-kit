@@ -31,15 +31,26 @@ private val appliedConsent = named("firebaseAppliedConsent")
  * OFF binds nothing (the defaults-only values stay). FAKE binds fake values and logging analytics behind the
  * consent gate. ON expects the platform to bind [RemoteConfigSource], [CollectionSwitch] and
  * [Analytics]/[CrashReporter] named "firebase"; it needs [consentModule] and the application scope too.
+ * [analyticsOptIn] turns on strict opt-in (see [collectionFor] and [ConsentGatedAnalytics]): a user who
+ * declines analytics sends nothing. Off by default, so a decliner is still counted without identifiers.
  */
-fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Boolean): Module = when (mode) {
+fun firebaseModule(
+    mode: FirebaseMode,
+    debugBuild: Boolean,
+    debugAnalytics: Boolean,
+    analyticsOptIn: Boolean = false,
+): Module = when (mode) {
     FirebaseMode.OFF -> module { }
     FirebaseMode.FAKE -> module {
         single<RemoteConfigSource> {
             FakeRemoteConfigSource(mapOf("showcase_remote_note" to "from the fake"))
         }
         single<RemoteValues> { SourceRemoteValues(get(), get(applicationScope)) }
-        single<Analytics> { ConsentGatedAnalytics(LoggingAnalytics { println("Analytics: $it") }, get<Consent>().state, get(applicationScope)) }
+        // The fake's sink, under the name ON gives the SDK adapter, so a test can replace it with a recorder.
+        single<Analytics>(firebase) { LoggingAnalytics { println("Analytics: $it") } }
+        single<Analytics> {
+            ConsentGatedAnalytics(get(firebase), get<Consent>().state, get(applicationScope), analyticsOptIn)
+        }
         single<CrashReporter> {
             ConsentGatedCrashReporter(
                 LoggingCrashReporter { message, t -> println("$message: $t") },
@@ -50,7 +61,7 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
     FirebaseMode.ON -> module {
         single { SourceRemoteValues(get(), get(applicationScope)) }
         single<RemoteValues>(createdAtStart = true) { get<SourceRemoteValues>().also { it.start() } }
-        single<Analytics> { ConsentGatedAnalytics(get(firebase), get(appliedConsent), get(applicationScope)) }
+        single<Analytics> { ConsentGatedAnalytics(get(firebase), get(appliedConsent), get(applicationScope), analyticsOptIn) }
         single<CrashReporter> { ConsentGatedCrashReporter(get(firebase), get(appliedConsent)) }
         // Applies consent to the SDKs, then publishes the consent it applied. The gates follow that flow, not
         // Consent.state: both collect on the application scope (Dispatchers.Default), so with the raw state a
@@ -67,7 +78,7 @@ fun firebaseModule(mode: FirebaseMode, debugBuild: Boolean, debugAnalytics: Bool
                 .filter { offAtStart || it !is ConsentState.Unknown }
                 .onEach {
                     // One failing platform apply must not end the collector; later consent changes still apply.
-                    runCatching { switch.apply(collectionFor(it, debugBuild, debugAnalytics)) }
+                    runCatching { switch.apply(collectionFor(it, debugBuild, debugAnalytics, analyticsOptIn)) }
                     // Published even when the apply failed, so the gates still follow consent (as before).
                     applied.value = it
                 }
