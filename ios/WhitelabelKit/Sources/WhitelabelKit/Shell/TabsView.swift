@@ -26,6 +26,8 @@ struct TabsView: View {
                             AdBanner(placement: placement).id(placement)
                         }
                     }
+                    // One visible tab draws no tab bar, as Android's bottom bar needs two.
+                    .toolbar(Self.showsTabBar(visibleTabs: routes.count) ? .visible : .hidden, for: .tabBar)
                     .tabItem { Label(tab.title, systemImage: tab.systemImage) }
                     .tag(Optional(route))
                 }
@@ -36,6 +38,9 @@ struct TabsView: View {
         // Signing in or out resets the navigator: pick the start tab again rather than leave none selected.
         .onChange(of: navigator.selectedTab) { if navigator.selectedTab == nil { selectStartTab() } }
     }
+
+    /** The tab bar shows only with two or more visible tabs, the same rule as Android's bottom bar. */
+    static func showsTabBar(visibleTabs: Int) -> Bool { visibleTabs >= 2 }
 
     /** The definition's start tab (or the first), unless a visible tab is already selected. */
     private func selectStartTab() {

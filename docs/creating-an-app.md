@@ -132,8 +132,8 @@ feature's module, then the app's own `modules(...)`.
 - **Sign-in:** `auth()` makes the whole app sign-in only. Features that need a session (profile,
   home, catalog) refuse to start without it, with a message naming `auth()`. Without `auth()` the
   app is public.
-- **Tabs and the bottom bar:** an app needs at least one tab. The bottom bar appears when two or
-  more tabs are visible.
+- **Tabs and the bottom bar:** an app needs at least one tab. The bottom bar (the iOS tab bar)
+  appears when two or more tabs are visible, on both platforms; a one-tab app has none.
 - **Firebase:** `firebase()` in the definition (with `firebase.enabled` in `app.properties`) gives the
   app remote values, analytics and crash reports behind the user's consent. Put
   `PrivacyChoicesRow()` in the app's own settings section. See [firebase.md](firebase.md).
